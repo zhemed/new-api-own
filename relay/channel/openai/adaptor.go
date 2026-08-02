@@ -352,8 +352,6 @@ func (a *Adaptor) ConvertOpenAIRequest(c *gin.Context, info *relaycommon.RelayIn
 			request.Model = originModel
 		}
 
-		info.ReasoningEffort = request.ReasoningEffort
-
 		// o系列模型developer适配（o1-mini除外）
 		if !strings.HasPrefix(info.UpstreamModelName, "o1-mini") && !strings.HasPrefix(info.UpstreamModelName, "o1-preview") {
 			//修改第一个Message的内容，将system改为developer
@@ -361,6 +359,12 @@ func (a *Adaptor) ConvertOpenAIRequest(c *gin.Context, info *relaycommon.RelayIn
 				request.Messages[0].Role = "developer"
 			}
 		}
+	}
+
+	// Preserve the requested effort for usage logs across all OpenAI-compatible
+	// models, not only the O-series/GPT-5 compatibility branch above.
+	if info != nil && request.ReasoningEffort != "" {
+		info.ReasoningEffort = request.ReasoningEffort
 	}
 
 	return request, nil
