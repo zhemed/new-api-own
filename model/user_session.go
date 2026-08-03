@@ -355,7 +355,7 @@ return 1`
 		if !completedAt.Before(cacheDeadline) {
 			return errUserSessionCacheObservationStale
 		}
-		if !completedAt.Before(sessionExpiresAt) {
+		if entry.ExpiresAt > 0 && !completedAt.Before(sessionExpiresAt) {
 			return ErrUserSessionInactive
 		}
 	}
