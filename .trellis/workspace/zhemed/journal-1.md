@@ -40,3 +40,39 @@ Persisted OpenAI Chat reasoning_effort for non-O/GPT-5 models, deployed the imag
 ### Next Steps
 
 - Keep the existing deployment task separate from this maintenance archive.
+
+
+## Session 2: new-api-account-balance
+
+**Date**: 2026-08-03
+**Task**: new-api-account-balance
+**Branch**: `main`
+
+### Summary
+
+panel_endpoint_and_ccswitch_usage_query
+
+### Main Changes
+
+- account_balance_endpoint
+- ccswitch_usage_script
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `665d1185` | (see git log) |
+
+### Testing
+
+- [OK] go_test_all
+- [OK] live_account_endpoint
+- [OK] ccswitch_extractor
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- none
