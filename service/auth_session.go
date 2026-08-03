@@ -13,7 +13,10 @@ import (
 	"github.com/google/uuid"
 )
 
-const RefreshCookieName = "new_api_refresh"
+const (
+	RefreshCookieName      = "new_api_refresh"
+	neverExpiringCookieTTL = 10 * 365 * 24 * time.Hour
+)
 
 var (
 	ErrLoginSessionInvalid  = errors.New("login session is invalid")
@@ -40,6 +43,13 @@ type AuthBundle struct {
 	AccessExpiresAt int64            `json:"access_expires_at"`
 	Session         LoginSessionView `json:"session"`
 	RefreshToken    string           `json:"-"`
+}
+
+func loginSessionExpiresAt(now int64) int64 {
+	if common.LoginSessionNeverExpires {
+		return 0
+	}
+	return time.Unix(now, 0).Add(LoginSessionTTL).Unix()
 }
 
 func CreateLoginSession(userID int, loginMethod, ip, userAgent string) (*AuthBundle, error) {
@@ -95,7 +105,7 @@ func createLoginSession(userID int, expectedAuthVersion int64, loginMethod, ip, 
 		UserAgent:       truncateAuthMetadata(userAgent, 512),
 		CreatedAt:       now,
 		LastActiveAt:    now,
-		ExpiresAt:       time.Unix(now, 0).Add(LoginSessionTTL).Unix(),
+		ExpiresAt:       loginSessionExpiresAt(now),
 	}
 	if session.LoginMethod == "" {
 		session.LoginMethod = "unknown"
@@ -120,7 +130,7 @@ func ValidateLoginSession(identity AuthIdentity) (*model.UserSession, *model.Use
 		return nil, nil, err
 	}
 	now := time.Now().Unix()
-	if session.UserID != identity.UserID || session.Status != model.UserSessionStatusActive || session.RevokedAt != 0 || session.ExpiresAt <= now || session.Version != identity.SessionVersion || session.UserAuthVersion != identity.UserAuthVersion {
+	if session.UserID != identity.UserID || session.Status != model.UserSessionStatusActive || session.RevokedAt != 0 || common.IsLoginSessionExpired(session.ExpiresAt, now) || session.Version != identity.SessionVersion || session.UserAuthVersion != identity.UserAuthVersion {
 		return nil, nil, ErrLoginSessionRevoked
 	}
 	user, err := model.GetUserCache(identity.UserID)
@@ -213,7 +223,7 @@ func RefreshLoginSession(rawRefreshToken, expectedSID, ip, userAgent string) (*A
 		}
 		return nil, nil, ErrRefreshTokenInvalid
 	}
-	if session.Status != model.UserSessionStatusActive || session.RevokedAt != 0 || session.ExpiresAt <= time.Now().Unix() {
+	if session.Status != model.UserSessionStatusActive || session.RevokedAt != 0 || common.IsLoginSessionExpired(session.ExpiresAt, time.Now().Unix()) {
 		return nil, nil, ErrLoginSessionRevoked
 	}
 	userCache, err := model.GetUserCache(session.UserID)
@@ -291,8 +301,11 @@ func ListLoginSessions(userID int, currentSID string) ([]LoginSessionView, error
 
 func WriteRefreshCookie(c *gin.Context, rawToken string) {
 	expiresAt := time.Now().Add(LoginSessionTTL)
+	if common.LoginSessionNeverExpires {
+		expiresAt = time.Now().Add(neverExpiringCookieTTL)
+	}
 	if sid, _, ok := splitRefreshToken(rawToken); ok {
-		if session, err := model.GetUserSessionCached(sid); err == nil && session.ExpiresAt > time.Now().Unix() {
+		if session, err := model.GetUserSessionCached(sid); err == nil && !common.IsLoginSessionExpired(session.ExpiresAt, time.Now().Unix()) && session.ExpiresAt > 0 {
 			expiresAt = time.Unix(session.ExpiresAt, 0)
 		}
 	}

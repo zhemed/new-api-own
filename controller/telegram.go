@@ -168,7 +168,7 @@ func TelegramBind(c *gin.Context) {
 			}
 			return err
 		}
-		if session.Status != model.UserSessionStatusActive || session.RevokedAt != 0 || session.ExpiresAt <= time.Now().Unix() {
+		if session.Status != model.UserSessionStatusActive || session.RevokedAt != 0 || common.IsLoginSessionExpired(session.ExpiresAt, time.Now().Unix()) {
 			return service.ErrLoginSessionRevoked
 		}
 		if session.UserAuthVersion != user.AuthVersion {
