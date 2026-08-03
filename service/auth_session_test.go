@@ -355,6 +355,29 @@ func TestLoginSessionCreateRefreshAndRevoke(t *testing.T) {
 	assert.True(t, errors.Is(err, ErrLoginSessionRevoked))
 }
 
+func TestNeverExpiringLoginSessionSupportsRedisCacheAndRefresh(t *testing.T) {
+	useTestSessionSecret(t)
+	user := setupAuthSessionTestDB(t)
+	useIndependentAuthSessionRedis(t)
+	previousNeverExpires := common.LoginSessionNeverExpires
+	common.LoginSessionNeverExpires = true
+	t.Cleanup(func() { common.LoginSessionNeverExpires = previousNeverExpires })
+
+	bundle, err := CreateLoginSession(user.Id, "password", "127.0.0.1", "test-agent")
+	require.NoError(t, err)
+	assert.Zero(t, bundle.Session.ExpiresAt)
+
+	identity, err := ParseAccessToken(bundle.AccessToken)
+	require.NoError(t, err)
+	_, _, err = ValidateLoginSession(identity)
+	require.NoError(t, err)
+
+	refreshed, _, err := RefreshLoginSession(bundle.RefreshToken, bundle.Session.SID, "127.0.0.2", "test-agent-2")
+	require.NoError(t, err)
+	assert.Zero(t, refreshed.Session.ExpiresAt)
+	assert.NotEqual(t, bundle.RefreshToken, refreshed.RefreshToken)
+}
+
 func TestIndependentRedisSessionRevokeConvergesAfterCacheTTL(t *testing.T) {
 	useTestSessionSecret(t)
 	user := setupAuthSessionTestDB(t)

@@ -158,6 +158,21 @@ func TestUserSessionCacheTTLUsesShortCacheWindow(t *testing.T) {
 	assert.LessOrEqual(t, fallbackTTL, 60*time.Second, "non-positive cache frequency must use the existing 60-second fallback")
 }
 
+func TestUserSessionCacheAcceptsNeverExpireSentinel(t *testing.T) {
+	setupUserSessionTest(t)
+	server := useUserCacheMiniRedis(t)
+	now := time.Now().Unix()
+	entry := newTestUserSession("never-expire-cache", 1205, now).cacheEntry()
+	entry.ExpiresAt = 0
+
+	require.NoError(t, writeUserSessionCache(entry, userSessionCacheDeadline()))
+	assert.Positive(t, server.TTL(userSessionCacheKey(entry.SID)))
+
+	cached, err := getUserSessionCache(entry.SID)
+	require.NoError(t, err)
+	assert.Zero(t, cached.ExpiresAt)
+}
+
 func TestStaleActiveSessionCacheFillCannotRestartWindowAfterDenyExpires(t *testing.T) {
 	setupUserSessionTest(t)
 	server := useUserCacheMiniRedis(t)
