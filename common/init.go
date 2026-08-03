@@ -137,6 +137,7 @@ func InitEnv() {
 }
 
 func initUserSessionSettings() {
+	LoginSessionNeverExpires = GetEnvOrDefaultBool("LOGIN_SESSION_NEVER_EXPIRES", false)
 	UserSessionActiveLimit = positiveUserSessionEnv("USER_SESSION_ACTIVE_LIMIT", DefaultUserSessionActiveLimit)
 	UserSessionIssuanceLimit = positiveUserSessionEnv("USER_SESSION_ISSUANCE_LIMIT", DefaultUserSessionIssuanceLimit)
 	UserSessionIssuanceWindowSeconds = int64(positiveUserSessionEnv("USER_SESSION_ISSUANCE_WINDOW_SECONDS", DefaultUserSessionIssuanceWindowSeconds))

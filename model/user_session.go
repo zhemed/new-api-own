@@ -132,7 +132,7 @@ func userSessionCacheDeadline() time.Time {
 
 func CreateUserSession(session *UserSession) error {
 	now := time.Now().Unix()
-	if session == nil || session.SID == "" || session.UserID <= 0 || session.UserAuthVersion <= 0 || session.RefreshHash == "" || session.ExpiresAt <= now {
+	if session == nil || session.SID == "" || session.UserID <= 0 || session.UserAuthVersion <= 0 || session.RefreshHash == "" || common.IsLoginSessionExpired(session.ExpiresAt, now) {
 		return ErrUserSessionInvalid
 	}
 	if session.Version <= 0 {
@@ -175,7 +175,7 @@ func CountActiveUserSessions(userID int, now int64) (int64, error) {
 	}
 	var count int64
 	err := DB.Model(&UserSession{}).
-		Where("user_id = ? AND status = ? AND expires_at > ?", userID, UserSessionStatusActive, now).
+		Where("user_id = ? AND status = ? AND (expires_at = 0 OR expires_at > ?)", userID, UserSessionStatusActive, now).
 		Count(&count).Error
 	return count, err
 }
@@ -228,7 +228,7 @@ func GetUserSessionCached(sid string) (*UserSession, error) {
 		return nil, err
 	}
 	now := time.Now().Unix()
-	if session.Status != UserSessionStatusActive || session.RevokedAt != 0 || session.ExpiresAt <= now {
+	if session.Status != UserSessionStatusActive || session.RevokedAt != 0 || common.IsLoginSessionExpired(session.ExpiresAt, now) {
 		if common.RedisEnabled {
 			entry := session.cacheEntry()
 			entry.Status = UserSessionStatusRevoked
@@ -261,7 +261,7 @@ func getUserSessionCache(sid string) (*userSessionCacheEntry, error) {
 	if entry.CacheSchema != userSessionCacheSchema || entry.SID != sid || entry.UserID <= 0 || entry.Version <= 0 || entry.UserAuthVersion <= 0 {
 		return nil, fmt.Errorf("user session cache schema is stale")
 	}
-	if entry.Status != UserSessionStatusActive || entry.RevokedAt != 0 || entry.ExpiresAt <= time.Now().Unix() {
+	if entry.Status != UserSessionStatusActive || entry.RevokedAt != 0 || common.IsLoginSessionExpired(entry.ExpiresAt, time.Now().Unix()) {
 		return nil, ErrUserSessionInactive
 	}
 	return &entry, nil
@@ -278,8 +278,12 @@ func writeUserSessionCache(entry *userSessionCacheEntry, cacheDeadline time.Time
 		return nil
 	}
 	now := time.Now()
-	sessionExpiresAt := time.Unix(entry.ExpiresAt, 0)
-	sessionTTL := sessionExpiresAt.Sub(now)
+	var sessionExpiresAt time.Time
+	var sessionTTL time.Duration
+	if entry.ExpiresAt > 0 {
+		sessionExpiresAt = time.Unix(entry.ExpiresAt, 0)
+		sessionTTL = sessionExpiresAt.Sub(now)
+	}
 	var redisExpiration int64
 	if entry.Status == UserSessionStatusActive {
 		if cacheDeadline.IsZero() {
@@ -289,11 +293,11 @@ func writeUserSessionCache(entry *userSessionCacheEntry, cacheDeadline time.Time
 		if cacheTTL <= 0 {
 			return errUserSessionCacheObservationStale
 		}
-		if sessionTTL <= 0 {
+		if entry.ExpiresAt > 0 && sessionTTL <= 0 {
 			return ErrUserSessionInactive
 		}
 		cacheExpiresAt := cacheDeadline
-		if sessionExpiresAt.Before(cacheExpiresAt) {
+		if entry.ExpiresAt > 0 && sessionExpiresAt.Before(cacheExpiresAt) {
 			cacheExpiresAt = sessionExpiresAt
 		}
 		if cacheExpiresAt.Sub(now) < time.Millisecond {
@@ -301,7 +305,10 @@ func writeUserSessionCache(entry *userSessionCacheEntry, cacheDeadline time.Time
 		}
 		redisExpiration = cacheExpiresAt.UnixMilli()
 	} else {
-		ttl := min(sessionTTL, time.Duration(userCacheTTLSeconds())*time.Second)
+		ttl := time.Duration(userCacheTTLSeconds()) * time.Second
+		if entry.ExpiresAt > 0 {
+			ttl = min(sessionTTL, ttl)
+		}
 		if ttl <= 0 {
 			ttl = time.Second
 		}
@@ -362,7 +369,7 @@ func confirmUserSessionActiveSnapshot(session *UserSession) error {
 	var count int64
 	err := DB.Model(&UserSession{}).
 		Where(
-			"sid = ? AND user_id = ? AND status = ? AND revoked_at = ? AND expires_at > ? AND version = ? AND user_auth_version = ?",
+			"sid = ? AND user_id = ? AND status = ? AND revoked_at = ? AND (expires_at = 0 OR expires_at > ?) AND version = ? AND user_auth_version = ?",
 			session.SID,
 			session.UserID,
 			UserSessionStatusActive,
@@ -410,7 +417,7 @@ func ListActiveUserSessions(userID int, currentSID string, now int64) ([]UserSes
 	if currentSID != "" {
 		var current []UserSession
 		if err := DB.Where(
-			"user_id = ? AND user_auth_version = ? AND status = ? AND expires_at > ? AND sid = ?",
+			"user_id = ? AND user_auth_version = ? AND status = ? AND (expires_at = 0 OR expires_at > ?) AND sid = ?",
 			userID,
 			authVersion,
 			UserSessionStatusActive,
@@ -426,7 +433,7 @@ func ListActiveUserSessions(userID int, currentSID string, now int64) ([]UserSes
 	remainingLimit := userSessionListLimit - len(sessions)
 
 	otherQuery := DB.Where(
-		"user_id = ? AND user_auth_version = ? AND status = ? AND expires_at > ?",
+		"user_id = ? AND user_auth_version = ? AND status = ? AND (expires_at = 0 OR expires_at > ?)",
 		userID,
 		authVersion,
 		UserSessionStatusActive,
@@ -465,13 +472,13 @@ func RotateUserSessionRefresh(userID int, sid, presentedHash, nextHash string, n
 		if err := DB.Where("sid = ? AND user_id = ?", sid, userID).First(&session).Error; err != nil {
 			return nil, err
 		}
-		if session.Status != UserSessionStatusActive || session.RevokedAt != 0 || session.ExpiresAt <= now {
+		if session.Status != UserSessionStatusActive || session.RevokedAt != 0 || common.IsLoginSessionExpired(session.ExpiresAt, now) {
 			return nil, ErrUserSessionInactive
 		}
 
 		if hmac.Equal([]byte(session.RefreshHash), []byte(presentedHash)) {
 			result := DB.Model(&UserSession{}).
-				Where("sid = ? AND user_id = ? AND status = ? AND revoked_at = ? AND expires_at > ? AND refresh_hash = ?",
+				Where("sid = ? AND user_id = ? AND status = ? AND revoked_at = ? AND (expires_at = 0 OR expires_at > ?) AND refresh_hash = ?",
 					sid, userID, UserSessionStatusActive, 0, now, presentedHash).
 				Updates(map[string]interface{}{
 					"previous_refresh_hash": session.RefreshHash,
@@ -517,7 +524,7 @@ func RotateUserSessionRefresh(userID int, sid, presentedHash, nextHash string, n
 			return nil, err
 		}
 		result := DB.Model(&UserSession{}).
-			Where("sid = ? AND user_id = ? AND status = ? AND revoked_at = ? AND expires_at > ?",
+			Where("sid = ? AND user_id = ? AND status = ? AND revoked_at = ? AND (expires_at = 0 OR expires_at > ?)",
 				sid, userID, UserSessionStatusActive, 0, now).
 			Updates(map[string]interface{}{
 				"status":         UserSessionStatusRevoked,
@@ -553,7 +560,7 @@ func RevokeUserSession(userID int, sid, reason string) (bool, error) {
 		}
 		return false, err
 	}
-	if candidate.Status != UserSessionStatusActive || candidate.RevokedAt != 0 || candidate.ExpiresAt <= now {
+	if candidate.Status != UserSessionStatusActive || candidate.RevokedAt != 0 || common.IsLoginSessionExpired(candidate.ExpiresAt, now) {
 		return false, nil
 	}
 	if err := writeUserSessionDenyFence(&candidate, UserSessionStatusRevoking, now, reason); err != nil {
@@ -566,7 +573,7 @@ func RevokeUserSession(userID int, sid, reason string) (bool, error) {
 		if err := lockForUpdate(tx).Where("sid = ? AND user_id = ?", sid, userID).First(&current).Error; err != nil {
 			return err
 		}
-		if current.Status != UserSessionStatusActive || current.RevokedAt != 0 || current.ExpiresAt <= now {
+		if current.Status != UserSessionStatusActive || current.RevokedAt != 0 || common.IsLoginSessionExpired(current.ExpiresAt, now) {
 			return nil
 		}
 		result := tx.Model(&UserSession{}).Where("sid = ? AND status = ?", sid, UserSessionStatusActive).Updates(map[string]interface{}{
@@ -611,7 +618,7 @@ func RevokeUserSessionByRefreshHash(sid, presentedHash, reason string) (bool, er
 			}
 			return err
 		}
-		if session.Status != UserSessionStatusActive || session.RevokedAt != 0 || session.ExpiresAt <= now {
+		if session.Status != UserSessionStatusActive || session.RevokedAt != 0 || common.IsLoginSessionExpired(session.ExpiresAt, now) {
 			return nil
 		}
 		validCurrent := hmac.Equal([]byte(session.RefreshHash), []byte(presentedHash))
@@ -664,7 +671,7 @@ func AdvanceUserSessionAuthVersion(userID int, sid string, expectedSessionVersio
 		if err := lockForUpdate(tx).Where("sid = ? AND user_id = ?", sid, userID).First(&session).Error; err != nil {
 			return err
 		}
-		if session.Status != UserSessionStatusActive || session.ExpiresAt <= now ||
+		if session.Status != UserSessionStatusActive || common.IsLoginSessionExpired(session.ExpiresAt, now) ||
 			session.Version != expectedSessionVersion || session.UserAuthVersion != expectedUserAuthVersion {
 			return ErrUserSessionInactive
 		}
@@ -716,7 +723,7 @@ func revokeUserSessions(userID int, excludedSID, reason string) (int64, error) {
 	now := time.Now().Unix()
 	var totalAffected int64
 	for {
-		query := DB.Where("user_id = ? AND status = ? AND expires_at > ?", userID, UserSessionStatusActive, now)
+		query := DB.Where("user_id = ? AND status = ? AND (expires_at = 0 OR expires_at > ?)", userID, UserSessionStatusActive, now)
 		if excludedSID != "" {
 			query = query.Where("sid <> ?", excludedSID)
 		}
@@ -802,7 +809,7 @@ func deleteExpiredUserSessionsBefore(expiredBefore, issuanceCutoff, revokedBefor
 		var sids []string
 		if err := DB.Model(&UserSession{}).
 			Where(
-				"expires_at < ? AND created_at <= ? AND (status <> ? OR revoked_at <= 0 OR revoked_at < ?)",
+				"expires_at > 0 AND expires_at < ? AND created_at <= ? AND (status <> ? OR revoked_at <= 0 OR revoked_at < ?)",
 				expiredBefore,
 				issuanceCutoff,
 				UserSessionStatusRevoked,
@@ -821,7 +828,7 @@ func deleteExpiredUserSessionsBefore(expiredBefore, issuanceCutoff, revokedBefor
 			}
 			if err := DB.Where("sid IN ?", sids[start:end]).
 				Where(
-					"expires_at < ? AND created_at <= ? AND (status <> ? OR revoked_at <= 0 OR revoked_at < ?)",
+					"expires_at > 0 AND expires_at < ? AND created_at <= ? AND (status <> ? OR revoked_at <= 0 OR revoked_at < ?)",
 					expiredBefore,
 					issuanceCutoff,
 					UserSessionStatusRevoked,
