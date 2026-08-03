@@ -18,6 +18,34 @@ For commercial licensing, please contact support@quantumnous.com
 */
 export const CHANNEL_CONNECTION_INFO_TYPE = 'newapi_channel_conn'
 
+const SECURE_SERVER_ORIGIN = 'https://cs.shemedhb.eu.org'
+
+export function getSecureServerOrigin(): string {
+  if (
+    typeof window !== 'undefined' &&
+    window.location.protocol === 'https:'
+  ) {
+    return window.location.origin
+  }
+
+  try {
+    if (typeof window !== 'undefined') {
+      const raw = window.localStorage.getItem('status')
+      if (raw) {
+        const status = JSON.parse(raw)
+        if (typeof status.server_address === 'string') {
+          const configured = new URL(status.server_address)
+          if (configured.protocol === 'https:') return configured.origin
+        }
+      }
+    }
+  } catch {
+    /* empty */
+  }
+
+  return SECURE_SERVER_ORIGIN
+}
+
 export type ChannelConnectionInfo = {
   key: string
   url: string

@@ -27,6 +27,7 @@ import { ComboboxInput } from '@/components/ui/combobox-input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { getUserModels } from '@/lib/api'
+import { getSecureServerOrigin } from '@/lib/channel-connection-info'
 
 const APP_CONFIGS = {
   claude: {
@@ -51,20 +52,43 @@ const APP_CONFIGS = {
   },
 } as const
 
-type AppType = keyof typeof APP_CONFIGS
-
-function getServerAddress(): string {
-  try {
-    const raw = localStorage.getItem('status')
-    if (raw) {
-      const status = JSON.parse(raw)
-      if (status.server_address) return status.server_address
+const CC_SWITCH_USAGE_SCRIPT = `({
+  request: {
+    url: "{{baseUrl}}/api/usage/account/",
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer {{apiKey}}"
     }
-  } catch {
-    /* empty */
+  },
+  extractor: function (response) {
+    if (response && response.success && response.data) {
+      return {
+        planName: response.data.group || "Default",
+        remaining: response.data.quota / 500000,
+        used: response.data.used_quota / 500000,
+        total: response.data.total_quota
+          ? response.data.total_quota / 500000
+          : (response.data.quota + response.data.used_quota) / 500000,
+        unit: response.data.unit || "USD"
+      };
+    }
+    return {
+      isValid: false,
+      invalidMessage: (response && response.message) || "Query failed"
+    };
   }
-  return window.location.origin
+})`
+
+function encodeBase64Url(value: string): string {
+  let binary = ''
+  for (const byte of new TextEncoder().encode(value)) {
+    binary += String.fromCharCode(byte)
+  }
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
+
+type AppType = keyof typeof APP_CONFIGS
 
 function buildCCSwitchURL(
   app: string,
@@ -72,7 +96,7 @@ function buildCCSwitchURL(
   models: Record<string, string>,
   apiKey: string
 ): string {
-  const serverAddress = getServerAddress()
+  const serverAddress = getSecureServerOrigin()
   const endpoint = app === 'codex' ? serverAddress + '/v1' : serverAddress
   const params = new URLSearchParams()
   params.set('resource', 'provider')
@@ -84,6 +108,13 @@ function buildCCSwitchURL(
     if (v) params.set(k, v)
   }
   params.set('homepage', serverAddress)
+  if (app === 'codex') {
+    params.set('usageEnabled', 'true')
+    params.set('usageScript', encodeBase64Url(CC_SWITCH_USAGE_SCRIPT))
+    params.set('usageApiKey', apiKey)
+    params.set('usageBaseUrl', serverAddress)
+    params.set('usageAutoInterval', '30')
+  }
   params.set('enabled', 'true')
   return `ccswitch://v1/import?${params.toString()}`
 }
