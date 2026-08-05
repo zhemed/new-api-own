@@ -32,6 +32,8 @@ export type SystemOptionsResponse = {
 export type UpdateOptionRequest = {
   key: string
   value: string | boolean | number
+  /** When true, useUpdateOption skips its success toast (caller shows one). */
+  silent?: boolean
 }
 
 export type UpdateOptionResponse = {

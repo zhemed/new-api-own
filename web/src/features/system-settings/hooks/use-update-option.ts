@@ -59,7 +59,11 @@ export function useUpdateOption() {
           }
         }
 
-        toast.success(i18next.t('Setting updated successfully'))
+        // Batch saves call each field update with silent: true and show one
+        // consolidated success toast themselves.
+        if (!variables.silent) {
+          toast.success(i18next.t('Setting updated successfully'))
+        }
       } else {
         toast.error(data.message || i18next.t('Failed to update setting'))
       }
