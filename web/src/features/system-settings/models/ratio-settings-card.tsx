@@ -347,9 +347,12 @@ export function RatioSettingsCard({
 
       for (const key of updates) {
         const apiKey = apiKeyMap[key as string] || (key as string)
-        await updateOption.mutateAsync({ key: apiKey, value: normalized[key] })
+        await updateOption.mutateAsync(
+          { key: apiKey, value: normalized[key], silent: true }
+        )
       }
 
+      toast.success(t('Setting updated successfully'))
       modelNormalizedDefaults.current = normalized
       setSavedModelValues(normalized)
     },
@@ -385,9 +388,14 @@ export function RatioSettingsCard({
 
       for (const key of updates) {
         const apiKey = apiKeyMap[key] || key
-        await updateOption.mutateAsync({ key: apiKey, value: normalized[key] })
+        await updateOption.mutateAsync(
+          { key: apiKey, value: normalized[key], silent: true }
+        )
       }
 
+      if (updates.length === 0) return
+
+      toast.success(t('Setting updated successfully'))
       groupNormalizedDefaults.current = normalized
     },
     [updateOption]
