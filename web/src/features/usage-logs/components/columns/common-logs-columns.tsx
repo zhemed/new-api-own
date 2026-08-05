@@ -619,6 +619,24 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
       meta: { mobileTitle: true },
     },
     {
+      id: 'reasoning_effort',
+      header: t('Reasoning Effort'),
+      cell: function ReasoningEffortCell({ row }) {
+        const log = row.original
+        if (!isDisplayableLogType(log.type)) return null
+
+        const value = parseLogOther(log.other)?.reasoning_effort
+        if (!value) return <span className='text-muted-foreground'>-</span>
+
+        let variant: StatusBadgeProps['variant'] = 'green'
+        if (value === 'high') variant = 'orange'
+        else if (value === 'medium') variant = 'yellow'
+
+        return <StatusBadge variant={variant}>{value}</StatusBadge>
+      },
+      meta: { label: t('Reasoning Effort') },
+    },
+    {
       accessorKey: 'is_stream',
       header: t('Stream'),
       cell: ({ row }) => {
