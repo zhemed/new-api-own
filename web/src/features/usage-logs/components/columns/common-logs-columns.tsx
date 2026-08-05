@@ -620,19 +620,26 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
     },
     {
       id: 'reasoning_effort',
+      accessorFn: (log) => parseLogOther(log.other)?.reasoning_effort,
       header: t('Reasoning Effort'),
       cell: function ReasoningEffortCell({ row }) {
         const log = row.original
         if (!isDisplayableLogType(log.type)) return null
 
-        const value = parseLogOther(log.other)?.reasoning_effort
+        const value = row.getValue<string | undefined>('reasoning_effort')
         if (!value) return <span className='text-muted-foreground'>-</span>
 
         let variant: StatusBadgeProps['variant'] = 'green'
         if (value === 'high') variant = 'orange'
         else if (value === 'medium') variant = 'yellow'
 
-        return <StatusBadge variant={variant}>{value}</StatusBadge>
+        return (
+          <div className='flex justify-center'>
+            <StatusBadge variant={variant} copyable={false}>
+              {value}
+            </StatusBadge>
+          </div>
+        )
       },
       meta: { label: t('Reasoning Effort') },
     },
