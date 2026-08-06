@@ -197,6 +197,12 @@ func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon
 	}
 
 	dataChan := make(chan string, 10)
+	handlerDone := make(chan struct{})
+	var closeDataChanOnce sync.Once
+	closeDataChan := func() {
+		closeDataChanOnce.Do(func() { close(dataChan) })
+	}
+	var scannerErr error
 
 	wg.Add(1)
 	gopool.Go(func() {
@@ -206,6 +212,7 @@ func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon
 				info.StreamStatus.SetEndReason(relaycommon.StreamEndReasonPanic, fmt.Errorf("handler panic: %v", r))
 			}
 			stop()
+			close(handlerDone)
 			wg.Done()
 		}()
 		sr := newStreamResult(info.StreamStatus)
@@ -227,7 +234,7 @@ func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon
 	wg.Add(1)
 	common.RelayCtxGo(ctx, func() {
 		defer func() {
-			close(dataChan)
+			closeDataChan()
 			if r := recover(); r != nil {
 				logger.LogError(c, fmt.Sprintf("scanner goroutine panic: %v", r))
 				info.StreamStatus.SetEndReason(relaycommon.StreamEndReasonPanic, fmt.Errorf("scanner panic: %v", r))
@@ -282,14 +289,25 @@ func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon
 
 		if err := scanner.Err(); err != nil {
 			if err != io.EOF {
-				logger.LogError(c, "scanner error: "+err.Error())
-				info.StreamStatus.SetEndReason(relaycommon.StreamEndReasonScannerErr, err)
+				if c.Request.Context().Err() == nil {
+					logger.LogError(c, "scanner error: "+err.Error())
+					scannerErr = err
+				}
 			}
 		}
-		info.StreamStatus.SetEndReason(relaycommon.StreamEndReasonEOF, nil)
+		closeDataChan()
+		<-handlerDone
+		if info.StreamStatus.EndReason == relaycommon.StreamEndReasonNone {
+			if scannerErr != nil {
+				info.StreamStatus.SetEndReason(relaycommon.StreamEndReasonScannerErr, scannerErr)
+			} else if c.Request.Context().Err() == nil {
+				info.StreamStatus.SetEndReason(relaycommon.StreamEndReasonEOF, nil)
+			}
+		}
 	})
 
 	// 主循环等待完成或超时
+	clientGone := false
 	select {
 	case <-ticker.C:
 		info.StreamStatus.SetEndReason(relaycommon.StreamEndReasonTimeout, nil)
@@ -298,10 +316,13 @@ func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon
 	case <-c.Request.Context().Done():
 		// 客户端断开：立即 cleanup 关闭上游 resp.Body，解除 scanner 阻塞并让上游停止生成，
 		// 避免为已放弃的请求继续消费上游 token。
-		info.StreamStatus.SetEndReason(relaycommon.StreamEndReasonClientGone, c.Request.Context().Err())
+		clientGone = true
 	}
 
 	cleanup()
+	if clientGone && info.StreamStatus.EndReason == relaycommon.StreamEndReasonNone {
+		info.StreamStatus.SetEndReason(relaycommon.StreamEndReasonClientGone, c.Request.Context().Err())
+	}
 	if info.StreamStatus.IsNormalEnd() && !info.StreamStatus.HasErrors() {
 		logger.LogInfo(c, fmt.Sprintf("stream ended: %s", info.StreamStatus.Summary()))
 	} else {
