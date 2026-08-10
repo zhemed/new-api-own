@@ -107,6 +107,8 @@ func ClaudeHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *typ
 		info.UpstreamModelName = request.Model
 	}
 
+	syncClaudeRequestMetadata(info, request)
+
 	if info.ChannelSetting.SystemPrompt != "" {
 		if request.System == nil {
 			request.SetStringSystem(info.ChannelSetting.SystemPrompt)
@@ -224,4 +226,13 @@ func ClaudeHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *typ
 
 	service.PostTextConsumeQuota(c, info, usage.(*dto.Usage), nil)
 	return nil
+}
+
+func syncClaudeRequestMetadata(info *relaycommon.RelayInfo, request *dto.ClaudeRequest) {
+	if info == nil || request == nil {
+		return
+	}
+	if effort := request.GetEfforts(); effort != "" {
+		info.SetReasoningEffort(effort)
+	}
 }
