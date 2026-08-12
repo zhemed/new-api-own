@@ -106,7 +106,12 @@ function getCommonLogColumnClassName(
 
   if (!COMMON_LOG_CENTERED_CELL_COLUMN_IDS.has(columnId)) return undefined
 
-  return 'text-center [&>div]:mx-auto [&>div]:w-fit [&>span]:mx-auto [&>button]:mx-auto [&>button]:w-fit [&>button]:justify-center [&>button]:text-center'
+  const cellClassName =
+    'text-center [&>div]:mx-auto [&>div]:w-fit [&>div]:flex [&>div]:justify-center [&>span]:mx-auto [&>button]:mx-auto [&>button]:w-fit [&>button]:flex [&>button]:justify-center [&>button]:text-center'
+
+  return columnId === 'is_stream'
+    ? `${cellClassName} [&>div]:items-center`
+    : cellClassName
 }
 
 interface UsageLogsTableProps {
