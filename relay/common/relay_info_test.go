@@ -1,13 +1,42 @@
 package common
 
 import (
+	"net/http/httptest"
 	"testing"
 
+	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/relaykit/relayconvert/convmeta"
 	"github.com/QuantumNous/new-api/relaykit/types"
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestGenRelayInfoResponsesRecordsReasoningEffort(t *testing.T) {
+	tests := []struct {
+		name   string
+		effort string
+	}{
+		{name: "high", effort: "high"},
+		{name: "absent"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+			ctx.Request = httptest.NewRequest("POST", "/v1/responses", nil)
+
+			var reasoning *dto.Reasoning
+			if tt.effort != "" {
+				reasoning = &dto.Reasoning{Effort: tt.effort}
+			}
+			request := &dto.OpenAIResponsesRequest{Reasoning: reasoning}
+
+			info := GenRelayInfoResponses(ctx, request)
+			assert.Equal(t, tt.effort, info.GetReasoningEffort())
+		})
+	}
+}
 
 func TestRelayInfoGetFinalRequestRelayFormatPrefersExplicitFinal(t *testing.T) {
 	info := &RelayInfo{
