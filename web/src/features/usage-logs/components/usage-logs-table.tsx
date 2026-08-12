@@ -68,7 +68,7 @@ function deserializeLogTypeFilter(value: unknown): unknown[] {
   return values.filter((item) => String(item) !== LOG_TYPE_ALL_VALUE)
 }
 
-const COMMON_LOG_CENTERED_COLUMN_IDS = new Set([
+const COMMON_LOG_CENTERED_HEADER_COLUMN_IDS = new Set([
   'created_at',
   'channel',
   'user',
@@ -82,17 +82,31 @@ const COMMON_LOG_CENTERED_COLUMN_IDS = new Set([
   'content',
 ])
 
+const COMMON_LOG_CENTERED_CELL_COLUMN_IDS = new Set([
+  'created_at',
+  'channel',
+  'user',
+  'token_name',
+  'model_name',
+  'reasoning_effort',
+  'is_stream',
+  'prompt_tokens',
+  'quota',
+  'use_time',
+])
+
 function getCommonLogColumnClassName(
   columnId: string,
   kind: 'header' | 'cell'
 ): string | undefined {
-  if (!COMMON_LOG_CENTERED_COLUMN_IDS.has(columnId)) return undefined
-
   if (kind === 'header') {
+    if (!COMMON_LOG_CENTERED_HEADER_COLUMN_IDS.has(columnId)) return undefined
     return 'text-center [&>div]:w-full [&>div]:justify-center'
   }
 
-  return 'text-center [&>div]:mx-auto [&>button]:mx-auto [&>button]:justify-center [&>button]:text-center'
+  if (!COMMON_LOG_CENTERED_CELL_COLUMN_IDS.has(columnId)) return undefined
+
+  return 'text-center [&>div]:mx-auto [&>div]:w-fit [&>span]:mx-auto [&>button]:mx-auto [&>button]:w-fit [&>button]:justify-center [&>button]:text-center'
 }
 
 interface UsageLogsTableProps {
