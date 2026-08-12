@@ -68,6 +68,33 @@ function deserializeLogTypeFilter(value: unknown): unknown[] {
   return values.filter((item) => String(item) !== LOG_TYPE_ALL_VALUE)
 }
 
+const COMMON_LOG_CENTERED_COLUMN_IDS = new Set([
+  'created_at',
+  'channel',
+  'user',
+  'token_name',
+  'model_name',
+  'reasoning_effort',
+  'is_stream',
+  'prompt_tokens',
+  'quota',
+  'use_time',
+  'content',
+])
+
+function getCommonLogColumnClassName(
+  columnId: string,
+  kind: 'header' | 'cell'
+): string | undefined {
+  if (!COMMON_LOG_CENTERED_COLUMN_IDS.has(columnId)) return undefined
+
+  if (kind === 'header') {
+    return 'text-center [&>div]:w-full [&>div]:justify-center'
+  }
+
+  return 'text-center [&>div]:mx-auto [&>button]:mx-auto [&>button]:justify-center [&>button]:text-center'
+}
+
 interface UsageLogsTableProps {
   logCategory: LogCategory
 }
@@ -191,6 +218,7 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
       tableClassName={cn(
         '[&_[data-slot=table]]:text-[13px] [&_[data-slot=table]_td]:text-[13px] [&_[data-slot=table]_td_*]:text-[13px] [&_[data-slot=table]_th]:text-[13px] [&_[data-slot=table]_th_*]:text-[13px]'
       )}
+      getColumnClassName={isCommon ? getCommonLogColumnClassName : undefined}
       mobile={
         <UsageLogsMobileList
           table={table}
