@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 const DISPLAY_DECIMALS = 12
 const SNAP_DECIMALS = 8
-const SNAP_EPSILON = 1e-12
+const SNAP_EPSILON = 1e-9 // ????? 1e-12 ??? 1e-9??????????????? 0.299999999997 -> 0.3?
 
 function toNumberOrNull(value: unknown): number | null {
   if (
@@ -58,4 +58,11 @@ export function formatPricingNumber(value: unknown): string {
 
   const normalized = snapFloatDrift(num)
   return Number.parseFloat(normalized.toFixed(DISPLAY_DECIMALS)).toString()
+}
+
+// ?????????????????JS ???????? 12 ???????????????
+export function formatRatioValue(value: unknown): string {
+  const num = toNumberOrNull(value)
+  if (num === null) return ''
+  return String(num)
 }
