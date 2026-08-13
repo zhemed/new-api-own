@@ -57,7 +57,7 @@
 version: '3'
 services:
   new-api:
-    image: calciumion/new-api:latest
+    image: ghcr.io/zhemed/new-api-own:latest
     container_name: new-api
     restart: always
     ports:

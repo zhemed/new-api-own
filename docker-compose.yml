@@ -16,7 +16,7 @@ version: '3.4' # For compatibility with older Docker versions
 
 services:
   new-api:
-    image: calciumion/new-api:latest
+    image: ghcr.io/zhemed/new-api-own:latest
     build:
       context: .
       dockerfile: Dockerfile
