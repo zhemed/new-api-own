@@ -80,7 +80,7 @@ import {
   type PricingMode,
 } from './model-pricing-core'
 import { PriceInput, PriceLane } from './model-pricing-inputs'
-import { formatPricingNumber } from './pricing-format'
+import { formatPricingNumber, formatRatioValue } from './pricing-format'
 import { TieredPricingEditor } from './tiered-pricing-editor'
 
 export type { ModelRatioData } from './model-pricing-core'
@@ -239,12 +239,12 @@ export const ModelPricingEditorPanel = forwardRef<
     if (lane === 'audioOutput') {
       const audioInputPrice = toNumberOrNull(nextLanePrices.audioInput)
       if (audioInputPrice === null || audioInputPrice === 0) return ''
-      return formatPricingNumber(priceNumber / audioInputPrice)
+      return formatRatioValue(priceNumber / audioInputPrice)
     }
 
     const inputPrice = toNumberOrNull(nextPromptPrice)
     if (inputPrice === null || inputPrice === 0) return ''
-    return formatPricingNumber(priceNumber / inputPrice)
+    return formatRatioValue(priceNumber / inputPrice)
   }
 
   const syncLaneRatios = (
@@ -255,7 +255,7 @@ export const ModelPricingEditorPanel = forwardRef<
     const inputPrice = toNumberOrNull(nextPromptPrice)
     setFormValue(
       'ratio',
-      inputPrice !== null ? formatPricingNumber(inputPrice / 2) : ''
+      inputPrice !== null ? formatRatioValue(inputPrice / 2) : ''
     )
 
     laneConfigs.forEach(({ key }) => {
