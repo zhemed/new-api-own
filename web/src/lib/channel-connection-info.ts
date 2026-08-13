@@ -18,8 +18,6 @@ For commercial licensing, please contact support@quantumnous.com
 */
 export const CHANNEL_CONNECTION_INFO_TYPE = 'newapi_channel_conn'
 
-const SECURE_SERVER_ORIGIN = 'https://cs.shemedhb.eu.org'
-
 export function getSecureServerOrigin(): string {
   if (
     typeof window !== 'undefined' &&
@@ -43,7 +41,12 @@ export function getSecureServerOrigin(): string {
     /* empty */
   }
 
-  return SECURE_SERVER_ORIGIN
+  // Fallback: use the origin the user is currently viewing
+  // (covers HTTP / IP-based deployments instead of a hardcoded domain).
+  if (typeof window !== 'undefined') {
+    return window.location.origin
+  }
+  return ''
 }
 
 export type ChannelConnectionInfo = {
