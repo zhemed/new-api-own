@@ -27,7 +27,7 @@ describe('CC Switch import contract', () => {
         'My Codex',
         { model: 'deepseek-v4-flash' },
         'sk-test-key',
-        'https://cs.shemedhb.eu.org/'
+        'https://example.com/'
       )
     )
     const params = url.searchParams
@@ -36,11 +36,11 @@ describe('CC Switch import contract', () => {
     assert.equal(url.protocol, 'ccswitch:')
     assert.equal(url.hostname, 'v1')
     assert.equal(url.pathname, '/import')
-    assert.equal(params.get('endpoint'), 'https://cs.shemedhb.eu.org/v1')
-    assert.equal(params.get('homepage'), 'https://cs.shemedhb.eu.org')
+    assert.equal(params.get('endpoint'), 'https://example.com/v1')
+    assert.equal(params.get('homepage'), 'https://example.com')
     assert.equal(params.get('usageEnabled'), 'true')
     assert.equal(params.get('usageApiKey'), 'sk-test-key')
-    assert.equal(params.get('usageBaseUrl'), 'https://cs.shemedhb.eu.org')
+    assert.equal(params.get('usageBaseUrl'), 'https://example.com')
     assert.equal(params.get('usageAutoInterval'), '30')
     assert.match(script, /\{\{baseUrl\}\}\/api\/usage\/account\//)
     assert.match(script, /Bearer \{\{apiKey\}\}/)
@@ -56,11 +56,11 @@ describe('CC Switch import contract', () => {
         'My Claude',
         { model: 'claude-sonnet' },
         'sk-test-key',
-        'https://cs.shemedhb.eu.org'
+        'https://example.com'
       )
     ).searchParams
 
-    assert.equal(params.get('endpoint'), 'https://cs.shemedhb.eu.org')
+    assert.equal(params.get('endpoint'), 'https://example.com')
     assert.equal(params.get('usageEnabled'), null)
     assert.equal(params.get('usageScript'), null)
   })
