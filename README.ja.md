@@ -194,7 +194,7 @@ docker run --name new-api -d --restart always \
 - 🤖 LinuxDO認証ログイン
 - 📱 Telegram認証ログイン
 - 🔑 OIDC統一認証
-- 🔍 Key使用量クォータ照会（[new-api-key-tool](https://github.com/Calcium-Ion/new-api-key-tool)と併用）
+- 🔍 Key使用量クォータ照会（new-api-key-toolと併用）
 
 
 ### 🚀 高度な機能
