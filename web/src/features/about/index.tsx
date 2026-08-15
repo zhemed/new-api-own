@@ -49,17 +49,17 @@ function EmptyAboutState() {
           <p>
             {t('New API Project Repository:')}{' '}
             <a
-              href='https://github.com/QuantumNous/new-api'
+              href='https://github.com/zhemed/new-api-own'
               target='_blank'
               rel='noopener noreferrer'
               className='text-primary hover:underline'
             >
-              {t('https://github.com/QuantumNous/new-api')}
+              {'https://github.com/zhemed/new-api-own'}
             </a>
           </p>
           <p className='text-muted-foreground'>
             <a
-              href='https://github.com/QuantumNous/new-api'
+              href='https://github.com/zhemed/new-api-own'
               target='_blank'
               rel='noopener noreferrer'
               className='text-primary hover:underline'
@@ -68,12 +68,12 @@ function EmptyAboutState() {
             </a>{' '}
             © {currentYear}{' '}
             <a
-              href='https://github.com/QuantumNous'
+              href='https://github.com/zhemed'
               target='_blank'
               rel='noopener noreferrer'
               className='text-primary hover:underline'
             >
-              {t('QuantumNous')}
+              {'zhemed'}
             </a>{' '}
             {t('| Based on')}{' '}
             <a
@@ -97,7 +97,7 @@ function EmptyAboutState() {
           <p className='text-muted-foreground'>
             {t('This project must be used in compliance with the')}{' '}
             <a
-              href='https://github.com/QuantumNous/new-api/blob/main/LICENSE'
+              href='https://github.com/zhemed/new-api-own/blob/main/LICENSE'
               target='_blank'
               rel='noopener noreferrer'
               className='text-primary hover:underline'
