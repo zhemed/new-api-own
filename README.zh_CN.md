@@ -13,26 +13,41 @@
 - **思考模式支持**：OpenAI o 系列、Claude thinking、Gemini thinking
 - **现代化 UI**：简洁美观的界面与多语言支持
 
-## 快速开始
+## 部署
+
+### 方式一：Docker 镜像（推荐，无需源码）
 
 ```bash
-# 克隆项目
+docker run -d --name new-api --restart always \
+  -p 3000:3000 \
+  -e TZ=Asia/Shanghai \
+  -v ./data:/data \
+  ghcr.io/zhemed/new-api-own:latest
+```
+
+- 默认使用 SQLite，数据保存在 `./data` 目录
+- 部署完成后访问 `http://localhost:3000`
+
+### 方式二：源码构建（需要仓库访问权限）
+
+```bash
+# 私有仓库，clone 需要 GitHub 凭据
 git clone https://github.com/zhemed/new-api-own.git
 cd new-api-own
 
-# 编辑 docker-compose.yml（默认使用 ghcr.io/zhemed/new-api-own:latest 镜像）
-nano docker-compose.yml
-
-# 启动服务
-docker-compose up -d
+# 单容器方式：构建并运行
+docker build -t new-api-own .
+docker run -d --name new-api --restart always \
+  -p 3000:3000 -v ./data:/data new-api-own
 ```
 
-部署完成后访问 `http://localhost:3000` 即可开始使用。
+### 生产部署参考
 
-## 数据
+仓库内的 `docker-compose.yml` 是 host 网络模式 + PostgreSQL/Redis 的生产配置，按需调整默认密码后使用：
 
-- 默认使用 SQLite，数据保存在 `./data` 目录
-- 数据目录可挂载到任意绝对路径，便于备份迁移
+```bash
+docker-compose up -d
+```
 
 ## 维护
 

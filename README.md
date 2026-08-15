@@ -13,26 +13,41 @@ A self-hosted LLM gateway and AI asset management platform: multi-model aggregat
 - **Reasoning effort support**: OpenAI o-series, Claude thinking, Gemini thinking
 - **Modern UI**: clean interface with multi-language support
 
-## Quick Start
+## Deployment
+
+### Option 1: Docker image (recommended, no source needed)
 
 ```bash
-# Clone the project
+docker run -d --name new-api --restart always \
+  -p 3000:3000 \
+  -e TZ=Asia/Shanghai \
+  -v ./data:/data \
+  ghcr.io/zhemed/new-api-own:latest
+```
+
+- SQLite by default; data is stored in `./data`
+- After deployment, visit `http://localhost:3000`
+
+### Option 2: Build from source (requires repository access)
+
+```bash
+# Private repository: cloning requires GitHub credentials
 git clone https://github.com/zhemed/new-api-own.git
 cd new-api-own
 
-# Edit docker-compose.yml (uses ghcr.io/zhemed/new-api-own:latest by default)
-nano docker-compose.yml
-
-# Start the service
-docker-compose up -d
+# Single-container build and run
+docker build -t new-api-own .
+docker run -d --name new-api --restart always \
+  -p 3000:3000 -v ./data:/data new-api-own
 ```
 
-After deployment, visit `http://localhost:3000` to start using it.
+### Production deployment reference
 
-## Data
+The `docker-compose.yml` in this repository is a host-network production setup with PostgreSQL/Redis. Adjust the default passwords before use:
 
-- SQLite by default, data stored in `./data`
-- The data directory can be mounted to any absolute path for backup and migration
+```bash
+docker-compose up -d
+```
 
 ## Maintained by
 
