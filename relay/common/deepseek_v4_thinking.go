@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"strings"
 
 	appcommon "github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/relaykit/dto"
@@ -51,6 +52,7 @@ func ApplyDeepSeekV4OpenAIThinkingSuffix(info *RelayInfo, request *dto.GeneralOp
 	}
 	baseModel, thinkingType, effort, ok := reasoning.ParseDeepSeekV4ThinkingSuffix(modelName)
 	if !ok {
+		applyDeepSeekV4OpenAIDefaultEffort(modelName, request)
 		return nil
 	}
 	thinking, err := appcommon.Marshal(map[string]string{
@@ -92,7 +94,35 @@ func ApplyDeepSeekV4ResponsesThinkingSuffix(info *RelayInfo, request *dto.OpenAI
 			info.UpstreamModelName = baseModel
 		}
 	}
+	if !ok && strings.HasPrefix(modelName, "deepseek-v4-") {
+		if request.Reasoning == nil {
+			request.Reasoning = &dto.Reasoning{}
+		}
+		if request.Reasoning.Effort == "" {
+			request.Reasoning.Effort = "high"
+		}
+	}
 	if info != nil && request.Reasoning != nil {
 		info.ReasoningEffort = request.Reasoning.Effort
+	}
+}
+
+// applyDeepSeekV4OpenAIDefaultEffort records the default thinking effort (high)
+// for suffix-less DeepSeek V4 chat requests unless thinking is explicitly disabled.
+func applyDeepSeekV4OpenAIDefaultEffort(modelName string, request *dto.GeneralOpenAIRequest) {
+	if request == nil || request.ReasoningEffort != "" || !strings.HasPrefix(modelName, "deepseek-v4-") {
+		return
+	}
+	disabled := false
+	if len(request.THINKING) > 0 {
+		var t struct {
+			Type string `json:"type"`
+		}
+		if err := appcommon.UnmarshalJsonStr(string(request.THINKING), &t); err == nil && t.Type == "disabled" {
+			disabled = true
+		}
+	}
+	if !disabled {
+		request.ReasoningEffort = "high"
 	}
 }
