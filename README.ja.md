@@ -479,6 +479,6 @@ Token、Origin 検証、PAT の契約については[ユーザー認証とログ
 
 **[問題フィードバック](https://github.com/zhemed/new-api-own/issues)**
 
-<sub>❤️ で構築された QuantumNous</sub>
+<sub>❤️ で構築された zhemed</sub>
 
 </div>

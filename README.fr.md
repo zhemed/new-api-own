@@ -480,6 +480,6 @@ Si ce projet vous est utile, bienvenue à nous donner une ⭐️ Étoile！
 
 **[Commentaires sur les problèmes](https://github.com/zhemed/new-api-own/issues)**
 
-<sub>Construit avec ❤️ par QuantumNous</sub>
+<sub>Construit avec ❤️ par zhemed</sub>
 
 </div>
