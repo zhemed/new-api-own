@@ -1,3 +1,4 @@
+# Docker 环境标准：Docker 29.7.2 + Compose v5.4.0（部署前运行 ./check-docker-env.sh 校验）
 FROM oven/bun:1@sha256:0733e50325078969732ebe3b15ce4c4be5082f18c4ac1a0f0ca4839c2e4e42a7 AS builder
 
 WORKDIR /build/web

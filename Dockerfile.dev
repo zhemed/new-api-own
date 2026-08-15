@@ -1,3 +1,4 @@
+# Docker 环境标准：Docker 29.7.2 + Compose v5.4.0（部署前运行 ./check-docker-env.sh 校验）
 # Backend-only build for frontend development
 # Skips frontend build and uses a placeholder for //go:embed web/dist
 
