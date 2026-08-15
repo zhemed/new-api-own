@@ -9,7 +9,6 @@ body:
         ## 提交前必读（请勿删除本节）
 
         - 文档：https://docs.newapi.ai/
-        - 使用问题先看或先问：https://deepwiki.com/QuantumNous/new-api
         - 开启透传后的转发相关反馈不接受 issue；透传模式会直接转发请求，请自行确认上游行为。
         - 不接受 Coding Plan、逆向渠道、第三方封装接口，以及将 Codex 接口反代为通用 API 后产生的兼容性问题；Codex API 自身特有的协议或行为也不应被当作标准 OpenAI API 行为，相关问题请先向渠道或接口提供方确认。
         - 警告：删除本模板、删除小节标题或随意清空内容的 issue，可能会被直接关闭；重复恶意提交者可能会被 block。
