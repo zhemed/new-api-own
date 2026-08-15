@@ -18,6 +18,9 @@
 ### 方式一：Docker 镜像（推荐，无需源码）
 
 ```bash
+# 私有镜像，需要先登录 GHCR（使用 GitHub 凭据）
+docker login ghcr.io -u zhemed
+
 docker run -d --name new-api --restart always \
   -p 3000:3000 \
   -e TZ=Asia/Shanghai \
