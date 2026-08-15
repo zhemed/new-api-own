@@ -77,7 +77,7 @@ const BRAND_AND_LITERAL_KEYS = new Set([
   'Pancake',
   'Passkey',
   'Perplexity',
-  'QuantumNous',
+  
   'Quota:',
   'Replicate',
   'SiliconFlow',
