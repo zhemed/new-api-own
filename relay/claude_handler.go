@@ -125,6 +125,13 @@ func ClaudeHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *typ
 		info.ReasoningEffort = effort
 	}
 
+	// DeepSeek V4 models think by default; record the default effort (high) so
+	// the usage log shows a reasoning level even when no suffix is used.
+	if info.ReasoningEffort == "" && strings.HasPrefix(request.Model, "deepseek-v4-") &&
+		(request.Thinking == nil || request.Thinking.Type != "disabled") {
+		info.ReasoningEffort = "high"
+	}
+
 	syncClaudeRequestMetadata(info, request)
 
 	if info.ChannelSetting.SystemPrompt != "" {
