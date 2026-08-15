@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/relay/channel"
 	"github.com/QuantumNous/new-api/relay/channel/claude"
 	"github.com/QuantumNous/new-api/relay/channel/openai"
@@ -15,7 +14,6 @@ import (
 	"github.com/QuantumNous/new-api/relay/constant"
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/relaykit/types"
-	"github.com/QuantumNous/new-api/setting/reasoning"
 	"github.com/gin-gonic/gin"
 )
 
@@ -37,7 +35,7 @@ func (a *Adaptor) ConvertClaudeRequest(c *gin.Context, info *relaycommon.RelayIn
 	if !ok {
 		return convertedRequest, nil
 	}
-	if err := applyDeepSeekV4ClaudeThinkingSuffix(info, claudeRequest); err != nil {
+	if err := relaycommon.ApplyDeepSeekV4ClaudeThinkingSuffix(info, claudeRequest); err != nil {
 		return nil, err
 	}
 	return claudeRequest, nil
@@ -86,69 +84,11 @@ func (a *Adaptor) ConvertOpenAIRequest(c *gin.Context, info *relaycommon.RelayIn
 	if request == nil {
 		return nil, errors.New("request is nil")
 	}
-	if err := applyDeepSeekV4OpenAIThinkingSuffix(info, request); err != nil {
+	if err := relaycommon.ApplyDeepSeekV4OpenAIThinkingSuffix(info, request); err != nil {
 		return nil, err
 	}
 
 	return request, nil
-}
-
-func applyDeepSeekV4OpenAIThinkingSuffix(info *relaycommon.RelayInfo, request *dto.GeneralOpenAIRequest) error {
-	modelName := request.Model
-	if info != nil && info.ChannelMeta != nil && info.UpstreamModelName != "" {
-		modelName = info.UpstreamModelName
-	}
-	baseModel, thinkingType, effort, ok := reasoning.ParseDeepSeekV4ThinkingSuffix(modelName)
-	if !ok {
-		return nil
-	}
-	thinking, err := common.Marshal(map[string]string{
-		"type": thinkingType,
-	})
-	if err != nil {
-		return fmt.Errorf("error marshalling thinking: %w", err)
-	}
-	request.Model = baseModel
-	request.THINKING = thinking
-	request.ReasoningEffort = effort
-	if info != nil {
-		if info.ChannelMeta != nil {
-			info.UpstreamModelName = baseModel
-		}
-		info.ReasoningEffort = effort
-	}
-	return nil
-}
-
-func applyDeepSeekV4ClaudeThinkingSuffix(info *relaycommon.RelayInfo, request *dto.ClaudeRequest) error {
-	modelName := request.Model
-	if info != nil && info.ChannelMeta != nil && info.UpstreamModelName != "" {
-		modelName = info.UpstreamModelName
-	}
-	baseModel, thinkingType, effort, ok := reasoning.ParseDeepSeekV4ThinkingSuffix(modelName)
-	if !ok {
-		return nil
-	}
-	request.Model = baseModel
-	request.Thinking = &dto.Thinking{Type: thinkingType}
-	if effort == "" {
-		request.OutputConfig = nil
-	} else {
-		outputConfig, err := common.Marshal(map[string]string{
-			"effort": effort,
-		})
-		if err != nil {
-			return fmt.Errorf("error marshalling output_config: %w", err)
-		}
-		request.OutputConfig = outputConfig
-	}
-	if info != nil {
-		if info.ChannelMeta != nil {
-			info.UpstreamModelName = baseModel
-		}
-		info.ReasoningEffort = effort
-	}
-	return nil
 }
 
 func (a *Adaptor) ConvertRerankRequest(c *gin.Context, relayMode int, request dto.RerankRequest) (any, error) {
@@ -161,32 +101,8 @@ func (a *Adaptor) ConvertEmbeddingRequest(c *gin.Context, info *relaycommon.Rela
 }
 
 func (a *Adaptor) ConvertOpenAIResponsesRequest(_ *gin.Context, info *relaycommon.RelayInfo, request dto.OpenAIResponsesRequest) (any, error) {
-	applyDeepSeekV4ResponsesThinkingSuffix(info, &request)
+	relaycommon.ApplyDeepSeekV4ResponsesThinkingSuffix(info, &request)
 	return request, nil
-}
-
-func applyDeepSeekV4ResponsesThinkingSuffix(info *relaycommon.RelayInfo, request *dto.OpenAIResponsesRequest) {
-	modelName := request.Model
-	if info != nil && info.ChannelMeta != nil && info.UpstreamModelName != "" {
-		modelName = info.UpstreamModelName
-	}
-	baseModel, thinkingType, effort, ok := reasoning.ParseDeepSeekV4ThinkingSuffix(modelName)
-	if ok {
-		if thinkingType == "disabled" {
-			effort = "none"
-		}
-		request.Model = baseModel
-		if request.Reasoning == nil {
-			request.Reasoning = &dto.Reasoning{}
-		}
-		request.Reasoning.Effort = effort
-		if info != nil && info.ChannelMeta != nil {
-			info.UpstreamModelName = baseModel
-		}
-	}
-	if info != nil && request.Reasoning != nil {
-		info.ReasoningEffort = request.Reasoning.Effort
-	}
 }
 
 func (a *Adaptor) DoRequest(c *gin.Context, info *relaycommon.RelayInfo, requestBody io.Reader) (any, error) {

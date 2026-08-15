@@ -107,6 +107,24 @@ func ClaudeHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *typ
 		info.UpstreamModelName = request.Model
 	}
 
+	if baseModel, thinkingType, effort, ok := reasoning.ParseDeepSeekV4ThinkingSuffix(request.Model); ok {
+		request.Model = baseModel
+		request.Thinking = &dto.Thinking{Type: thinkingType}
+		if effort == "" {
+			request.OutputConfig = nil
+		} else {
+			outputConfig, err := common.Marshal(map[string]string{
+				"effort": effort,
+			})
+			if err != nil {
+				return types.NewError(err, types.ErrorCodeConvertRequestFailed, types.ErrOptionWithSkipRetry())
+			}
+			request.OutputConfig = outputConfig
+		}
+		info.UpstreamModelName = request.Model
+		info.ReasoningEffort = effort
+	}
+
 	syncClaudeRequestMetadata(info, request)
 
 	if info.ChannelSetting.SystemPrompt != "" {
