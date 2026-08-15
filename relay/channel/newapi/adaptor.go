@@ -60,10 +60,14 @@ func (a *Adaptor) ConvertOpenAIRequest(c *gin.Context, info *relaycommon.RelayIn
 	if request == nil {
 		return nil, errors.New("request is nil")
 	}
+	if err := relaycommon.ApplyDeepSeekV4OpenAIThinkingSuffix(info, request); err != nil {
+		return nil, err
+	}
 	return request, nil
 }
 
 func (a *Adaptor) ConvertOpenAIResponsesRequest(c *gin.Context, info *relaycommon.RelayInfo, request dto.OpenAIResponsesRequest) (any, error) {
+	relaycommon.ApplyDeepSeekV4ResponsesThinkingSuffix(info, &request)
 	return request, nil
 }
 
@@ -74,6 +78,9 @@ func (a *Adaptor) ConvertEmbeddingRequest(c *gin.Context, info *relaycommon.Rela
 func (a *Adaptor) ConvertClaudeRequest(c *gin.Context, info *relaycommon.RelayInfo, request *dto.ClaudeRequest) (any, error) {
 	if request == nil {
 		return nil, errors.New("request is nil")
+	}
+	if err := relaycommon.ApplyDeepSeekV4ClaudeThinkingSuffix(info, request); err != nil {
+		return nil, err
 	}
 	return request, nil
 }

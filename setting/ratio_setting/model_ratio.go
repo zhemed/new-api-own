@@ -726,6 +726,15 @@ func FormatMatchingModelName(name string) string {
 		name = handleThinkingBudgetModel(name, "gemini-2.5-pro", "gemini-2.5-pro-thinking-*")
 	}
 
+	// deepseek-v4 thinking effort suffix: deepseek-v4-flash-max / deepseek-v4-flash-none
+	if strings.HasPrefix(name, "deepseek-v4-") {
+		if strings.HasSuffix(name, "-none") {
+			name = strings.TrimSuffix(name, "-none")
+		} else if strings.HasSuffix(name, "-max") {
+			name = strings.TrimSuffix(name, "-max")
+		}
+	}
+
 	if strings.HasPrefix(name, "gpt-4-gizmo") {
 		name = "gpt-4-gizmo-*"
 	}
