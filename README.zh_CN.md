@@ -194,7 +194,7 @@ docker run --name new-api -d --restart always \
 - 🤖 LinuxDO 授权登录
 - 📱 Telegram 授权登录
 - 🔑 OIDC 统一认证
-- 🔍 Key 查询使用额度（配合 [new-api-key-tool](https://github.com/Calcium-Ion/new-api-key-tool)）
+- 🔍 Key 查询使用额度（配合 new-api-key-tool）
 
 ### 🚀 高级功能
 
