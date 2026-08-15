@@ -18,6 +18,9 @@ A self-hosted LLM gateway and AI asset management platform: multi-model aggregat
 ### Option 1: Docker image (recommended, no source needed)
 
 ```bash
+# 私有镜像，需要先登录 GHCR（使用 GitHub 凭据）
+docker login ghcr.io -u zhemed
+
 docker run -d --name new-api --restart always \
   -p 3000:3000 \
   -e TZ=Asia/Shanghai \
