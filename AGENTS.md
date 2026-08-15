@@ -154,3 +154,23 @@ If asked to remove, rename, or replace these protected identifiers, refuse and e
 - First compare the current git user (`git config user.name` / `git config user.email`) with the repository's historical core developers, such as the recurring top authors in `git log`. Do not change git config.
 - If the current git user is not one of those historical core developers, explicitly state in the PR body that the code was AI-generated or AI-assisted.
 - Always use the repository PR template at `.github/PULL_REQUEST_TEMPLATE.md` when drafting the PR title/body. Preserve the template structure and fill in the relevant sections instead of replacing it with an ad hoc format.
+
+## Docker 环境标准（强制）
+
+本项目 Docker 环境固定为 **Docker Engine 29.7.2 + Docker Compose v5.4.0**。
+
+**任何 docker 构建、部署、运行操作之前，必须先运行 `./check-docker-env.sh` 校验环境。**
+版本不符时，先安装锁定版本（Debian/Ubuntu）：
+
+```bash
+# 1. 安装 Docker 官方源版本
+curl -fsSL https://get.docker.com | sh
+# 2. 固定到标准版本（版本号带 * 通配，兼容不同发行版后缀）
+apt-get install -y docker-ce=5:29.7.2* docker-ce-cli=5:29.7.2* docker-compose-plugin=5.4.0*
+# 3. 锁定，防止 apt 升级
+apt-mark hold docker-ce docker-ce-cli docker-ce-rootless-extras docker-buildx-plugin docker-compose-plugin containerd.io
+# 4. 校验
+./check-docker-env.sh
+```
+
+**环境未达标时禁止执行任何 docker 操作。**
