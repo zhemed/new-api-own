@@ -1,6 +1,6 @@
 # RelayKit
 
-RelayKit 是从 [new-api](https://github.com/QuantumNous/new-api) 中拆分出的独立 Go 模块，提供常用大模型文本协议的 DTO、请求转换、响应转换和流式事件转换。
+RelayKit 是本项目拆分出的独立 Go 模块，提供常用大模型文本协议的 DTO、请求转换、响应转换和流式事件转换。
 
 它只负责协议层的数据建模与语义转换，不包含 HTTP 服务、上游请求发送、渠道调度、鉴权、计费或数据库逻辑。因此可以脱离 new-api 主模块，嵌入其他 Go 网关或代理服务。
 

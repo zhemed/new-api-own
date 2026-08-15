@@ -18,10 +18,10 @@
     "openai",
     "claude"
   ],
-  "author": "QuantumNous",
+  "author": "zhemed",
   "repository": {
     "type": "git",
-    "url": "https://github.com/QuantumNous/new-api"
+    "url": "https://github.com/zhemed/new-api-own"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
