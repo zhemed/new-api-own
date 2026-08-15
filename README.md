@@ -194,7 +194,7 @@ docker run --name new-api -d --restart always \
 - 🤖 LinuxDO authorization login
 - 📱 Telegram authorization login
 - 🔑 OIDC unified authentication
-- 🔍 Key quota query usage (with [new-api-key-tool](https://github.com/Calcium-Ion/new-api-key-tool))
+- 🔍 Key quota query usage (with new-api-key-tool)
 
 ### 🚀 Advanced Features
 
