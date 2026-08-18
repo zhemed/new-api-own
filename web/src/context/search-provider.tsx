@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { createContext, useContext, useEffect, useState } from 'react'
 
+// oxlint-disable-next-line import/no-cycle -- 此处渲染 CommandMenu 与其使用 useSearch 形成真实运行时循环（均为组件内使用，不涉及模块顶层求值，运行安全）；拆分共享模块需改动多个文件，风险大，保留循环
 import { CommandMenu } from '@/components/command-menu'
 
 type SearchContextType = {

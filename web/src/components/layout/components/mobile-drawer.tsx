@@ -263,6 +263,7 @@ export function MobileDrawer({
                   <AnimatePresence>
                     {mobileLinksList.map((link, index) => (
                       <motion.div
+                        // oxlint-disable-next-line react/no-array-index-key -- 导航链接可能含重复 href（不同标题），且 AnimatePresence 退出动画需要稳定 key，href+序号保证唯一
                         key={`${link.href}-${index}`}
                         className='border-border border-b p-2.5 last:border-b-0'
                         variants={MOBILE_DRAWER_ANIMATION.menuItem as Variants}

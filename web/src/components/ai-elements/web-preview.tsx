@@ -212,6 +212,7 @@ export const WebPreviewBody = ({
     <div className='flex-1'>
       <iframe
         className={cn('size-full', className)}
+        // oxlint-disable-next-line react/iframe-missing-sandbox -- 预览 iframe 需同时允许脚本与同源访问（预览页面依赖 localStorage/fetch），移除任一会破坏预览功能
         sandbox='allow-scripts allow-same-origin allow-forms allow-popups allow-presentation'
         src={(src ?? url) || undefined}
         title={t('Preview')}
@@ -280,6 +281,7 @@ export const WebPreviewConsole = ({
                   log.level === 'warn' && 'text-warning',
                   log.level === 'log' && 'text-foreground'
                 )}
+                // oxlint-disable-next-line react/no-array-index-key -- 日志无唯一 id，同一毫秒可能产生多条日志，时间戳+序号用于保证 key 唯一；控制台日志为纯展示列表，无内部状态
                 key={`${log.timestamp.getTime()}-${index}`}
               >
                 <span className='text-muted-foreground'>

@@ -160,6 +160,11 @@ function ChatRouteComponent() {
       className='h-full w-full border-0'
       allow='camera; microphone'
       title={`Chat preset: ${preset.name}`}
+      // The embedded chat app is a user-configured trusted preset that needs
+      // scripts, forms, popups, and its own origin (localStorage); keep
+      // navigation and downloads sandboxed.
+      // oxlint-disable-next-line react/iframe-missing-sandbox -- allow-same-origin is required by the embedded app
+      sandbox='allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals'
     />
   )
 }

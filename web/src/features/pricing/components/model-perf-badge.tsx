@@ -71,6 +71,14 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
     ...statusRates,
   ].slice(-3)
 
+  // 空位条的颜色按位置区分，实际成功率条用统一配色
+  function statusBarClass(rate: number | null, index: number): string {
+    if (rate == null) {
+      return index === 0 ? 'bg-muted-foreground/10' : 'bg-muted-foreground/15'
+    }
+    return getSuccessRateDotClass(rate)
+  }
+
   return (
     <div
       className={cn(
@@ -104,17 +112,14 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
         <div className='flex h-4 items-center justify-end gap-0.5'>
           {statusBars.map((rate, index) => (
             <span
+              // oxlint-disable-next-line react/no-array-index-key -- 状态条固定 3 格、值为纯展示且可能重复，索引即稳定 key
               key={`${index}-${rate ?? 'empty'}`}
               className={cn(
                 'w-1 rounded-full',
                 index === 0 && 'h-2',
                 index === 1 && 'h-2.5',
                 index === 2 && 'h-3',
-                rate == null
-                  ? index === 0
-                    ? 'bg-muted-foreground/10'
-                    : 'bg-muted-foreground/15'
-                  : getSuccessRateDotClass(rate)
+                statusBarClass(rate, index)
               )}
             />
           ))}

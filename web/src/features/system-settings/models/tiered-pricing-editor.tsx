@@ -332,8 +332,9 @@ function formatTokenHint(n: number | string | null | undefined): string {
 
 function formatNumberDraft(value: number | string): string {
   if (value === '') return ''
-  if (typeof value === 'number')
+  if (typeof value === 'number') {
     return Number.isFinite(value) ? String(value) : '0'
+  }
   return value
 }
 
@@ -436,12 +437,10 @@ function ConditionRow({ condition, onChange, onRemove }: ConditionRowProps) {
   return (
     <div className='flex items-center gap-2'>
       <Select
-        items={[
-          ...CONDITION_INPUT_OPTIONS.map((option) => ({
-            value: option.value,
-            label: t(option.labelKey),
-          })),
-        ]}
+        items={CONDITION_INPUT_OPTIONS.map((option) => ({
+          value: option.value,
+          label: t(option.labelKey),
+        }))}
         value={condition.var}
         onValueChange={(value) =>
           onChange({ ...condition, var: value as TierConditionInput['var'] })
@@ -667,6 +666,7 @@ function VisualTierCard({
         ) : (
           tier.conditions.map((condition, conditionIndex) => (
             <ConditionRow
+              // oxlint-disable-next-line react/no-array-index-key -- 阶梯条件无唯一 id（var 可能重复），仅按位置增删不改序，索引即稳定 key
               key={conditionIndex}
               condition={condition}
               onChange={(next) => handleConditionChange(conditionIndex, next)}
@@ -849,6 +849,7 @@ function VisualEditor({ visualConfig, onChange }: VisualEditorProps) {
       </p>
       {config.tiers.map((tier, index) => (
         <VisualTierCard
+          // oxlint-disable-next-line react/no-array-index-key -- 阶梯无唯一 id（label 可编辑可能重复），仅按位置增删不改序，索引即稳定 key
           key={index}
           tier={tier}
           index={index}
@@ -967,12 +968,14 @@ function RuleConditionRow({
         return timeFunc
     }
   }
-  const sourceLabel =
-    condition.source === SOURCE_PARAM
-      ? t('Body param')
-      : condition.source === SOURCE_HEADER
-        ? t('Header')
-        : t('Time')
+  let sourceLabel: string
+  if (condition.source === SOURCE_PARAM) {
+    sourceLabel = t('Body param')
+  } else if (condition.source === SOURCE_HEADER) {
+    sourceLabel = t('Header')
+  } else {
+    sourceLabel = t('Time')
+  }
 
   const handleSourceChange = (source: string) => {
     if (source === SOURCE_TIME) {
@@ -992,12 +995,10 @@ function RuleConditionRow({
   const renderTimeCondition = (timeCond: TimeCondition) => (
     <>
       <Select
-        items={[
-          ...TIME_FUNCS.map((fn) => ({
-            value: fn,
-            label: getTimeFuncLabel(fn),
-          })),
-        ]}
+        items={TIME_FUNCS.map((fn) => ({
+          value: fn,
+          label: getTimeFuncLabel(fn),
+        }))}
         value={timeCond.timeFunc}
         onValueChange={(value) =>
           onChange({ ...timeCond, timeFunc: value as TimeFunc })
@@ -1017,12 +1018,10 @@ function RuleConditionRow({
         </SelectContent>
       </Select>
       <Select
-        items={[
-          ...COMMON_TIMEZONES.map((tz) => ({
-            value: tz.value,
-            label: tz.label,
-          })),
-        ]}
+        items={COMMON_TIMEZONES.map((tz) => ({
+          value: tz.value,
+          label: tz.label,
+        }))}
         value={timeCond.timezone}
         onValueChange={(value) =>
           value !== null && onChange({ ...timeCond, timezone: value })
@@ -1045,12 +1044,10 @@ function RuleConditionRow({
         </SelectContent>
       </Select>
       <Select
-        items={[
-          ...matchOptions.map((option) => ({
-            value: option.value,
-            label: getMatchLabel(option.value),
-          })),
-        ]}
+        items={matchOptions.map((option) => ({
+          value: option.value,
+          label: getMatchLabel(option.value),
+        }))}
         value={timeCond.mode}
         onValueChange={(v) => v !== null && handleModeChange(v)}
       >
@@ -1111,12 +1108,10 @@ function RuleConditionRow({
         className='w-44'
       />
       <Select
-        items={[
-          ...matchOptions.map((option) => ({
-            value: option.value,
-            label: getMatchLabel(option.value),
-          })),
-        ]}
+        items={matchOptions.map((option) => ({
+          value: option.value,
+          label: getMatchLabel(option.value),
+        }))}
         value={phCond.mode}
         onValueChange={(v) => v !== null && handleModeChange(v)}
       >
@@ -1241,6 +1236,7 @@ function RuleGroupCard({
       <div className='space-y-2'>
         {group.conditions.map((condition, conditionIndex) => (
           <RuleConditionRow
+            // oxlint-disable-next-line react/no-array-index-key -- 请求规则条件无唯一 id（param/header 可重复），仅按位置增删不改序，索引即稳定 key
             key={conditionIndex}
             condition={condition}
             onChange={(next) => handleConditionChange(conditionIndex, next)}
@@ -1562,7 +1558,7 @@ function LlmPromptHelper({ modelName }: LlmPromptHelperProps) {
 
   const prompt = useMemo(() => {
     if (modelName) {
-      return LLM_PROMPT_TEMPLATE + `\n\nCurrent model: ${modelName}`
+      return `${LLM_PROMPT_TEMPLATE}\n\nCurrent model: ${modelName}`
     }
     return LLM_PROMPT_TEMPLATE
   }, [modelName])
@@ -1837,6 +1833,7 @@ export const TieredPricingEditor = memo(function TieredPricingEditor({
               <>
                 {requestRuleGroups.map((group, groupIndex) => (
                   <RuleGroupCard
+                    // oxlint-disable-next-line react/no-array-index-key -- 规则组无唯一 id（条件与倍率可重复），仅按位置增删不改序，索引即稳定 key
                     key={groupIndex}
                     group={group}
                     index={groupIndex}

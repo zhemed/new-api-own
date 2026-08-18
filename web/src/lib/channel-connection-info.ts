@@ -19,10 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 export const CHANNEL_CONNECTION_INFO_TYPE = 'newapi_channel_conn'
 
 export function getSecureServerOrigin(): string {
-  if (
-    typeof window !== 'undefined' &&
-    window.location.protocol === 'https:'
-  ) {
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
     return window.location.origin
   }
 
