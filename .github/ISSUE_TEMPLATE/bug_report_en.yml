@@ -8,7 +8,7 @@ body:
       value: |
         ## Read This First (Do Not Remove This Section)
 
-        - Docs: https://docs.newapi.ai/
+        - Docs: https://github.com/zhemed/new-api-own
         - Relay reports must first establish that the issue occurs in the new-api layer. Use equivalent redacted requests to compare the direct upstream result with the result through new-api, including response status, error body, and server logs. Reports involving pass-through mode, or showing only an upstream error without this comparison, are not accepted.
         - Reports about Coding Plan services, reverse-engineered channels, third-party API wrappers, or compatibility issues caused by exposing a Codex endpoint through a reverse proxy as a general-purpose API are not accepted. Protocols or behavior specific to the Codex API should not be treated as standard OpenAI API behavior; confirm such issues with the channel or API provider first.
         - This project does not operate an official hosted service or provide technical support for third-party hosting sites, relay services, or API services. Contact the relevant operator for those issues.
@@ -42,7 +42,7 @@ body:
       options:
         - label: "**Non-duplicate issue:** I have searched existing [Issues](https://github.com/QuantumNous/new-api/issues?q=is%3Aissue) and confirmed there are no similar issues."
           required: true
-        - label: "**Read this first:** I have fully read the section above, reviewed the docs at https://docs.newapi.ai/ and the project README, and asked AI first, confirming this is not a usage, configuration, or integration question."
+        - label: "**Read this first:** I have fully read the section above, reviewed the docs at https://github.com/zhemed/new-api-own and the project README, and asked AI first, confirming this is not a usage, configuration, or integration question."
           required: true
         - label: "**Supported version:** I have provided an exact version, commit, or image tag (not `latest` or `unknown`) and confirmed that the issue reproduces on an unmodified, supported version from this repository."
           required: true

@@ -6,6 +6,8 @@ import (
 	"github.com/QuantumNous/new-api/constant"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relaykit/dto"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestConvertOpenAIRequestRecordsReasoningEffortForChatModel(t *testing.T) {
@@ -21,13 +23,7 @@ func TestConvertOpenAIRequestRecordsReasoningEffortForChatModel(t *testing.T) {
 	}
 
 	converted, err := (&Adaptor{}).ConvertOpenAIRequest(nil, info, request)
-	if err != nil {
-		t.Fatalf("ConvertOpenAIRequest returned error: %v", err)
-	}
-	if converted != request {
-		t.Fatalf("ConvertOpenAIRequest returned a different request pointer")
-	}
-	if info.ReasoningEffort != "high" {
-		t.Fatalf("ReasoningEffort = %q, want %q", info.ReasoningEffort, "high")
-	}
+	require.NoError(t, err, "ConvertOpenAIRequest returned error")
+	assert.Same(t, request, converted, "ConvertOpenAIRequest returned a different request pointer")
+	assert.Equal(t, "high", info.ReasoningEffort, "ReasoningEffort mismatch")
 }

@@ -70,6 +70,21 @@ func TextHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *types
 	}
 	adaptor.Init(info)
 
+	// Preserve the client-requested reasoning effort on relay info before any
+	// channel adaptor runs, so usage logs record it even when an adaptor
+	// clears or rewrites the field (e.g. OpenRouter O-series normalization).
+	if info != nil && request.ReasoningEffort != "" && info.GetReasoningEffort() == "" {
+		info.SetReasoningEffort(request.ReasoningEffort)
+	}
+
+	// DeepSeek V4 -max/-none suffixes apply to every OpenAI-compatible chat
+	// channel (the deepseek/newapi adaptors already run this; the call is
+	// idempotent once the suffix is stripped). Gemini and Anthropic are
+	// excluded: their converters map the suffixes to their own thinking config.
+	if info != nil && info.ApiType != constant.APITypeGemini && info.ApiType != constant.APITypeAnthropic {
+		_ = relaycommon.ApplyDeepSeekV4OpenAIThinkingSuffix(info, request)
+	}
+
 	passThroughGlobal := model_setting.GetGlobalSettings().PassThroughRequestEnabled
 	if info.RelayMode == relayconstant.RelayModeChatCompletions &&
 		!passThroughGlobal &&
