@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { type Table } from '@tanstack/react-table'
+import type { Table } from '@tanstack/react-table'
 import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
@@ -119,6 +119,7 @@ export function DataTablePagination<TData>({
           </Button>
 
           {pageNumbers.map((pageNumber, index) => (
+            // oxlint-disable-next-line react/no-array-index-key -- 分页省略号 '...' 可能重复出现，页码之外没有更稳定的唯一 key；分页按钮无内部状态，使用 index 安全
             <div key={`${pageNumber}-${index}`} className='flex items-center'>
               {pageNumber === '...' ? (
                 <span className='text-muted-foreground/60 px-0.5 text-sm @lg/pagination:px-1'>

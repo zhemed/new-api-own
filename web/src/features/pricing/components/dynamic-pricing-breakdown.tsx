@@ -268,6 +268,7 @@ export function DynamicPricingBreakdown({
                 tier.label === matchedTierLabel
               return (
                 <div
+                  // oxlint-disable-next-line react/no-array-index-key -- 解析出的 tier 无唯一 id，label 可能重复，仅静态展示用索引即可
                   key={`tier-mobile-${i}`}
                   className={cn(
                     'rounded-md border p-2',
@@ -427,6 +428,7 @@ export function DynamicPricingBreakdown({
           <ul className='space-y-1.5'>
             {ruleGroups.map((group, gi) => (
               <li
+                // oxlint-disable-next-line react/no-array-index-key -- 规则组无唯一 id，条件与倍率可能重复，仅静态展示用索引即可
                 key={`group-${gi}`}
                 className='bg-muted/50 flex items-center justify-between gap-3 rounded-md px-3 py-2'
               >

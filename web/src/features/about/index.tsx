@@ -54,7 +54,7 @@ function EmptyAboutState() {
               rel='noopener noreferrer'
               className='text-primary hover:underline'
             >
-              {'https://github.com/zhemed/new-api-own'}
+              https://github.com/zhemed/new-api-own
             </a>
           </p>
           <p className='text-muted-foreground'>
@@ -73,7 +73,7 @@ function EmptyAboutState() {
               rel='noopener noreferrer'
               className='text-primary hover:underline'
             >
-              {'zhemed'}
+              zhemed
             </a>{' '}
             {t('| Based on')}{' '}
             <a
