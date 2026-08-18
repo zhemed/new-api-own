@@ -242,6 +242,10 @@ var defaultModelRatio = map[string]float64{
 	"deepseek-chat":          0.27 / 2,
 	"deepseek-coder":         0.27 / 2,
 	"deepseek-reasoner":      0.55 / 2, // 0.55 / 1k tokens
+	// deepseek-v4 (official pricing since 2026-08-17, peak/off-peak; using
+	// off-peak input prices: flash 1.5 CNY/M, pro 4.5 CNY/M; peak is 2x)
+	"deepseek-v4-flash":      1.5 * RMB,
+	"deepseek-v4-pro":        4.5 * RMB,
 	// Perplexity online 模型对搜索额外收费，有需要应自行调整，此处不计入搜索费用
 	"llama-3-sonar-small-32k-chat":   0.2 / 1000 * USD,
 	"llama-3-sonar-small-32k-online": 0.2 / 1000 * USD,
@@ -326,6 +330,9 @@ var modelRatioMap = types.NewRWMap[string, float64]()
 var completionRatioMap = types.NewRWMap[string, float64]()
 
 var defaultCompletionRatio = map[string]float64{
+	// deepseek-v4 output pricing is 3x input (off-peak 4.5/13.5 CNY per M)
+	"deepseek-v4-flash": 3,
+	"deepseek-v4-pro":   3,
 	"gpt-4-gizmo-*":  2,
 	"gpt-4o-gizmo-*": 3,
 	"gpt-4-all":      2,
