@@ -398,6 +398,15 @@ func ChatCompletionsRequestToResponsesRequest(req *dto.GeneralOpenAIRequest) (*d
 			Effort:  req.ReasoningEffort,
 			Summary: "detailed",
 		}
+	} else if len(req.THINKING) > 0 {
+		var thinkingCfg struct {
+			Type string `json:"type"`
+		}
+		if err := kitutil.Unmarshal(req.THINKING, &thinkingCfg); err == nil && thinkingCfg.Type == "disabled" {
+			// Preserve an explicit thinking:disabled request; without this the
+			// DeepSeek V4 suffix-less default would force high effort upstream.
+			out.Reasoning = &dto.Reasoning{Effort: "none"}
+		}
 	}
 
 	return out, nil

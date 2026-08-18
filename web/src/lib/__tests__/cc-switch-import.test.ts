@@ -9,7 +9,7 @@ License, or (at your option) any later version.
 import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 
-import { buildCCSwitchURL } from './cc-switch-import'
+import { buildCCSwitchURL } from '../cc-switch-import'
 
 function decodeBase64Url(value: string): string {
   const base64 = value.replaceAll('-', '+').replaceAll('_', '/')

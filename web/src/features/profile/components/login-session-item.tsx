@@ -65,7 +65,10 @@ export function LoginSessionItem({ session, onRevoke }: LoginSessionItemProps) {
         <p className='text-muted-foreground mt-1 text-xs'>
           {t('Last active {{time}} · Expires {{expires}}', {
             time: dayjs.unix(session.last_active_at).fromNow(),
-            expires: dayjs.unix(session.expires_at).format('YYYY-MM-DD HH:mm'),
+            expires:
+              session.expires_at === 0
+                ? t('Never')
+                : dayjs.unix(session.expires_at).format('YYYY-MM-DD HH:mm'),
           })}
         </p>
       </div>
