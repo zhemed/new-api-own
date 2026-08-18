@@ -43,6 +43,9 @@ const (
 	DefaultUserSessionIssuanceWindowSeconds = 24 * 60 * 60
 	DefaultUserSessionRevokedRetentionDays  = 7
 	DefaultUserSessionHourlyAlertThreshold  = 5000
+	// DefaultUserSessionNeverExpireIdleDays is the idle threshold (days) after
+	// which a never-expiring session is eligible for cleanup; 0 disables it.
+	DefaultUserSessionNeverExpireIdleDays = 0
 )
 
 var (
@@ -51,6 +54,7 @@ var (
 	UserSessionIssuanceWindowSeconds = int64(DefaultUserSessionIssuanceWindowSeconds)
 	UserSessionRevokedRetentionDays  = DefaultUserSessionRevokedRetentionDays
 	UserSessionHourlyAlertThreshold  = DefaultUserSessionHourlyAlertThreshold
+	UserSessionNeverExpireIdleDays   = DefaultUserSessionNeverExpireIdleDays
 )
 
 var OptionMap map[string]string

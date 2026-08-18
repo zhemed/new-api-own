@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/logger"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	relayconstant "github.com/QuantumNous/new-api/relay/constant"
@@ -76,6 +77,15 @@ func ResponsesHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *
 		return types.NewError(fmt.Errorf("invalid api type: %d", info.ApiType), types.ErrorCodeInvalidApiType, types.ErrOptionWithSkipRetry())
 	}
 	adaptor.Init(info)
+
+	// DeepSeek V4 -max/-none suffixes apply to every OpenAI-compatible
+	// Responses channel (the deepseek/newapi adaptors already run this; the
+	// call is idempotent once the suffix is stripped). Gemini/Anthropic
+	// exclude Responses relay modes and are skipped for symmetry.
+	if info != nil && info.ApiType != constant.APITypeGemini && info.ApiType != constant.APITypeAnthropic {
+		relaycommon.ApplyDeepSeekV4ResponsesThinkingSuffix(info, request)
+	}
+
 	var requestBody io.Reader
 	if model_setting.GetGlobalSettings().PassThroughRequestEnabled || info.ChannelSetting.PassThroughBodyEnabled {
 		storage, err := common.GetBodyStorage(c)

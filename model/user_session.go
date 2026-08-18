@@ -789,7 +789,54 @@ func DeleteExpiredUserSessions(now int64) error {
 	}
 	issuanceCutoff := now - common.UserSessionIssuanceWindowSeconds
 	revokedBefore := now - int64(common.UserSessionRevokedRetentionDays)*24*60*60
+	if common.UserSessionNeverExpireIdleDays > 0 {
+		if err := deleteIdleNeverExpireUserSessions(now, issuanceCutoff); err != nil {
+			return err
+		}
+	}
 	return deleteExpiredUserSessionsBefore(now, issuanceCutoff, revokedBefore)
+}
+
+// deleteIdleNeverExpireUserSessions removes never-expiring (expires_at = 0)
+// sessions that have been idle longer than UserSessionNeverExpireIdleDays, so
+// a permanent session cannot occupy an active-session slot forever.
+func deleteIdleNeverExpireUserSessions(now, issuanceCutoff int64) error {
+	idleBefore := now - int64(common.UserSessionNeverExpireIdleDays)*24*60*60
+	revokedBefore := now - int64(common.UserSessionRevokedRetentionDays)*24*60*60
+	for {
+		var sids []string
+		if err := DB.Model(&UserSession{}).
+			Where(
+				"expires_at = 0 AND last_active_at < ? AND created_at <= ? AND (status <> ? OR revoked_at <= 0 OR revoked_at < ?)",
+				idleBefore,
+				issuanceCutoff,
+				UserSessionStatusRevoked,
+				revokedBefore,
+			).
+			Order("last_active_at").Limit(userSessionCleanupScanLimit).Pluck("sid", &sids).Error; err != nil {
+			return err
+		}
+		if len(sids) == 0 {
+			return nil
+		}
+		for start := 0; start < len(sids); start += userSessionCleanupBatchSize {
+			end := start + userSessionCleanupBatchSize
+			if end > len(sids) {
+				end = len(sids)
+			}
+			if err := DB.Where("sid IN ?", sids[start:end]).
+				Where(
+					"expires_at = 0 AND last_active_at < ? AND created_at <= ? AND (status <> ? OR revoked_at <= 0 OR revoked_at < ?)",
+					idleBefore,
+					issuanceCutoff,
+					UserSessionStatusRevoked,
+					revokedBefore,
+				).
+				Delete(&UserSession{}).Error; err != nil {
+				return err
+			}
+		}
+	}
 }
 
 func DeleteOldRevokedUserSessions(now int64) error {
