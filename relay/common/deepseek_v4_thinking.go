@@ -68,7 +68,13 @@ func ApplyDeepSeekV4OpenAIThinkingSuffix(info *RelayInfo, request *dto.GeneralOp
 		if info.ChannelMeta != nil {
 			info.UpstreamModelName = baseModel
 		}
-		info.ReasoningEffort = effort
+		// -none means thinking explicitly disabled; record it uniformly as
+		// "none" (matches the Responses path) instead of an empty value.
+		if thinkingType == "disabled" {
+			info.ReasoningEffort = "none"
+		} else {
+			info.ReasoningEffort = effort
+		}
 	}
 	return nil
 }

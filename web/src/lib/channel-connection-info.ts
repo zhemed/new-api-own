@@ -46,6 +46,10 @@ export function getSecureServerOrigin(): string {
   return ''
 }
 
+export function isSecureServerOrigin(origin: string): boolean {
+  return origin.startsWith('https://')
+}
+
 export type ChannelConnectionInfo = {
   key: string
   url: string

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestLoginSessionExpiresAtSupportsNeverExpireMode(t *testing.T) {
@@ -11,12 +12,10 @@ func TestLoginSessionExpiresAtSupportsNeverExpireMode(t *testing.T) {
 	defer func() { common.LoginSessionNeverExpires = previous }()
 
 	common.LoginSessionNeverExpires = true
-	if got := loginSessionExpiresAt(100); got != 0 {
-		t.Fatalf("never-expire mode returned %d, want 0", got)
-	}
+	got := loginSessionExpiresAt(100)
+	assert.Equal(t, int64(0), got, "never-expire mode returned %d, want 0", got)
 
 	common.LoginSessionNeverExpires = false
-	if got := loginSessionExpiresAt(100); got <= 100 {
-		t.Fatalf("default mode returned %d, want a future expiry", got)
-	}
+	got = loginSessionExpiresAt(100)
+	assert.Greater(t, got, int64(100), "default mode returned %d, want a future expiry", got)
 }

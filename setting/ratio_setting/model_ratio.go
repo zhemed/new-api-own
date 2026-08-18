@@ -358,6 +358,12 @@ func UpdateModelPriceByJSONString(jsonStr string) error {
 
 // GetModelPrice 返回模型的价格，如果模型不存在则返回-1，false
 func GetModelPrice(name string, printErr bool) (float64, bool) {
+	// A configured entry with a thinking-effort suffix (e.g. -none/-max)
+	// must win over normalization, otherwise independent pricing for the
+	// variant is unreachable.
+	if price, ok := modelPriceMap.Get(name); ok {
+		return price, true
+	}
 	name = FormatMatchingModelName(name)
 
 	if price, ok := modelPriceMap.Get(name); ok {
@@ -394,6 +400,9 @@ func handleThinkingBudgetModel(name, prefix, wildcard string) string {
 }
 
 func GetModelRatio(name string) (float64, bool, string) {
+	if ratio, ok := modelRatioMap.Get(name); ok {
+		return ratio, true, name
+	}
 	name = FormatMatchingModelName(name)
 
 	ratio, ok := modelRatioMap.Get(name)
@@ -434,6 +443,9 @@ func UpdateCompletionRatioByJSONString(jsonStr string) error {
 }
 
 func GetCompletionRatio(name string) float64 {
+	if ratio, ok := completionRatioMap.Get(name); ok {
+		return ratio
+	}
 	name = FormatMatchingModelName(name)
 
 	if strings.Contains(name, "/") {
@@ -457,6 +469,12 @@ type CompletionRatioInfo struct {
 }
 
 func GetCompletionRatioInfo(name string) CompletionRatioInfo {
+	if ratio, ok := completionRatioMap.Get(name); ok {
+		return CompletionRatioInfo{
+			Ratio:  ratio,
+			Locked: false,
+		}
+	}
 	name = FormatMatchingModelName(name)
 
 	if strings.Contains(name, "/") {
@@ -621,6 +639,9 @@ func getHardcodedCompletionModelRatio(name string) (float64, bool) {
 }
 
 func GetAudioRatio(name string) float64 {
+	if ratio, ok := audioRatioMap.Get(name); ok {
+		return ratio
+	}
 	name = FormatMatchingModelName(name)
 	if ratio, ok := audioRatioMap.Get(name); ok {
 		return ratio
@@ -629,6 +650,9 @@ func GetAudioRatio(name string) float64 {
 }
 
 func GetAudioCompletionRatio(name string) float64 {
+	if ratio, ok := audioCompletionRatioMap.Get(name); ok {
+		return ratio
+	}
 	name = FormatMatchingModelName(name)
 	if ratio, ok := audioCompletionRatioMap.Get(name); ok {
 		return ratio
@@ -637,12 +661,18 @@ func GetAudioCompletionRatio(name string) float64 {
 }
 
 func ContainsAudioRatio(name string) bool {
+	if _, ok := audioRatioMap.Get(name); ok {
+		return true
+	}
 	name = FormatMatchingModelName(name)
 	_, ok := audioRatioMap.Get(name)
 	return ok
 }
 
 func ContainsAudioCompletionRatio(name string) bool {
+	if _, ok := audioCompletionRatioMap.Get(name); ok {
+		return true
+	}
 	name = FormatMatchingModelName(name)
 	_, ok := audioCompletionRatioMap.Get(name)
 	return ok

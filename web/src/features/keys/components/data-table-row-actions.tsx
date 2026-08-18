@@ -53,6 +53,7 @@ import { sendToFluent } from '@/features/chat/lib/send-to-fluent'
 import {
   encodeChannelConnectionInfo,
   getSecureServerOrigin,
+  isSecureServerOrigin,
 } from '@/lib/channel-connection-info'
 import { copyToClipboard } from '@/lib/copy-to-clipboard'
 
@@ -245,10 +246,13 @@ export function DataTableRowActions<TData>({
           onClick={async () => {
             const realKey = getCachedRealKey()
             if (!realKey) return
-            const connStr = encodeChannelConnectionInfo(
-              realKey,
-              getSecureServerOrigin()
-            )
+            const origin = getSecureServerOrigin()
+            if (!isSecureServerOrigin(origin)) {
+              toast.warning(
+                t('Connection info requires an HTTPS server address')
+              )
+            }
+            const connStr = encodeChannelConnectionInfo(realKey, origin)
             const ok = await copyToClipboard(connStr)
             if (ok) toast.success(t('Copied'))
           }}

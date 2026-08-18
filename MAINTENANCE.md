@@ -102,16 +102,20 @@ SQLITE_PATH=/tmp/own.db SESSION_SECRET=<随机串> PORT=3020 /tmp/new-api-own-bi
 3. 🟢 **C3**：会话列表对永不过期会话显示 1970-01-01 → 已改显示「Never/永不过期」（i18n 7 语言齐全）。
 4. 🟢 **E5（部分）**：`cc-switch-import.test.ts` 已迁至 `web/src/lib/__tests__/`（符合 web/AGENTS.md 目录约定）。
 
-### 已知考量（未改，需决策或条件成熟后处理）
-- **A2**：客户端显式 effort 在 deepseek/newapi 透传渠道、OpenRouter 渠道（274/292 行清空）、chat→Claude 转换、Gemini 渠道（全无记录）丢失。建议在 `TextHelper` 公共路径统一同步 `request.ReasoningEffort` 到 info。
-- **A3**：`-none` 语义不一致（chat/claude 路径不记录、Responses 路径记 "none"）。需决策统一口径。
-- **B1**：`-max/-none` 实际只覆盖 deepseek/newapi 渠道 + Claude 格式；普通 OpenAI 兼容渠道（openai/advancedcustom 等）原样上送、Gemini 渠道 `-max` 被剥掉但不注入 thinking（静默丢语义）。
-- **B2（计费）**：`FormatMatchingModelName` 把 `deepseek-v4-*` 带后缀名归一为基名 → 管理员配置的带后缀独立倍率永远匹配不到、保存时被静默改写。
-- **B5**：`-max` 上送 `reasoning_effort:"max"` 的枚举兼容性需与上游核对。
-- **C1/C2（决策项）**：永不过期默认开启 + 10 年 cookie + 活跃会话上限（默认 50）永久锁。**当前是自用部署的有意配置**（MAINTENANCE.md 已注明）；若对外提供服务需重新评估或加活跃淘汰。
-- **E5（部分）**：既有测试（session_expiry、auth_session_policy、adaptor_reasoning）用手写断言未用 testify；后续改动相关文件时顺带迁移。
-- **D2**：HTTP 部署下 CC Switch 导入无 HTTPS 告警提示。
-- **D3**：`.github/ISSUE_TEMPLATE/*` 仍指向 docs.newapi.ai（上游文档站），追求彻底去上游化可替换。
+### 已处理（第二批，2026-08-18 全面处理）
+- **A2**：`relay/compatible_handler.go` 转换前统一把客户端显式 `reasoning_effort` 同步到 info（覆盖 deepseek/newapi 透传、OpenRouter 清空、chat→Claude、Gemini 等全部 OpenAI 兼容渠道，后缀派生值优先覆盖）。
+- **A3**：`-none` 三路径统一记录 "none"（Claude/chat 路径在 `deepseek_v4_thinking.go` 补 disabled 分支；Responses 路径原有）。
+- **B1**：`-max/-none` 挂到公共路径——chat 在 `compatible_handler.go`、Responses 在 `responses_handler.go` 对所有非 Gemini/Anthropic 的 OpenAI 兼容渠道生效（deepseek/newapi 原有调用幂等）；Gemini 渠道在 `ApplyThinkingConfig` 新增 DeepSeek V4 分支（`-none` → ThinkingBudget=0、`-max` → ThinkingLevel=high，修复原 TrimEffortSuffix 把 "max" 当 Gemini level 的静默丢语义）。
+- **B2**：8 个倍率/限流查询函数（GetModelPrice/GetModelRatio/GetCompletionRatio/GetCompletionRatioInfo/GetAudioRatio/GetAudioCompletionRatio/ContainsAudioRatio/ContainsAudioCompletionRatio）先查原样名（带后缀独立定价条目直接命中），miss 再归一化。
+- **B5**：已核对上游——`max` 是 DeepSeek V4 官方支持的 effort 值（vLLM PR #40982、DeepSeek API Thinking Mode 文档、litellm #27439），保持透传，无需映射。
+- **C1/C2**：新增 `USER_SESSION_NEVER_EXPIRE_IDLE_DAYS` env（默认 0=不启用，行为不变）；启用后清理任务对 `expires_at=0` 且空闲超阈值的会话按分页批量删除（`model/user_session.go` 的 `deleteIdleNeverExpireUserSessions`），防止永不过期会话永久占满活跃上限。
+- **D2**：CC Switch 导入/连接信息复制在 HTTP 地址时提示（warning，不阻止）。
+- **D3**：`.github/ISSUE_TEMPLATE/*` 的上游文档链接已替换/移除。
+- **E5**：session_expiry / auth_session_policy / adaptor_reasoning 三个测试文件已迁移 testify。
+
+### 其余已知考量
+- **C1（10 年 cookie 被浏览器截断为 ~400 天）**：服务端会话仍在，仅需重登，无功能错误。
+- **模型后缀派生 effort（gpt-5-high 等）在 Gemini/Claude 渠道的 Responses 转换不解析**：🟢 轻微。
 
 ## 自用部署注意事项
 

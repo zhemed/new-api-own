@@ -138,6 +138,23 @@ func ApplyThinkingConfig(geminiRequest *dto.GeminiChatRequest, info convmeta.Met
 				ThinkingBudget: kitutil.GetPointer(0),
 			}
 		}
+	} else if _, thinkingType, effort, ok := reasoning.ParseDeepSeekV4ThinkingSuffix(modelName); ok {
+		// DeepSeek V4 -max/-none suffixes mapped onto Gemini thinking:
+		// -none disables thinking, -max requests the highest thinking level.
+		// (The generic TrimEffortSuffix branch below would only strip the
+		// suffix and send "max" as a level Gemini does not understand.)
+		if thinkingType == "disabled" {
+			geminiRequest.GenerationConfig.ThinkingConfig = &dto.GeminiThinkingConfig{
+				ThinkingBudget: kitutil.GetPointer(0),
+			}
+			info.SetReasoningEffort("none")
+		} else {
+			geminiRequest.GenerationConfig.ThinkingConfig = &dto.GeminiThinkingConfig{
+				IncludeThoughts: true,
+				ThinkingLevel:   "high",
+			}
+			info.SetReasoningEffort(effort)
+		}
 	} else if _, level, ok := reasoning.TrimEffortSuffix(modelName); ok && level != "" {
 		geminiRequest.GenerationConfig.ThinkingConfig = &dto.GeminiThinkingConfig{
 			IncludeThoughts: true,

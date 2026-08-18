@@ -28,6 +28,10 @@ import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { getUserModels } from '@/lib/api'
 import { buildCCSwitchURL } from '@/lib/cc-switch-import'
+import {
+  getSecureServerOrigin,
+  isSecureServerOrigin,
+} from '@/lib/channel-connection-info'
 
 const APP_CONFIGS = {
   claude: {
@@ -103,10 +107,14 @@ export function CCSwitchDialog(props: Props) {
       toast.warning(t('Please select a primary model'))
       return
     }
+    const origin = getSecureServerOrigin()
+    if (!isSecureServerOrigin(origin)) {
+      toast.warning(t('CC Switch requires an HTTPS server address'))
+    }
     const key = props.tokenKey.startsWith('sk-')
       ? props.tokenKey
       : `sk-${props.tokenKey}`
-    const url = buildCCSwitchURL(app, name, models, key)
+    const url = buildCCSwitchURL(app, name, models, key, origin)
     window.open(url, '_blank')
     props.onOpenChange(false)
   }

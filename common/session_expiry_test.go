@@ -1,16 +1,14 @@
 package common
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestIsLoginSessionExpiredTreatsZeroAsNever(t *testing.T) {
 	now := int64(100)
-	if IsLoginSessionExpired(0, now) {
-		t.Fatal("zero expiry must remain active")
-	}
-	if !IsLoginSessionExpired(now-1, now) {
-		t.Fatal("past expiry must be expired")
-	}
-	if IsLoginSessionExpired(now+1, now) {
-		t.Fatal("future expiry must remain active")
-	}
+	assert.False(t, IsLoginSessionExpired(0, now), "zero expiry must remain active")
+	assert.True(t, IsLoginSessionExpired(now-1, now), "past expiry must be expired")
+	assert.False(t, IsLoginSessionExpired(now+1, now), "future expiry must remain active")
 }
