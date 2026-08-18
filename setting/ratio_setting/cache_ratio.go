@@ -38,9 +38,9 @@ var defaultCacheRatio = map[string]float64{
 	"gpt-5-nano-2025-08-07":               0.1,
 	"deepseek-chat":                       0.25,
 	"deepseek-reasoner":                   0.25,
-	// deepseek-v4: cache-hit input is 1/30 of uncached (0.05/1.5 and 0.15/4.5 CNY)
-	"deepseek-v4-flash":                   1.0 / 30,
-	"deepseek-v4-pro":                     1.0 / 30,
+	// deepseek-v4: official USD cache-hit input (flash $0.007, pro $0.022)
+	"deepseek-v4-flash":                   0.007 / 0.22,
+	"deepseek-v4-pro":                     0.022 / 0.66,
 	"deepseek-coder":                      0.25,
 	"claude-3-sonnet-20240229":            0.1,
 	"claude-3-opus-20240229":              0.1,
