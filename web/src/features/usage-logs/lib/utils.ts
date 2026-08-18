@@ -93,21 +93,9 @@ function timestampToSeconds(ms: number): number {
 
 /**
  * Build query parameters from filters
+ * (re-exported from ../api to avoid an import cycle)
  */
-export function buildQueryParams(
-  params: Record<string, unknown>
-): URLSearchParams {
-  const queryParams = new URLSearchParams()
-
-  Object.entries(params).forEach(([key, value]) => {
-    // Keep 0 as a valid value, only filter out undefined, null, and empty string
-    if (value !== undefined && value !== null && value !== '') {
-      queryParams.append(key, String(value))
-    }
-  })
-
-  return queryParams
-}
+export { buildQueryParams } from '../api'
 
 /**
  * Build time range parameters with default values

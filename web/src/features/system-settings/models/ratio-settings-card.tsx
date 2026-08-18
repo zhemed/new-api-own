@@ -347,9 +347,11 @@ export function RatioSettingsCard({
 
       for (const key of updates) {
         const apiKey = apiKeyMap[key as string] || (key as string)
-        await updateOption.mutateAsync(
-          { key: apiKey, value: normalized[key], silent: true }
-        )
+        await updateOption.mutateAsync({
+          key: apiKey,
+          value: normalized[key],
+          silent: true,
+        })
       }
 
       toast.success(t('Setting updated successfully'))
@@ -388,9 +390,11 @@ export function RatioSettingsCard({
 
       for (const key of updates) {
         const apiKey = apiKeyMap[key] || key
-        await updateOption.mutateAsync(
-          { key: apiKey, value: normalized[key], silent: true }
-        )
+        await updateOption.mutateAsync({
+          key: apiKey,
+          value: normalized[key],
+          silent: true,
+        })
       }
 
       if (updates.length === 0) return
@@ -398,7 +402,7 @@ export function RatioSettingsCard({
       toast.success(t('Setting updated successfully'))
       groupNormalizedDefaults.current = normalized
     },
-    [updateOption]
+    [t, updateOption]
   )
 
   const handleResetRatios = useCallback(() => {

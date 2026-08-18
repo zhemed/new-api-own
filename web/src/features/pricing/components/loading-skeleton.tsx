@@ -48,6 +48,7 @@ function CardContentSkeleton() {
   return (
     <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
       {Array.from({ length: 9 }).map((_, i) => (
+        // oxlint-disable-next-line react/no-array-index-key -- 骨架屏为纯静态占位，无数据身份，索引即稳定 key
         <div key={i} className='rounded-xl border p-5'>
           <div className='flex items-start justify-between gap-3'>
             <div className='flex min-w-0 items-start gap-3'>
@@ -85,6 +86,7 @@ function FilterBarSkeleton() {
         <div className='flex flex-1 flex-wrap items-center gap-2'>
           {[80, 90, 75, 85, 70].map((width, i) => (
             <Skeleton
+              // oxlint-disable-next-line react/no-array-index-key -- 静态宽度列表，无业务数据可作 key，索引即稳定 key
               key={i}
               className='h-8 rounded-lg'
               style={{ width: `${width}px` }}
@@ -120,6 +122,7 @@ function TableContentSkeleton() {
           <div className='flex items-center gap-4'>
             {columns.map((col, i) => (
               <Skeleton
+                // oxlint-disable-next-line react/no-array-index-key -- 静态列配置列表，宽度值重复无唯一 id，索引即稳定 key
                 key={i}
                 className='h-4'
                 style={{ width: `${col.width}px` }}
@@ -129,11 +132,13 @@ function TableContentSkeleton() {
         </div>
         {Array.from({ length: 10 }).map((_, i) => (
           <div
+            // oxlint-disable-next-line react/no-array-index-key -- 骨架行无数据身份，索引即稳定 key
             key={i}
             className='flex items-center gap-4 border-b px-4 py-3 last:border-b-0'
           >
             {columns.map((col, j) => (
               <Skeleton
+                // oxlint-disable-next-line react/no-array-index-key -- 静态列配置列表，宽度值重复无唯一 id，索引即稳定 key
                 key={j}
                 className='h-5'
                 style={{ width: `${col.width}px` }}
@@ -146,6 +151,7 @@ function TableContentSkeleton() {
         <Skeleton className='h-5 w-32' />
         <div className='flex items-center gap-2'>
           {Array.from({ length: 4 }).map((_, i) => (
+            // oxlint-disable-next-line react/no-array-index-key -- 分页占位无数据身份，索引即稳定 key
             <Skeleton key={i} className='size-8' />
           ))}
         </div>
