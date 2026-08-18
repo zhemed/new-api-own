@@ -52,7 +52,7 @@ func ApplyDeepSeekV4OpenAIThinkingSuffix(info *RelayInfo, request *dto.GeneralOp
 	}
 	baseModel, thinkingType, effort, ok := reasoning.ParseDeepSeekV4ThinkingSuffix(modelName)
 	if !ok {
-		applyDeepSeekV4OpenAIDefaultEffort(modelName, request)
+		applyDeepSeekV4OpenAIDefaultEffort(info, modelName, request)
 		return nil
 	}
 	thinking, err := appcommon.Marshal(map[string]string{
@@ -109,7 +109,7 @@ func ApplyDeepSeekV4ResponsesThinkingSuffix(info *RelayInfo, request *dto.OpenAI
 
 // applyDeepSeekV4OpenAIDefaultEffort records the default thinking effort (high)
 // for suffix-less DeepSeek V4 chat requests unless thinking is explicitly disabled.
-func applyDeepSeekV4OpenAIDefaultEffort(modelName string, request *dto.GeneralOpenAIRequest) {
+func applyDeepSeekV4OpenAIDefaultEffort(info *RelayInfo, modelName string, request *dto.GeneralOpenAIRequest) {
 	if request == nil || request.ReasoningEffort != "" || !strings.HasPrefix(modelName, "deepseek-v4-") {
 		return
 	}
@@ -124,5 +124,10 @@ func applyDeepSeekV4OpenAIDefaultEffort(modelName string, request *dto.GeneralOp
 	}
 	if !disabled {
 		request.ReasoningEffort = "high"
+		if info != nil {
+			// Mirror the effort on the relay info so usage logs record the
+			// defaulted high effort (matches the Responses/Claude paths).
+			info.ReasoningEffort = "high"
+		}
 	}
 }
