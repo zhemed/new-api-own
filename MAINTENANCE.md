@@ -117,6 +117,20 @@ SQLITE_PATH=/tmp/own.db SESSION_SECRET=<随机串> PORT=3020 /tmp/new-api-own-bi
 - **C1（10 年 cookie 被浏览器截断为 ~400 天）**：服务端会话仍在，仅需重登，无功能错误。
 - **模型后缀派生 effort（gpt-5-high 等）在 Gemini/Claude 渠道的 Responses 转换不解析**：🟢 轻微。
 
+## 模型定价换算速查（防再踩坑）
+
+`defaultModelRatio` 的单位是 quota/token，UI 显示美元/百万 = ratio × 2。两种价格书写模式：
+
+- **美元模型**：`ratio = 美元/M × 0.5`（例：deepseek-chat 旧价 $0.27/M → `0.27 / 2`）
+- **人民币模型**：`ratio = 元/千 tokens × RMB`（RMB = USD/7.3 = 68.49；例：ERNIE `0.12 * RMB` = 0.12 元/千 tokens）
+- **⚠️ 错误教训（720a96fb）**：人民币价格写成 `元/M × RMB` 会**高估 1000 倍**（把 1.5 元/M 当成 1.5 元/K）——人民币必须先除以 1000 再乘 RMB。
+
+deepseek-v4 已配置（2026-08-17 官方峰谷价，取谷价，高峰 2 倍）：
+- `ModelRatio`: flash `1.5/1000*RMB`（0.10274）、pro `4.5/1000*RMB`（0.30822）
+- `CompletionRatio`: 3（官方输出 = 输入 × 3）
+- `CacheRatio`: 1/30（缓存命中 0.05/0.15 元/M）
+- UI 校验：flash 输入 $0.2055/M、补全 $0.6164/M、缓存 $0.0068/M ✅
+
 ## 自用部署注意事项
 
 - docker-compose 中 `CRITICAL_RATE_LIMIT_ENABLE=false` 是**有意的自用配置**（内网信任环境、方便频繁操作），不是缺陷；若仓库公开或对外提供服务需重新评估
