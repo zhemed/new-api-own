@@ -23,9 +23,6 @@
 - 部署前运行 `./check-docker-env.sh` 校验环境
 
 ```bash
-# 私有镜像，需要先登录 GHCR（使用 GitHub 凭据）
-docker login ghcr.io -u zhemed
-
 docker run -d --name new-api --restart always \
   -p 3000:3000 \
   -v ./data:/data \
@@ -38,7 +35,6 @@ docker run -d --name new-api --restart always \
 ### 方式二：源码构建（需要仓库访问权限）
 
 ```bash
-# 私有仓库，clone 需要 GitHub 凭据
 git clone https://github.com/zhemed/new-api-own.git
 cd new-api-own
 

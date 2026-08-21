@@ -1,6 +1,6 @@
 # MAINTENANCE.md — 维护手册
 
-> 本仓库 `zhemed/new-api-own` 是 **私有** 仓库，基于 QuantumNous/new-api 代码基独立维护（非 fork 关系，历史含上游提交，但自 2026-08 起完全自维护）。
+> 本仓库 `zhemed/new-api-own` 是 **公开** 仓库，基于 QuantumNous/new-api 代码基独立维护（非 fork 关系，历史含上游提交，但自 2026-08 起完全自维护）。
 
 ## 铁律（违反即事故）
 
@@ -16,7 +16,7 @@
 - 后端：Go 1.22+、Gin、GORM v2；前端：React 19 + TS + Rsbuild（`web/`，包管理用 Bun）
 - 数据库：SQLite / MySQL / PostgreSQL 三库兼容；缓存：Redis + 内存
 - 独立模块：`relaykit/`（不得依赖根模块，改动后必须 `GOWORK=off` 单独构建）
-- 部署：私有镜像 `ghcr.io/zhemed/new-api-own`（需 `docker login ghcr.io -u zhemed`），docker-compose 用 host 网络
+- 部署：公开镜像 `ghcr.io/zhemed/new-api-own`（无需登录，直接拉取），docker-compose 用 host 网络
 
 ## 本机开发环境
 
@@ -24,7 +24,7 @@
 |---|---|
 | Go | `/usr/local/go/bin/go`（1.26.4），需 `export HOME=/root PATH=$PATH:/usr/local/go/bin GOPATH=/root/go GOMODCACHE=/root/go/pkg/mod GOCACHE=/root/.cache/go-build` |
 | Bun | `~/.bun/bin/bun`（1.3.14），所有前端命令前需 `export HOME=/root` |
-| GitHub 私有仓库 | 克隆/推送需带 token：`git clone https://zhemed:<token>@github.com/zhemed/new-api-own.git`（token 在 `/root/.git-credentials`；git 操作需 `export HOME=/root`） |
+| GitHub 公开仓库 | 克隆无需凭据（`git clone https://github.com/zhemed/new-api-own.git`），推送需带 token（`https://zhemed:<token>@...`，token 在 `/root/.git-credentials`） |
 
 ## 构建与测试
 
@@ -135,7 +135,7 @@ deepseek-v4 已配置（2026-08-17 官方**美元**定价，英文站价格表�
 ## 自用部署注意事项
 
 - docker-compose 中 `CRITICAL_RATE_LIMIT_ENABLE=false` 是**有意的自用配置**（内网信任环境、方便频繁操作），不是缺陷；若仓库公开或对外提供服务需重新评估
-- 私有镜像部署需先 `docker login ghcr.io -u zhemed`（用 GitHub token 作为密码）
+- 公开镜像可直接拉取，无需 `docker login`
 - 部署前运行 `./check-docker-env.sh` 校验 Docker 环境
 
 ## 工作流
@@ -143,4 +143,4 @@ deepseek-v4 已配置（2026-08-17 官方**美元**定价，英文站价格表�
 1. 改代码 → 涉及文件 lint 0 error + typecheck 通过 → 相关 Go 测试/前端测试
 2. 行为变更必须补回归测试（后端 `testify`；前端放 `__tests__/` 目录）
 3. 提交信息用项目风格（`fix:` / `feat:` / `chore:` 前缀，描述变更与原因）
-4. 提交后推送：`export HOME=/root && git push origin main`（私有仓库，凭据在 `/root/.git-credentials`）
+4. 提交后推送：`export HOME=/root && git push origin main`（公开仓库，推送需凭据（`/root/.git-credentials`））
