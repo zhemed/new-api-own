@@ -1,7 +1,6 @@
 package common
 
 import (
-	"encoding/json"
 	"sync"
 )
 
@@ -15,7 +14,7 @@ var topupGroupRatioMutex sync.RWMutex
 func TopupGroupRatio2JSONString() string {
 	topupGroupRatioMutex.RLock()
 	defer topupGroupRatioMutex.RUnlock()
-	jsonBytes, err := json.Marshal(topupGroupRatio)
+	jsonBytes, err := Marshal(topupGroupRatio)
 	if err != nil {
 		SysError("error marshalling topup group ratio: " + err.Error())
 	}
@@ -25,8 +24,12 @@ func TopupGroupRatio2JSONString() string {
 func UpdateTopupGroupRatioByJSONString(jsonStr string) error {
 	topupGroupRatioMutex.Lock()
 	defer topupGroupRatioMutex.Unlock()
-	topupGroupRatio = make(map[string]float64)
-	return json.Unmarshal([]byte(jsonStr), &topupGroupRatio)
+	var tmp map[string]float64
+	if err := UnmarshalJsonStr(jsonStr, &tmp); err != nil {
+		return err
+	}
+	topupGroupRatio = tmp
+	return nil
 }
 
 func GetTopupGroupRatio(name string) float64 {

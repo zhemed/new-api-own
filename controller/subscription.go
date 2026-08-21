@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 
@@ -143,10 +144,31 @@ func AdminCreateSubscriptionPlan(c *gin.Context) {
 		return
 	}
 
+	var raw map[string]any
+	if storage, err := common.GetBodyStorage(c); err == nil {
+		if b, err2 := storage.Bytes(); err2 == nil {
+			_ = common.Unmarshal(b, &raw)
+			// reset for subsequent UnmarshalBodyReusable
+			_, _ = storage.Seek(0, io.SeekStart)
+			c.Request.Body = io.NopCloser(storage)
+		}
+	}
 	var req AdminUpsertSubscriptionPlanRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := common.UnmarshalBodyReusable(c, &req); err != nil {
 		common.ApiErrorMsg(c, "参数错误")
 		return
+	}
+	// Default enabled to true when not explicitly provided (replaces gorm:"default:true")
+	if raw != nil {
+		if planRaw, ok := raw["plan"].(map[string]any); ok {
+			if _, has := planRaw["enabled"]; !has {
+				req.Plan.Enabled = true
+			}
+		} else if _, has := raw["enabled"]; !has {
+			req.Plan.Enabled = true
+		}
+	} else if !req.Plan.Enabled {
+		req.Plan.Enabled = true
 	}
 	req.Plan.Id = 0
 	if strings.TrimSpace(req.Plan.Title) == "" {
