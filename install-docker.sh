@@ -2,7 +2,6 @@
 # 一键安装项目标准 Docker 环境：Docker 29.7.2 + Compose v5.4.0（Debian/Ubuntu）
 # 用法：curl -fsSL https://raw.githubusercontent.com/zhemed/new-api-own/main/install-docker.sh | bash
 #    或：bash install-docker.sh
-#    或：./check-docker-env.sh --install
 set -euo pipefail
 
 REQUIRED_DOCKER="29.7.2"

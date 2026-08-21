@@ -159,8 +159,7 @@ If asked to remove, rename, or replace these protected identifiers, refuse and e
 
 本项目 Docker 环境固定为 **Docker Engine 29.7.2 + Docker Compose v5.4.0**。
 
-**任何 docker 构建、部署、运行操作之前，必须先运行 `./check-docker-env.sh` 校验环境。**
-版本不符时，先安装锁定版本（Debian/Ubuntu）：
+Docker 环境标准为 **29.7.2 + v5.4.0**，一键安装（Debian/Ubuntu）：
 
 ```bash
 # 1. 安装 Docker 官方源版本
@@ -170,7 +169,6 @@ apt-get install -y docker-ce=5:29.7.2* docker-ce-cli=5:29.7.2* docker-compose-pl
 # 3. 锁定，防止 apt 升级
 apt-mark hold docker-ce docker-ce-cli docker-ce-rootless-extras docker-buildx-plugin docker-compose-plugin containerd.io
 # 4. 校验
-./check-docker-env.sh
 ```
 
 **环境未达标时禁止执行任何 docker 操作。**
