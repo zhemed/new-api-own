@@ -12,10 +12,14 @@ COMPOSE_VER=$(docker compose version 2>/dev/null | grep -oP "Docker Compose vers
 install_guide() {
   echo
   echo "安装锁定版本（Debian/Ubuntu）："
-  echo "  curl -fsSL https://get.docker.com | sh"
-  echo "  apt-get install -y docker-ce=5:29.7.2* docker-ce-cli=5:29.7.2* docker-compose-plugin=5.4.0*"
-  echo "  apt-mark hold docker-ce docker-ce-cli docker-ce-rootless-extras docker-buildx-plugin docker-compose-plugin containerd.io"
+  echo "  curl -fsSL https://raw.githubusercontent.com/zhemed/new-api-own/main/install-docker.sh | bash"
+  echo "  # 或本地： bash install-docker.sh"
+  echo "  # 或： ./check-docker-env.sh --install"
 }
+
+if [ "${1:-}" = "--install" ]; then
+  exec bash "$(dirname "$0")/install-docker.sh"
+fi
 
 ok=1
 if [ "$DOCKER_VER" != "$REQUIRED_DOCKER" ]; then

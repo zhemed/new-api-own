@@ -19,8 +19,7 @@ A self-hosted LLM gateway and AI asset management platform: multi-model aggregat
 
 ## 环境要求
 
-- Docker **29.7.2** + Docker Compose **v5.4.0**（项目标准版本）
-- 部署前运行 `./check-docker-env.sh` 校验环境
+- Docker **29.7.2** + Docker Compose **v5.4.0** (standard) — one-click install: `curl -fsSL https://raw.githubusercontent.com/zhemed/new-api-own/main/install-docker.sh | bash` or `./check-docker-env.sh --install`, verify: `./check-docker-env.sh`
 
 ```bash
 docker run -d --name new-api --restart always \
