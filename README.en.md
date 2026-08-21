@@ -23,9 +23,6 @@ A self-hosted LLM gateway and AI asset management platform: multi-model aggregat
 - 部署前运行 `./check-docker-env.sh` 校验环境
 
 ```bash
-# 私有镜像，需要先登录 GHCR（使用 GitHub 凭据）
-docker login ghcr.io -u zhemed
-
 docker run -d --name new-api --restart always \
   -p 3000:3000 \
   -v ./data:/data \
@@ -38,7 +35,6 @@ docker run -d --name new-api --restart always \
 ### Option 2: Build from source (requires repository access)
 
 ```bash
-# Private repository: cloning requires GitHub credentials
 git clone https://github.com/zhemed/new-api-own.git
 cd new-api-own
 
