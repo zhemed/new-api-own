@@ -168,7 +168,23 @@ func (c ChannelInfo) Value() (driver.Value, error) {
 
 // Scan implements sql.Scanner interface
 func (c *ChannelInfo) Scan(value interface{}) error {
-	bytesValue, _ := value.([]byte)
+	if value == nil {
+		*c = ChannelInfo{}
+		return nil
+	}
+	var bytesValue []byte
+	switch v := value.(type) {
+	case []byte:
+		bytesValue = v
+	case string:
+		bytesValue = []byte(v)
+	default:
+		return fmt.Errorf("unsupported type for ChannelInfo: %T", value)
+	}
+	if len(bytesValue) == 0 {
+		*c = ChannelInfo{}
+		return nil
+	}
 	return common.Unmarshal(bytesValue, c)
 }
 
@@ -316,7 +332,7 @@ func (channel *Channel) GetOtherInfo() map[string]interface{} {
 }
 
 func (channel *Channel) SetOtherInfo(otherInfo map[string]interface{}) {
-	otherInfoBytes, err := json.Marshal(otherInfo)
+	otherInfoBytes, err := common.Marshal(otherInfo)
 	if err != nil {
 		common.SysLog(fmt.Sprintf("failed to marshal other info: channel_id=%d, tag=%s, name=%s, error=%v", channel.Id, channel.GetTag(), channel.Name, err))
 		return
