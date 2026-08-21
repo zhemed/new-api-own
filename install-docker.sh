@@ -28,7 +28,7 @@ fi
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
-apt-get install -y \
+apt-get install -y --allow-downgrades \
   docker-ce=5:${REQUIRED_DOCKER}* \
   docker-ce-cli=5:${REQUIRED_DOCKER}* \
   docker-compose-plugin=${REQUIRED_COMPOSE#v}* \
