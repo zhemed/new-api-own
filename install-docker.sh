@@ -31,7 +31,7 @@ apt-get update -qq
 apt-get install -y \
   docker-ce=5:${REQUIRED_DOCKER}* \
   docker-ce-cli=5:${REQUIRED_DOCKER}* \
-  docker-compose-plugin=${REQUIRED_COMPOSE}* \
+  docker-compose-plugin=${REQUIRED_COMPOSE#v}* \
   docker-ce-rootless-extras docker-buildx-plugin containerd.io 2>&1 | tail -5
 
 apt-mark hold docker-ce docker-ce-cli docker-ce-rootless-extras docker-buildx-plugin docker-compose-plugin containerd.io >/dev/null 2>&1 || true
@@ -45,6 +45,6 @@ if [ "$DOCKER_VER" = "$REQUIRED_DOCKER" ] && [ "$COMPOSE_VER" = "$REQUIRED_COMPO
   echo "✅ 完成：Docker $DOCKER_VER + Compose $COMPOSE_VER 已就绪（已 hold 锁定版本）"
 else
   echo "⚠️ 安装后版本仍不符：Docker $DOCKER_VER（期望 $REQUIRED_DOCKER），Compose $COMPOSE_VER（期望 $REQUIRED_COMPOSE）" >&2
-  echo "请检查 apt 源或手动执行：apt-get install -y docker-ce=5:${REQUIRED_DOCKER}* docker-ce-cli=5:${REQUIRED_DOCKER}* docker-compose-plugin=${REQUIRED_COMPOSE}*" >&2
+  echo "请检查 apt 源或手动执行：apt-get install -y docker-ce=5:${REQUIRED_DOCKER}* docker-ce-cli=5:${REQUIRED_DOCKER}* docker-compose-plugin=${REQUIRED_COMPOSE#v}*" >&2
   exit 1
 fi
