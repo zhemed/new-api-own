@@ -7,7 +7,7 @@
 1. **绝不同步上游**：未经仓库所有者明确许可，禁止对 QuantumNous/new-api（或任何上游）执行 fetch / merge / rebase / cherry-pick。上游改动一律不关注、不引入。
 2. **不修改受保护标识**：new-api 与 QuantumNous 的名称、品牌、署名（README、许可头、包路径、Docker 镜像名、文档等）一律不得改动（见 `AGENTS.md` Project Governance）。
 3. **行为不变原则**：清理代码（lint/format/重构）时不得改变任何用户可见行为；无法保证等价时，宁可用 `oxlint-disable` 注释，也不改行为。
-4. **Docker 环境标准（AGENTS.md 强制）**：Docker Engine 29.7.2 + Docker Compose v5.4.0。任何 docker 操作前必须先运行 `./check-docker-env.sh` 校验；版本不符先安装锁定版本（见 AGENTS.md）。
+4. **Docker 环境标准（AGENTS.md 强制）**：Docker Engine 29.7.2 + Docker Compose v5.4.0。需 Docker Engine 29.7.2 + Compose v5.4.0；一键安装：`curl -fsSL https://raw.githubusercontent.com/zhemed/new-api-own/main/install-docker.sh | bash`。
 5. **提交前必须通过质量门禁**（见下）。
 
 ## 项目是什么
@@ -136,7 +136,7 @@ deepseek-v4 已配置（2026-08-17 官方**美元**定价，英文站价格表�
 
 - docker-compose 中 `CRITICAL_RATE_LIMIT_ENABLE=false` 是**有意的自用配置**（内网信任环境、方便频繁操作），不是缺陷；若仓库公开或对外提供服务需重新评估
 - 公开镜像可直接拉取，无需 `docker login`
-- 部署前运行 `./check-docker-env.sh` 校验 Docker 环境
+- 部署前确保 Docker 为标准版本（29.7.2 + v5.4.0）
 
 ## 工作流
 

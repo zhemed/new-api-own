@@ -19,7 +19,7 @@
 
 ## 环境要求
 
-- Docker **29.7.2** + Docker Compose **v5.4.0**（项目标准版本）——一键安装：`curl -fsSL https://raw.githubusercontent.com/zhemed/new-api-own/main/install-docker.sh | bash` 或 `./check-docker-env.sh --install`，校验：`./check-docker-env.sh`
+- Docker **29.7.2** + Docker Compose **v5.4.0**（项目标准版本）——一键安装：`curl -fsSL https://raw.githubusercontent.com/zhemed/new-api-own/main/install-docker.sh | bash`
 
 ```bash
 docker run -d --name new-api --restart always \
