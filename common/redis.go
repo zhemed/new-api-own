@@ -250,26 +250,19 @@ func RedisIncr(key string, delta int64) error {
 		return fmt.Errorf("failed to get TTL: %w", err)
 	}
 
-	// 只有在 key 存在且有 TTL 时才需要特殊处理
+	ctx := context.Background()
 	if ttl > 0 {
-		ctx := context.Background()
-		// 开始一个Redis事务
 		txn := RDB.TxPipeline()
-
-		// 减少余额
 		decrCmd := txn.IncrBy(ctx, key, delta)
 		if err := decrCmd.Err(); err != nil {
-			return err // 如果减少失败，则直接返回错误
+			return err
 		}
-
-		// 重新设置过期时间，使用原来的过期时间
 		txn.Expire(ctx, key, ttl)
-
-		// 执行事务
 		_, err = txn.Exec(ctx)
 		return err
 	}
-	return nil
+	// ttl == -1 (no expiry) or -2 (not exists): still need to increment
+	return RDB.IncrBy(ctx, key, delta).Err()
 }
 
 func RedisHIncrBy(key, field string, delta int64) error {
@@ -282,21 +275,18 @@ func RedisHIncrBy(key, field string, delta int64) error {
 		return fmt.Errorf("failed to get TTL: %w", err)
 	}
 
+	ctx := context.Background()
 	if ttl > 0 {
-		ctx := context.Background()
 		txn := RDB.TxPipeline()
-
 		incrCmd := txn.HIncrBy(ctx, key, field, delta)
 		if err := incrCmd.Err(); err != nil {
 			return err
 		}
-
 		txn.Expire(ctx, key, ttl)
-
 		_, err = txn.Exec(ctx)
 		return err
 	}
-	return nil
+	return RDB.HIncrBy(ctx, key, field, delta).Err()
 }
 
 func RedisHSetField(key, field string, value interface{}) error {
@@ -309,19 +299,16 @@ func RedisHSetField(key, field string, value interface{}) error {
 		return fmt.Errorf("failed to get TTL: %w", err)
 	}
 
+	ctx := context.Background()
 	if ttl > 0 {
-		ctx := context.Background()
 		txn := RDB.TxPipeline()
-
 		hsetCmd := txn.HSet(ctx, key, field, value)
 		if err := hsetCmd.Err(); err != nil {
 			return err
 		}
-
 		txn.Expire(ctx, key, ttl)
-
 		_, err = txn.Exec(ctx)
 		return err
 	}
-	return nil
+	return RDB.HSet(ctx, key, field, value).Err()
 }

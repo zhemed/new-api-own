@@ -1,11 +1,13 @@
 package common
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // SSRFProtection SSRF防护配置
@@ -167,6 +169,9 @@ func parsePortRanges(portConfigs []string) ([]int, error) {
 
 			if startPort < 1 || startPort > 65535 || endPort < 1 || endPort > 65535 {
 				return nil, fmt.Errorf("port range %s contains invalid port numbers (must be 1-65535)", config)
+			}
+			if endPort-startPort > 1000 {
+				return nil, fmt.Errorf("port range %s too large (max 1000 ports)", config)
 			}
 
 			// 添加范围内的所有端口
@@ -363,12 +368,16 @@ func (p *SSRFProtection) ValidateURL(urlStr string) error {
 		return nil
 	}
 
-	// 解析域名对应IP并检查
-	ips, err := net.LookupIP(host)
+	// 解析域名对应IP并检查（带超时避免 DNS 挂死）
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	resolver := &net.Resolver{}
+	addrs, err := resolver.LookupIPAddr(ctx, host)
 	if err != nil {
 		return fmt.Errorf("DNS resolution failed for %s: %v", host, err)
 	}
-	for _, ip := range ips {
+	for _, addr := range addrs {
+		ip := addr.IP
 		if err := p.ValidateResolvedIP(host, ip); err != nil {
 			return err
 		}

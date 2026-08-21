@@ -11,7 +11,7 @@ import (
 var relayGoPool gopool.Pool
 
 func init() {
-	relayGoPool = gopool.NewPool("gopool.RelayPool", math.MaxInt32, gopool.NewConfig())
+	relayGoPool = gopool.NewPool("gopool.RelayPool", 10000, gopool.NewConfig())
 	relayGoPool.SetPanicHandler(func(ctx context.Context, i interface{}) {
 		if stopChan, ok := ctx.Value("stop_chan").(chan bool); ok {
 			SafeSendBool(stopChan, true)

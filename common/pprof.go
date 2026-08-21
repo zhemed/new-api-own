@@ -14,17 +14,24 @@ func Monitor() {
 	for {
 		percent, err := cpu.Percent(time.Second, false)
 		if err != nil {
-			panic(err)
+			SysLog("pprof monitor cpu.Percent failed: " + err.Error())
+			time.Sleep(30 * time.Second)
+			continue
 		}
 		if percent[0] > 80 {
-			fmt.Println("cpu usage too high")
-			// write pprof file
+			SysLog(fmt.Sprintf("cpu usage too high: %.2f%%", percent[0]))
 			if _, err := os.Stat("./pprof"); os.IsNotExist(err) {
 				err := os.Mkdir("./pprof", os.ModePerm)
 				if err != nil {
 					SysLog("创建pprof文件夹失败 " + err.Error())
 					continue
 				}
+			}
+			// cap pprof files to avoid filling disk (max 10 files)
+			if entries, err := os.ReadDir("./pprof"); err == nil && len(entries) > 10 {
+				SysLog(fmt.Sprintf("pprof directory has %d files, skip new profile", len(entries)))
+				time.Sleep(30 * time.Second)
+				continue
 			}
 			f, err := os.Create("./pprof/" + fmt.Sprintf("cpu-%s.pprof", time.Now().Format("20060102150405")))
 			if err != nil {
@@ -34,11 +41,12 @@ func Monitor() {
 			err = pprof.StartCPUProfile(f)
 			if err != nil {
 				SysLog("启动pprof失败 " + err.Error())
+				_ = f.Close()
 				continue
 			}
-			time.Sleep(10 * time.Second) // profile for 30 seconds
+			time.Sleep(10 * time.Second)
 			pprof.StopCPUProfile()
-			f.Close()
+			_ = f.Close()
 		}
 		time.Sleep(30 * time.Second)
 	}
