@@ -28,7 +28,6 @@ docker login ghcr.io -u zhemed
 
 docker run -d --name new-api --restart always \
   -p 3000:3000 \
-  -e TZ=Asia/Shanghai \
   -v ./data:/data \
   ghcr.io/zhemed/new-api-own:latest
 ```
