@@ -23,7 +23,7 @@ A self-hosted LLM gateway and AI asset management platform: multi-model aggregat
 
 ```bash
 docker run -d --name new-api --restart always \
-  -p 3000:3000 \
+  --network host \
   -v ./data:/data \
   ghcr.io/zhemed/new-api-own:latest
 ```
@@ -40,7 +40,8 @@ cd new-api-own
 # Single-container build and run
 docker build -t new-api-own .
 docker run -d --name new-api --restart always \
-  -p 3000:3000 -v ./data:/data new-api-own
+  --network host \
+  -v ./data:/data new-api-own
 ```
 
 ### Production deployment reference
