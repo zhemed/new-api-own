@@ -13,7 +13,7 @@
 ## 项目是什么
 
 自用 LLM 网关与 AI 资产管理平台（Go + React）：多模型聚合、Key 管理、计费与分发、API 格式转换（OpenAI ⇄ Claude、OpenAI → Gemini）、授权登录、智能路由、思考模式支持。
-- 后端：Go 1.22+、Gin、GORM v2；前端：React 19 + TS + Rsbuild（`web/`，包管理用 Bun）
+- 后端：Go 1.25.1、Gin、GORM v2；前端：React 19 + TS + Rsbuild（`web/`，包管理用 Bun）
 - 数据库：SQLite / MySQL / PostgreSQL 三库兼容；缓存：Redis + 内存
 - 独立模块：`relaykit/`（不得依赖根模块，改动后必须 `GOWORK=off` 单独构建）
 - 部署：公开镜像 `ghcr.io/zhemed/new-api-own`（无需登录，直接拉取），docker-compose 用 host 网络
