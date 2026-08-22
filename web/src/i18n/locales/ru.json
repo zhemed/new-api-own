@@ -5248,7 +5248,9 @@
     "Zero retention": "Без хранения данных",
     "Zhipu": "Zhipu",
     "Zhipu V4": "Zhipu V4",
-    "Zoom": "Zoom"
+    "Zoom": "Zoom",
+    "OAuth": "OAuth",
+    "Resize column": "Изменить размер столбца"
   },
   "Never": "Никогда"
 }

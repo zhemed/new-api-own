@@ -5248,7 +5248,9 @@
     "Zero retention": "データ保持なし",
     "Zhipu": "Zhipu",
     "Zhipu V4": "Zhipu V 4",
-    "Zoom": "ズーム"
+    "Zoom": "ズーム",
+    "OAuth": "OAuth",
+    "Resize column": "列のサイズを変更"
   },
   "Never": "無期限"
 }
