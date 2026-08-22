@@ -1,11 +1,11 @@
 package jimeng
 
 import (
+	"github.com/QuantumNous/new-api/common"
 	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -41,7 +41,7 @@ import (
 const HexPayloadHashKey = "HexPayloadHash"
 
 func SetPayloadHash(c *gin.Context, req any) error {
-	body, err := json.Marshal(req)
+	body, err := common.Marshal(req)
 	if err != nil {
 		return err
 	}
