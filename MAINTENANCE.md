@@ -132,6 +132,65 @@ deepseek-v4 已配置（2026-08-17 官方**美元**定价，英文站价格表�
 - UI 校验：flash 输入 $0.22/M、补全 $0.66/M、缓存 $0.007/M ✅（官方英文站价，峰值 UTC 01:00-04:00/06:00-10:00 为 2 倍）
 - 注意：官方中文站是人民币价（1.5/4.5 元），英文站是美元价（$0.22/$0.66），两者汇率口径略有差异（≈6.8）；本仓库按美元价配置
 
+## OpenCode Go 会话头（`x-opencode-session`）
+
+OpenCode Go（`https://opencode.ai/zen/go`）自 2026-09-05 起要求每个请求携带会话标识，缺失时上游返回：
+
+```
+400 MissingSessionID: Error from provider (Console Go): Request is missing
+x-opencode-session and cannot be routed efficiently
+```
+
+该头不是鉴权，而是**上游 GPU 提示缓存的路由亲和键**：同一对话的多轮请求带同一个 ID 才能复用显存里的 KV 缓存。
+
+### 两个容易混淆的字段
+
+| 字段 | 结构 | 说明 |
+|---|---|---|
+| `header_override` | 扁平 map `{"头名": "字符串值"}` | 值为非字符串会报 `ChannelHeaderOverrideInvalid`；键 `*` / `re:<regex>` / `regex:<regex>` 是透传规则（值被忽略） |
+| `param_override` | `{"operations": [...]}` | 通用操作流，按数组顺序执行（`pass_headers` / `set_header` / `copy_header` …） |
+
+**不要混用**：把 operations 数组写进 `header_override` 会因值不是字符串而校验失败；`header_override` 的占位符语法在 `param_override` 里也不生效。
+
+### 推荐配置（`header_override`，单条搞定）
+
+```json
+{
+  "x-opencode-session": "{client_header:x-opencode-session|opencode-go-fallback}"
+}
+```
+
+语义：客户端带了 `x-opencode-session` 就用客户端的（**每对话独立，缓存亲和完整**）；没带则填 `opencode-go-fallback`（避免 400，代价是该类客户端**共用一个缓存桶**）。
+
+### 等价配置（`param_override` operations）
+
+面板「参数覆盖」内置预设 **OpenCode Go Session Header** 可直接套用，展开为：
+
+```json
+{"operations":[
+  {"mode":"pass_headers","value":["x-opencode-session","Session-Id","X-Session-Id"],"keep_origin":true},
+  {"mode":"set_header","path":"x-opencode-session","value":"opencode-go-fallback","keep_origin":true}
+]}
+```
+
+> ⚠️ **顺序不可颠倒**：`pass_headers` 必须在前，`set_header`（`keep_origin: true`）在后。
+> 写反了兜底值会压过客户端值，退化成「所有对话共用一个会话 ID」——功能不报错，但缓存亲和全丢。
+> 该 operations 形式在「测试渠道」时同样生效；`header_override` 的**无兜底**占位符在测试渠道时会被跳过（测试请求没有真实客户端头），带 `|DEFAULT` 的形态不受影响。
+
+### 上游行为实测（2026-09-12，直连上游对照实验）
+
+1. 上游**不挑头名**：`x-opencode-session`、`Session-Id`、`X-Session-Id`、`Session_id` 均返回 200；`Thread-Id` 不认。
+2. 只给 `claude-cli` / `codex_cli_rs` 的 `User-Agent` **不能**替代会话头，仍 400。
+3. **`x-opencode-session` 参与上游缓存键，`Session-Id` 不参与**：固定长前缀下换 `Session-Id` 仍命中缓存（4608 tokens），换 `x-opencode-session` 则命中为 0。走原生 `Session-Id` 的客户端只是「不报错」，缓存仍是共享的。
+4. 两个头同时存在时 `x-opencode-session` 优先。
+5. 缓存读取价约为输入价的 1/10，所以命中与否则是实打实的成本差异。
+
+### 诊断手法（可复用）
+
+要确认网关究竟发出了哪些头，**架本地探针比翻二进制快得多**：起一个打印请求头的临时 HTTP 服务，把渠道 `base_url` 临时指向它，发一次请求后读探针日志，最后还原 `base_url`。本次结论 5 即由此得出（探针只看到 `User-Agent: Go-http-client/1.1` + `Authorization` + `Content-Type`）。
+
+> 注意：通过 `ssh 'bash -s' < script` 跑远端脚本时，不需要 stdin 的 `docker run` 必须加 `< /dev/null`，否则容器会吞掉脚本剩余内容，表现为执行中途静默截断。
+
 ## 自用部署注意事项
 
 - docker-compose 中 `CRITICAL_RATE_LIMIT_ENABLE=false` 是**有意的自用配置**（内网信任环境、方便频繁操作），不是缺陷；若仓库公开或对外提供服务需重新评估

@@ -352,6 +352,39 @@ const CLAUDE_CLI_HEADER_PASSTHROUGH_TEMPLATE = buildPassHeadersTemplate(
   CLAUDE_CLI_HEADER_PASSTHROUGH_HEADERS
 )
 
+// OpenCode Go rejects requests that carry no session identifier with
+// "MissingSessionID". It accepts its own header name as well as the native
+// session headers of Codex-style clients, so forward whichever one the client
+// already sends and only fall back to a stable value when none is present.
+// The fallback is shared by every client that sends no session header, which
+// costs per-conversation prompt-cache affinity; clients that send their own
+// value keep full isolation.
+const OPENCODE_GO_SESSION_HEADERS = [
+  'x-opencode-session',
+  'Session-Id',
+  'X-Session-Id',
+]
+
+const OPENCODE_GO_SESSION_TEMPLATE = {
+  operations: [
+    {
+      description:
+        'Forward the session identifier the client already sends, if any.',
+      mode: 'pass_headers',
+      value: [...OPENCODE_GO_SESSION_HEADERS],
+      keep_origin: true,
+    },
+    {
+      description:
+        'Fill x-opencode-session for clients that send no session header.',
+      mode: 'set_header',
+      path: 'x-opencode-session',
+      value: 'opencode-go-fallback',
+      keep_origin: true,
+    },
+  ],
+}
+
 const AWS_BEDROCK_ANTHROPIC_COMPAT_TEMPLATE = {
   operations: [
     {
@@ -436,6 +469,11 @@ const TEMPLATE_PRESET_CONFIG: Record<string, TemplatePresetConfig> = {
     label: 'Codex CLI Header Passthrough',
     kind: 'operations',
     payload: CODEX_CLI_HEADER_PASSTHROUGH_TEMPLATE,
+  },
+  opencode_go_session: {
+    label: 'OpenCode Go Session Header',
+    kind: 'operations',
+    payload: OPENCODE_GO_SESSION_TEMPLATE,
   },
   aws_bedrock_anthropic_beta_override: {
     label: 'AWS Bedrock Claude Compat',

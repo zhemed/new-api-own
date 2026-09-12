@@ -144,24 +144,55 @@ func shouldSkipPassthroughHeader(name string) bool {
 	return false
 }
 
+// clientHeaderPlaceholder is a parsed {client_header:NAME} or
+// {client_header:NAME|DEFAULT} placeholder.
+type clientHeaderPlaceholder struct {
+	name        string
+	fallback    string
+	hasFallback bool
+}
+
+// parseClientHeaderPlaceholder parses a client_header placeholder that must
+// occupy the whole override value. The optional part after "|" is used when
+// the incoming request carries no value for name.
+func parseClientHeaderPlaceholder(template string) (clientHeaderPlaceholder, error) {
+	body, ok := strings.CutPrefix(template, clientHeaderPlaceholderPrefix)
+	if !ok || !strings.HasSuffix(body, "}") {
+		return clientHeaderPlaceholder{}, fmt.Errorf("client_header placeholder must be the full value: %q", template)
+	}
+
+	body = body[:len(body)-1]
+	name, fallback, hasFallback := strings.Cut(body, "|")
+	placeholder := clientHeaderPlaceholder{
+		name:        strings.TrimSpace(name),
+		fallback:    strings.TrimSpace(fallback),
+		hasFallback: hasFallback,
+	}
+	if placeholder.name == "" {
+		return clientHeaderPlaceholder{}, fmt.Errorf("client_header placeholder name is empty: %q", template)
+	}
+	return placeholder, nil
+}
+
 func applyHeaderOverridePlaceholders(template string, c *gin.Context, apiKey string) (string, bool, error) {
 	trimmed := strings.TrimSpace(template)
 	if strings.HasPrefix(trimmed, clientHeaderPlaceholderPrefix) {
-		afterPrefix := trimmed[len(clientHeaderPlaceholderPrefix):]
-		end := strings.Index(afterPrefix, "}")
-		if end < 0 || end != len(afterPrefix)-1 {
-			return "", false, fmt.Errorf("client_header placeholder must be the full value: %q", template)
+		placeholder, err := parseClientHeaderPlaceholder(trimmed)
+		if err != nil {
+			return "", false, err
 		}
 
-		name := strings.TrimSpace(afterPrefix[:end])
-		if name == "" {
-			return "", false, fmt.Errorf("client_header placeholder name is empty: %q", template)
-		}
 		if c == nil || c.Request == nil {
+			if placeholder.hasFallback {
+				return placeholder.fallback, true, nil
+			}
 			return "", false, fmt.Errorf("missing request context for client_header placeholder")
 		}
-		clientHeaderValue := c.Request.Header.Get(name)
+		clientHeaderValue := c.Request.Header.Get(placeholder.name)
 		if strings.TrimSpace(clientHeaderValue) == "" {
+			if placeholder.hasFallback {
+				return placeholder.fallback, true, nil
+			}
 			return "", false, nil
 		}
 		// Do not interpolate {api_key} inside client-supplied content.
@@ -181,12 +212,16 @@ func applyHeaderOverridePlaceholders(template string, c *gin.Context, apiKey str
 // Supported placeholders:
 //   - {api_key}: resolved to the channel API key
 //   - {client_header:<name>}: resolved to the incoming request header value
+//   - {client_header:<name>|<default>}: same, but falls back to <default> when the
+//     incoming request carries no value for <name>
 //
 // Header passthrough rules (keys only; values are ignored):
 //   - "*": passthrough all incoming headers by name (excluding unsafe headers)
 //   - "re:<regex>" / "regex:<regex>": passthrough headers whose names match the regex (Go regexp)
 //
 // Passthrough rules are applied first, then normal overrides are applied, so explicit overrides win.
+// A placeholder without a fallback resolves to "skip this override" when the client
+// header is absent; with a fallback it always contributes a value.
 func processHeaderOverride(info *common.RelayInfo, c *gin.Context) (map[string]string, error) {
 	headerOverride := make(map[string]string)
 	if info == nil {
@@ -271,7 +306,13 @@ func processHeaderOverride(info *common.RelayInfo, c *gin.Context) (map[string]s
 			return nil, types.NewError(nil, types.ErrorCodeChannelHeaderOverrideInvalid)
 		}
 		if info.IsChannelTest && strings.HasPrefix(strings.TrimSpace(str), clientHeaderPlaceholderPrefix) {
-			continue
+			// A channel test has no client request to read headers from, so the plain
+			// form is skipped. A placeholder with an explicit fallback still has a
+			// value to contribute, so it is resolved normally.
+			placeholder, parseErr := parseClientHeaderPlaceholder(strings.TrimSpace(str))
+			if parseErr != nil || !placeholder.hasFallback {
+				continue
+			}
 		}
 
 		value, include, err := applyHeaderOverridePlaceholders(str, c, info.ApiKey)
