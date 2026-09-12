@@ -191,3 +191,117 @@ func TestProcessHeaderOverride_PassHeadersTemplateSetsRuntimeHeaders(t *testing.
 	require.Equal(t, "sess-123", upstreamReq.Header.Get("Session_id"))
 	require.Empty(t, upstreamReq.Header.Get("X-Codex-Beta-Features"))
 }
+
+func TestProcessHeaderOverride_ClientHeaderPlaceholderFallback(t *testing.T) {
+	t.Parallel()
+
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name        string
+		clientValue string
+		override    string
+		expected    string
+		expectSet   bool
+	}{
+		{
+			name:        "client value wins when present",
+			clientValue: "session-from-client",
+			override:    "{client_header:x-opencode-session|fallback-session}",
+			expected:    "session-from-client",
+			expectSet:   true,
+		},
+		{
+			name:      "fallback applies when client header is absent",
+			override:  "{client_header:x-opencode-session|fallback-session}",
+			expected:  "fallback-session",
+			expectSet: true,
+		},
+		{
+			name:      "fallback is used verbatim without api_key interpolation",
+			override:  "{client_header:x-opencode-session|literal-{api_key}}",
+			expected:  "literal-{api_key}",
+			expectSet: true,
+		},
+		{
+			name:      "override is skipped when there is no fallback",
+			override:  "{client_header:x-opencode-session}",
+			expectSet: false,
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			recorder := httptest.NewRecorder()
+			ctx, _ := gin.CreateTestContext(recorder)
+			ctx.Request = httptest.NewRequest(http.MethodPost, "/v1/chat/completions", nil)
+			if tc.clientValue != "" {
+				ctx.Request.Header.Set("x-opencode-session", tc.clientValue)
+			}
+
+			info := &relaycommon.RelayInfo{
+				ChannelMeta: &relaycommon.ChannelMeta{
+					HeadersOverride: map[string]any{
+						"x-opencode-session": tc.override,
+					},
+				},
+			}
+
+			headers, err := processHeaderOverride(info, ctx)
+			require.NoError(t, err)
+
+			value, ok := headers["x-opencode-session"]
+			require.Equal(t, tc.expectSet, ok)
+			if tc.expectSet {
+				require.Equal(t, tc.expected, value)
+			}
+		})
+	}
+}
+
+func TestProcessHeaderOverride_ClientHeaderPlaceholderFallbackAppliesDuringChannelTest(t *testing.T) {
+	t.Parallel()
+
+	gin.SetMode(gin.TestMode)
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodPost, "/v1/chat/completions", nil)
+
+	info := &relaycommon.RelayInfo{
+		IsChannelTest: true,
+		ChannelMeta: &relaycommon.ChannelMeta{
+			HeadersOverride: map[string]any{
+				"X-Opencode-Session": "{client_header:x-opencode-session|channel-test-fallback}",
+				"X-No-Fallback":      "{client_header:x-absent}",
+			},
+		},
+	}
+
+	headers, err := processHeaderOverride(info, ctx)
+	require.NoError(t, err)
+	require.Equal(t, "channel-test-fallback", headers["x-opencode-session"])
+	_, exists := headers["x-no-fallback"]
+	require.False(t, exists)
+}
+
+func TestApplyHeaderOverridePlaceholders_RejectsMalformedClientHeaderPlaceholder(t *testing.T) {
+	t.Parallel()
+
+	gin.SetMode(gin.TestMode)
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodPost, "/v1/chat/completions", nil)
+
+	for _, template := range []string{
+		"{client_header:}",
+		"{client_header:|fallback}",
+		"{client_header:X-Trace",
+		"{client_header:X-Trace} trailing",
+	} {
+		_, _, err := applyHeaderOverridePlaceholders(template, ctx, "sk-test")
+		require.Error(t, err, "template %q must be rejected", template)
+	}
+}

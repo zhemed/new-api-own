@@ -4030,7 +4030,14 @@ export function ChannelMutateDrawer({
                                       <code className='bg-muted rounded px-1 py-0.5'>
                                         {'{client_header:NAME}'}
                                       </code>{' '}
-                                      — {t('Client header value')}
+                                      — {t('Client header value')},{' '}
+                                      <code className='bg-muted rounded px-1 py-0.5'>
+                                        {'{client_header:NAME|DEFAULT}'}
+                                      </code>{' '}
+                                      —{' '}
+                                      {t(
+                                        'Client header value, or DEFAULT when the client sends none'
+                                      )}
                                     </FormDescription>
                                     <FormMessage />
                                   </FormItem>
