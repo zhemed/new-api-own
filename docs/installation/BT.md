@@ -126,7 +126,7 @@ volumes:
 
 ```bash
 # 拉取最新镜像
-docker pull calciumion/new-api:latest
+docker pull ghcr.io/zhemed/new-api-own:latest
 
 # 重启容器
 docker-compose down && docker-compose up -d
