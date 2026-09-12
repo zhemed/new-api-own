@@ -9,26 +9,83 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestModelRedisRateLimitUsesUTCRegardlessOfLocalTimezone(t *testing.T) {
-	redisServer, redisClient := useRateLimitMiniRedis(t)
+func TestCheckRedisRateLimitAllowsUpToMaxCountThenRejects(t *testing.T) {
+	_, redisClient := useRateLimitMiniRedis(t)
+
+	ctx := context.Background()
+	key := "rateLimit:model-fixed-window"
+
+	for attempt := 1; attempt <= 2; attempt++ {
+		allowed, err := checkRedisRateLimit(ctx, redisClient, key, 2, 60)
+		require.NoError(t, err)
+		assert.True(t, allowed, "attempt %d must stay within the limit", attempt)
+	}
+
+	allowed, err := checkRedisRateLimit(ctx, redisClient, key, 2, 60)
+	require.NoError(t, err)
+	assert.False(t, allowed, "the attempt past maxCount must be rejected")
+
+	ttl, err := redisClient.TTL(ctx, key).Result()
+	require.NoError(t, err)
+	assert.Positive(t, ttl, "the counter must carry the window TTL")
+	assert.LessOrEqual(t, ttl, 60*time.Second)
+}
+
+func TestCheckRedisRateLimitSkipsCountingWhenMaxCountIsZero(t *testing.T) {
+	_, redisClient := useRateLimitMiniRedis(t)
+
+	ctx := context.Background()
+	key := "rateLimit:model-unlimited"
+
+	for attempt := 1; attempt <= 5; attempt++ {
+		allowed, err := checkRedisRateLimit(ctx, redisClient, key, 0, 60)
+		require.NoError(t, err)
+		assert.True(t, allowed, "maxCount=0 must not limit attempt %d", attempt)
+	}
+
+	exists, err := redisClient.Exists(ctx, key).Result()
+	require.NoError(t, err)
+	assert.Zero(t, exists, "maxCount=0 must not create a counter key")
+}
+
+func TestCheckRedisRateLimitKeepsPerKeyWindowsSeparate(t *testing.T) {
+	_, redisClient := useRateLimitMiniRedis(t)
+
+	ctx := context.Background()
+
+	allowed, err := checkRedisRateLimit(ctx, redisClient, "rateLimit:model-user-a", 1, 60)
+	require.NoError(t, err)
+	assert.True(t, allowed)
+
+	allowed, err = checkRedisRateLimit(ctx, redisClient, "rateLimit:model-user-b", 1, 60)
+	require.NoError(t, err)
+	assert.True(t, allowed, "a separate key must keep its own window")
+
+	allowed, err = checkRedisRateLimit(ctx, redisClient, "rateLimit:model-user-a", 1, 60)
+	require.NoError(t, err)
+	assert.False(t, allowed)
+}
+
+func TestCheckRedisRateLimitWindowIsIndependentOfLocalTimezone(t *testing.T) {
+	_, redisClient := useRateLimitMiniRedis(t)
+
 	previousLocation := time.Local
 	time.Local = time.FixedZone("test-utc-plus-eight", 8*60*60)
 	t.Cleanup(func() { time.Local = previousLocation })
 
 	ctx := context.Background()
-	recordKey := "rateLimit:model-utc-record"
-	recordRedisRequest(ctx, redisClient, recordKey, 2)
-	recorded, err := redisClient.LIndex(ctx, recordKey, 0).Result()
-	require.NoError(t, err)
-	recordedAt, err := time.Parse(modelRateLimitTimeFormat, recorded)
-	require.NoError(t, err)
-	assert.WithinDuration(t, time.Now().UTC(), recordedAt, 2*time.Second)
+	key := "rateLimit:model-timezone"
 
-	checkKey := "rateLimit:model-utc-check"
-	withinWindow := time.Now().UTC().Add(-30 * time.Second).Format(modelRateLimitTimeFormat)
-	_, err = redisServer.Push(checkKey, withinWindow, withinWindow)
+	allowed, err := checkRedisRateLimit(ctx, redisClient, key, 1, 60)
 	require.NoError(t, err)
-	allowed, err := checkRedisRateLimit(ctx, redisClient, checkKey, 2, 60)
+	assert.True(t, allowed)
+
+	allowed, err = checkRedisRateLimit(ctx, redisClient, key, 1, 60)
 	require.NoError(t, err)
-	assert.False(t, allowed, "an existing UTC timestamp inside the window must remain limited on a non-UTC host")
+	assert.False(t, allowed, "a non-UTC host must not widen the fixed window")
+
+	ttl, err := redisClient.TTL(ctx, key).Result()
+	require.NoError(t, err)
+	assert.Positive(t, ttl)
+	assert.LessOrEqual(t, ttl, 60*time.Second)
 }

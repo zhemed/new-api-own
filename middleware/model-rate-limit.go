@@ -19,7 +19,6 @@ import (
 const (
 	ModelRequestRateLimitCountMark        = "MRRL"
 	ModelRequestRateLimitSuccessCountMark = "MRRLS"
-	modelRateLimitTimeFormat              = "2006-01-02T15:04:05.000Z"
 )
 
 // 检查Redis中的请求限制 - Fixed window via atomic INCR+EXPIRE Lua (reuses GlobalWebRateLimit pattern)
@@ -56,17 +55,6 @@ func checkRedisRateLimit(ctx context.Context, rdb *redis.Client, key string, max
 	}
 	allowed, _ := res[0].(int64)
 	return allowed == 1, nil
-}
-
-// 记录Redis请求 - no-op with fixed-window Lua (check already increments).
-// Kept for compatibility with callers that expect separate record step.
-func recordRedisRequest(ctx context.Context, rdb *redis.Client, key string, maxCount int) {
-	if maxCount == 0 {
-		return
-	}
-	// No separate increment needed; checkRedisRateLimit already INCRs.
-	// Ensure expiry is set for keys created outside check path.
-	_ = rdb.Expire(ctx, key, time.Duration(setting.ModelRequestRateLimitDurationMinutes)*time.Minute).Err()
 }
 
 // Redis限流处理器
