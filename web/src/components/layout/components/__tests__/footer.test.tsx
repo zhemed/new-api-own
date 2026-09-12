@@ -23,12 +23,15 @@ import DOMPurify from 'dompurify'
 import { Window } from 'happy-dom'
 
 // Setup DOMPurify with happy-dom window
-const domWindow = new Window() as unknown as Window & typeof globalThis
-const purify = DOMPurify(domWindow as unknown as Window)
+// happy-dom's Window is structurally narrower than DOMPurify's WindowLike, so
+// bridge the two explicitly instead of casting to the DOM lib's Window.
+const domWindow = new Window() as unknown as Parameters<typeof DOMPurify>[0]
+const purify = DOMPurify(domWindow)
 
 describe('footer XSS sanitization', () => {
   test('sanitizes script tag injection', () => {
-    const malicious = '<img src=x onerror=alert(1)><script>alert(1)</script><p>safe</p>'
+    const malicious =
+      '<img src=x onerror=alert(1)><script>alert(1)</script><p>safe</p>'
     const sanitized = purify.sanitize(malicious)
     assert.equal(sanitized.includes('<script'), false)
     assert.equal(sanitized.includes('onerror'), false)
@@ -43,7 +46,8 @@ describe('footer XSS sanitization', () => {
   })
 
   test('preserves safe html attributes', () => {
-    const safe = '<a href="https://example.com" target="_blank" rel="noopener noreferrer">link</a><p>safe</p>'
+    const safe =
+      '<a href="https://example.com" target="_blank" rel="noopener noreferrer">link</a><p>safe</p>'
     const sanitized = purify.sanitize(safe)
     assert.equal(sanitized.includes('href="https://example.com"'), true)
     assert.equal(sanitized.includes('<p>safe</p>'), true)
