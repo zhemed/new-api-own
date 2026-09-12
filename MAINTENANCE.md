@@ -197,6 +197,73 @@ x-opencode-session and cannot be routed efficiently
 - 公开镜像可直接拉取，无需 `docker login`
 - 部署前确保 Docker 为标准版本（29.7.2 + v5.4.0）
 
+## 部署安全基线（必读）
+
+> 来源：2026-09-12 对线上实例（（实例域名已脱敏））的实测排查。**仓库当前配置默认不满足其中数项**，对外部署前请逐条确认。
+
+### 1. 面板端口默认暴露在公网 ⚠️
+
+`docker-compose.yml` 用 `network_mode: host`，NewAPI 自身直接监听 `*:3000`（所有网卡，含公网 IP）。
+
+**关键认知：反向代理（lucky / nginx / caddy）只是"额外开一个入口"，不会关闭这个直连端口。** 反代到 `127.0.0.1:3000` 与 `3000` 是否对外可达，是两件互相独立的事。
+
+实测证据（**从另一台机器**访问，不是服务器自测）：
+
+```
+http://<公网IP>:3000/   ->  HTTP 200      # 面板直连可达
+GET /api/status          ->  HTTP 200      # 无需登录即可读出大量配置
+```
+
+若主机又没有入站防火墙（nftables 里只有 Docker 的 FORWARD 链、没有 INPUT 链），入站流量将全部放行。
+
+加固二选一：
+
+```bash
+# 方案 A：保留 host 网络，用防火墙限制来源
+nft add table ip filter
+nft add chain ip filter INPUT '{ type filter hook input priority filter; policy accept; }'
+nft add rule ip filter INPUT iif lo accept
+nft add rule ip filter INPUT tcp dport 3000 drop      # 或改成白名单 accept
+
+# 方案 B（推荐）：只绑本地，交给反代转发
+# docker-compose.yml 中把 new-api 的 network_mode: host 改为：
+#   ports:
+#     - "127.0.0.1:3000:3000"
+# 注意：此时 redis / postgres 不能再依赖 host 网络，需一并改为容器网络 + 内部地址
+```
+
+### 2. 数据目录含明文密钥，必须收紧权限
+
+`data/one-api.db`（SQLite 模式）中**上游渠道 API Key 是明文存储**的，`users` / `tokens` 表还含可用凭据；`data/` 下的备份文件同样带密钥。默认权限下同机任何用户都可读取。
+
+```bash
+chmod 700 data data/logs data/backup 2>/dev/null
+chmod 600 data/*.db data/logs/* data/backup/* 2>/dev/null
+```
+
+> 真正的防线是**目录 700**：即使应用后续新建的日志文件又是 644，非 root 也无法遍历进入该目录。
+
+### 3. 容器以 root 运行
+
+`Dockerfile` 未设置 `USER`，容器内进程为 `uid=0`，会放大上面「数据权限」与「挂载目录」两项的影响面。如需收紧，可在运行阶段创建非 root 用户并保证 `/data` 属主匹配。
+
+### 4. 默认口令必须替换
+
+compose 中 Postgres / Redis 口令均为 `123456`，仅有一行注释提醒。对外提供服务前务必替换，并同步修改 `SQL_DSN` 与 `REDIS_CONN_STRING`。
+
+### 5. 部署自检清单
+
+```bash
+# 端口暴露面（应只看到预期开放的口）
+ss -tulnp | grep -E ':(3000|6379|5432)'
+
+# 是否存在入站防火墙
+nft list ruleset | grep -q 'hook input' || echo '⚠️ 无 INPUT 链，入站全放行'
+
+# 数据文件权限（应为 700 / 600）
+stat -c '%A %n' data data/*.db 2>/dev/null
+```
+
 ## 工作流
 
 1. 改代码 → 涉及文件 lint 0 error + typecheck 通过 → 相关 Go 测试/前端测试

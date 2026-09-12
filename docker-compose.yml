@@ -1,4 +1,4 @@
-# Docker 环境标准：Docker 29.7.2 + Compose v5.4.0（部署前运行 ./check-docker-env.sh 校验）
+# Docker 环境标准：Docker 29.7.2 + Compose v5.4.0（一键安装见 install-docker.sh）
 # New-API Docker Compose Configuration (host network mode)
 #
 # Host network deployment (mirrors the setup on （内网地址已脱敏）):
@@ -9,6 +9,22 @@
 # Uses our own image: ghcr.io/zhemed/new-api-own:latest
 #
 # IMPORTANT: change all default passwords (123456) before production!
+#
+# SECURITY - host networking puts the panel on every interface.
+#   new-api listens on *:3000, so http://<public-ip>:3000/ is reachable from the
+#   internet unless the host firewall blocks it; a reverse proxy in front does NOT
+#   close that direct port. /api/status also answers without authentication, so an
+#   exposed panel leaks configuration. Minimal hardening (keep host networking):
+#     nft add table ip filter
+#     nft add chain ip filter INPUT '{ type filter hook input priority filter; policy accept; }'
+#     nft add rule ip filter INPUT iif lo accept
+#     nft add rule ip filter INPUT tcp dport 3000 drop
+#   To bind loopback only, drop `network_mode: host` for new-api and use
+#     ports: ["127.0.0.1:3000:3000"]
+#   (redis/postgres must then move off host networking as well).
+#   Data files hold plaintext upstream API keys - keep them root-only:
+#     chmod 700 data data/logs && chmod 600 data/*.db data/logs/*
+#   See the "部署安全基线" section in MAINTENANCE.md.
 
 services:
   new-api:
