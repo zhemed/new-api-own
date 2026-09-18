@@ -389,3 +389,33 @@ Read-only discovery first, then replaced the stale v0.0.2 container with the reb
 ### Status
 
 [OK] **Completed**
+
+
+## Session 18: 实装 /opt/docker/new-api-own 并修预检误报
+<!-- trellis-session: v=2 fp=49eb0555ec586ff6 -->
+
+**Date**: 2026-09-18
+**Task**: 实装 /opt/docker/new-api-own 并修预检误报
+**Branch**: `main`
+
+### Summary
+
+用发布的一行命令实装到 /opt/docker/new-api-own，实装当场暴露一个 E2E 没覆盖到的缺陷并修掉。
+
+缺陷：预检用 docker inspect，而它**同时匹配容器与镜像**；本项目的容器名 redis / postgres 与 docker-compose.yml 自己要拉的镜像（redis:latest、postgres:15）同名 —— 镜像一旦存在（第一次部署后必然如此），预检就把镜像当容器，永远报「已有同名容器」，脚本从第二次起不可再运行。上一轮带 --name-prefix 的 E2E 恰好绕开了这个组合（e2e-redis ≠ 镜像 redis），所以没测出来。修法：4 处改 docker container inspect（含提示文案里的示例命令）。判别性验证：docker inspect redis → exit=0（误报可复现）；docker container inspect redis → exit≠0（放行）；真有同名容器 → exit=0（仍拦下）。
+
+实装结果：new-api / postgres / redis 三容器起来、new-api healthy、GET /api/status 200、重跑正确报「已有部署拒绝覆盖」而非撞名；权限 750/700/600；komari 与 litepan 未受影响。过程中两次失败运行留下的半成品（/opt/docker/new-api-own 下仅本脚本写入的 compose/.env/data/logs）已清理后重装。
+
+环境注意（非仓库问题）：raw.githubusercontent.com 对 main 的 install-compose.sh 有 CDN 缓存，推送后仍发旧版；本次实装改用按提交 SHA 钉住的 URL 取到修好的脚本。文档本就建议钉 ref，此处再证一次。main 的 docker-compose.yml 缓存是新的。
+
+教训（值得记住的形状）：E2E 为了不碰真实部署而加的名字前缀，会把「容器名与镜像名同名」这类冲突整类屏蔽掉 —— 用与生产一致的名字做的边界，必须单独补一条不依赖前缀的验证。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c69e351` | fix(deploy): 预检改用 docker container inspect [task:precheck-container-inspect] |
+
+### Status
+
+[OK] **Completed**
