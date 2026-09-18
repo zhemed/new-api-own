@@ -26,6 +26,52 @@
 | Bun | `~/.bun/bin/bun`（1.3.14），所有前端命令前需 `export HOME=/root` |
 | GitHub 公开仓库 | 克隆无需凭据（`git clone https://github.com/zhemed/new-api-own.git`），推送需带 token（`https://zhemed:<token>@...`，token 在 `（本机凭据文件）`） |
 
+## 维护者接入（其他人 clone 之后如何开始）
+
+仓库自带全部工作流产物：`.trellis/`（流程、规范、归档任务、journal）、`.dsh/skills/` 与 `.agents/skills/`（Trellis 技能）。**每台机器只需初始化一次开发者身份**（2026-09-18 在全新 clone 上实测通过）：
+
+```bash
+npm i -g @mindfoldhq/trellis          # 技能与脚本的运行器（本机 0.6.17）
+git clone https://github.com/zhemed/new-api-own.git
+cd new-api-own
+trellis init --dsh -u <你的开发名> -s -y   # -s 跳过已存在文件；-y 跳过模板选择，不会覆盖仓库内容
+```
+
+在已有 `.trellis/` 的仓库上，`trellis init` 会：
+
+- 写入本机身份 `.trellis/.developer`（被 `.trellis/.gitignore` 忽略，不进仓库）
+- 创建 `.trellis/workspace/<开发名>/` 个人 journal
+- 自动创建 `00-join-<开发名>` 接入任务（in_progress），由 AI 会话带着读完项目上下文
+- 更新 `.trellis/.template-hashes.json`（模板追踪文件，属于正常现象；可提交，也可 `git checkout -- .trellis/.template-hashes.json` 还原）
+
+之后每次工作都走同一套任务流程（dsh 里直接让 agent 加载 `trellis-start` 技能，或手工执行）：
+
+```bash
+python3 .trellis/scripts/task.py create "<标题>" --slug <slug> -d "<描述>"
+python3 .trellis/scripts/task.py start <MM-DD-slug>        # → in_progress，先写 prd.md
+# … 实现 → 质量校验（go vet / go build / make test；前端 bun run typecheck / bun test）…
+python3 .trellis/scripts/task.py finish
+python3 .trellis/scripts/task.py archive <MM-DD-slug> --skip-branch-validation
+python3 .trellis/scripts/add_session.py --title "<本次标题>" --commit <sha>
+```
+
+随仓库分发 vs 只在本机：
+
+| 随仓库分发（提交进 git） | 只在本机（`.trellis/.gitignore`） |
+|---|---|
+| `.trellis/spec/` 规范、`.trellis/workflow.md`、`.trellis/config.yaml`、`.trellis/scripts/` | `.trellis/.developer` 开发者身份 |
+| `.trellis/tasks/archive/` 历史任务（含 PRD 与验收结论） | `.trellis/.current-task` 当前任务指针 |
+| `.trellis/workspace/<开发名>/` 各人 journal | `.trellis/.runtime/`、`__pycache__/` 等运行时文件 |
+| `.dsh/skills/`、`.agents/skills/` 技能，`AGENTS.md` 内的 Trellis 托管块 | |
+
+CI 需要的一次性仓库设置（仓库所有者操作）：
+
+- 允许 Actions 运行；本仓库工作流自带 `permissions:`（Release 需要 `contents: write`，镜像发布需要 `packages: write`）
+- GHCR 包 `new-api-own` 需与本仓库关联，或配置 `GHCR_TOKEN` secret（带 `write:packages`），否则 tag 构建推送镜像会 403；v0.0.2 已用内置 `GITHUB_TOKEN` 推送成功，说明当前关联有效
+- 可选：设置仓库变量 `GITCODE_REPOSITORY` 后，`Sync Release to GitCode` 工作流才会把每次 Release 同步到 GitCode（未设置时该工作流整体 skip）
+
+发版流程见下一节。
+
 ## 构建与测试
 
 ```bash
