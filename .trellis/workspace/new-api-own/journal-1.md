@@ -135,3 +135,23 @@ Ported the komari-style three-layer gate: .githooks/pre-commit + commit-msg reje
 ### Status
 
 [OK] **Completed**
+
+
+## Session 7: Investigation: x-opencode-session / （实例兜底值已脱敏） channel override
+<!-- trellis-session: v=2 fp=1041b2c7f8a1658f -->
+
+**Date**: 2026-09-18
+**Task**: Investigation: x-opencode-session / （实例兜底值已脱敏） channel override
+**Branch**: `main`
+
+### Summary
+
+Read-only investigation. The live （实例域名已脱敏） gateway runs a single channel (id=1 （渠道名已脱敏）, type=NewAPI, base_url https://opencode.ai/zen/go) whose param_override passes through x-opencode-session/Session-Id/X-Session-Id and falls back to the literal （实例兜底值已脱敏） when the client sends none. Evidence from the 2026-09-16 DB backup: the value appears exactly once in channels.param_override; the 09-12 00:41 backup is empty while the 10:41 one already has it, and commit 25c9aa1 (09-12 11:05) turned it into the reusable {client_header:NAME|DEFAULT} placeholder plus panel preset and the MAINTENANCE.md chapter. Upstream therefore sees our egress IP plus a session id, with the documented cost that every client without its own header shares one prompt-cache bucket. Blind spot: the value could not be re-read from the live DB (no SSH key to （内网地址已脱敏）); the live /api/status reports an empty version, i.e. an image built before the 09-12 version fill.
+
+### Git Commits
+
+(No commits - planning session)
+
+### Status
+
+[OK] **Completed**
