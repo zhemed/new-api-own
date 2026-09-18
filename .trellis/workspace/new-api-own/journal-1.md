@@ -259,3 +259,23 @@ User confirmed the docker run command was never executed, so no rollback or clea
 ### Status
 
 [OK] **Completed**
+
+
+## Session 13: Rebuilt the v0.0.3 image so latest points at 0.0.3 again
+<!-- trellis-session: v=2 fp=6659d5e20a412a8c -->
+
+**Date**: 2026-09-18
+**Task**: Rebuilt the v0.0.3 image so latest points at 0.0.3 again
+**Branch**: `main`
+
+### Summary
+
+The registry latest tag had regressed to v0.0.2 because a single force-push of both tags triggered two docker-build runs and the v0.0.2 run recreated latest last. Per the task PRD I did exactly one thing: dispatched docker-build for tag v0.0.3 (run 35319659491, success). Verified read-only afterwards that latest, 0.0.3 and v0.0.3 all report v0.0.3 and share digest sha256:3d04916fe29a32f89..., and that the GitHub Release v0.0.3 with its 7 assets was untouched. The structural change so an older tag can never move latest again was left out of scope on purpose.
+
+### Git Commits
+
+(No commits - planning session)
+
+### Status
+
+[OK] **Completed**
