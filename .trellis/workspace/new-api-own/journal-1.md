@@ -197,3 +197,25 @@ Ran the maintenance round and shipped 0.0.3: backend gates all green (go vet/bui
 ### Status
 
 [OK] **Completed**
+
+
+## Session 10: Purged deployment details from the repo and rewrote history
+<!-- trellis-session: v=2 fp=40754f8137fe8215 -->
+
+**Date**: 2026-09-18
+**Task**: Purged deployment details from the repo and rewrote history
+**Branch**: `main`
+
+### Summary
+
+Sanitized every tracked file (MAINTENANCE.md, archived task PRDs, journals) and added a hard rule that deployment facts never enter this public repo, backed by a self-check command in MAINTENANCE.md and the AGENTS.md gate block. Then rewrote all reachable history with git filter-repo (two passes, blobs plus commit messages) and force-pushed main and both tags: every commit reachable from refs is now clean, releases survived and all workflows re-ran green. Caveat recorded honestly: GitHub still serves the old dangling objects by SHA until Support purges them, and a local mirror backup of the old history remains in /tmp.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d2ca7cf` | chore(privacy): 清除仓库内的部署细节污染并立规则 [task:purge-deploy-details] |
+
+### Status
+
+[OK] **Completed**
