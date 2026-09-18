@@ -23,7 +23,7 @@
 - 备份：`/tmp/new-api-own-backup.git`（`git clone --mirror`，含全部 refs/tags，110 个提交）
 - 第一轮替换 7 个字符串；第二轮补掉裸串（第一轮只覆盖了带后缀的完整值）
 - 验证方式：对每个目标串做 `git rev-list --all` 逐提交 `git grep`，全部 0 处；
-  提交消息扫描 0 处；`go.sum` 里的 base64 巧合（`RFSmiioY6Uoo…`）**未被误改**
+  提交消息扫描 0 处；`go.sum` 里的 base64 哈希巧合（含目标字串的随机片段）**未被误改**
 - 主分支与两个 tag 强推成功：`main → cc6816e`、`v0.0.2 → 4d95e4f`、`v0.0.3 → 8a99114`
 - `.trellis/gates/enforce-from` 更新为重写后的闸门提交 SHA（`3b658688…`），本地与 CI 审计均通过
 
