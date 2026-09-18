@@ -31,11 +31,11 @@
 |---|------|-------|---------|--------|
 | 9 | 2026-09-18 | Maintenance round: released v0.0.3 | `3471112` | `main` |
 | 8 | 2026-09-18 | Status check: v0.0.3 not released yet | - | `main` |
-| 7 | 2026-09-18 | Investigation: x-opencode-session / （实例兜底值已脱敏） channel override | - | `main` |
+| 7 | 2026-09-18 | Investigation: x-opencode-session / 实例专属兜底值 channel override | - | `main` |
 | 6 | 2026-09-18 | Trellis commit gate enabled (3 layers) | `47c61db` | `main` |
 | 5 | 2026-09-18 | Maintainer onboarding flow documented and verified | `2bc0e1a` | `main` |
 | 4 | 2026-09-18 | Release v0.0.2: dual image tags, GitHub Release, version-injection fix | `6829e8e` | `main` |
-| 3 | 2026-09-18 | Audit: VERSION 0.0.1 origin and the （内网地址已脱敏） reference | - | `main` |
+| 3 | 2026-09-18 | Audit: VERSION 0.0.1 origin and the 线上主机 reference | - | `main` |
 | 2 | 2026-09-18 | Disable global web/API/critical/search rate limiters | `a4e74df` | `main` |
 | 1 | 2026-09-18 | Trellis bootstrap: backend spec filled from real code | `8e62ba2` | `main` |
 <!-- @@@/auto:session-history -->

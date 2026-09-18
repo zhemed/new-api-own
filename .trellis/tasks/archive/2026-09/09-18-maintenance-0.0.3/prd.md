@@ -13,11 +13,11 @@
 - [x] `git remote -v` 只有 `origin` —— 未引入 upstream，本轮无 fetch/merge/rebase
 - [x] 四组限流开关仍为有意关闭：`common/init.go:125/129/133/137` 默认 `false` +
       `docker-compose.yml:46-49` 四个 `*=false`
-- [x] 部署安全基线：**部分复核** —— 从本机（（本机地址已脱敏））可无鉴权访问
-      `http://（内网地址已脱敏）:3000/api/status`（面板直连可达、/api/status 泄露配置），
-      与基线第 1 条一致；防火墙/公网视角需在 `（内网地址已脱敏）` 上跑 `nft list ruleset`，
+- [x] 部署安全基线：**部分复核** —— 从本机可无鉴权访问
+      `线上实例/api/status`（面板直连可达、/api/status 泄露配置），
+      与基线第 1 条一致；防火墙/公网视角需在 `线上主机` 上跑 `nft list ruleset`，
       **本机无该机 SSH 私钥（`Permission denied`），未做**
-- [~] 数据/日志权限（`chmod 700 data data/logs`）：需 SSH 到 `（内网地址已脱敏）`，同上未做
+- [~] 数据/日志权限（`chmod 700 data data/logs`）：需 SSH 到 `线上主机`，同上未做
 
 ### B. 依赖与工具链
 
@@ -37,7 +37,7 @@
       1. Go 版本 1.26.4 → 实测 1.26.6
       2. 标明本机没有 bun，前端检查需换机器
       3. 推送方式改为 `git -c credential.helper='!gh auth git-credential'`（旧记录的
-         `（本机凭据文件）` 在本机不存在，且 AGENTS.md 禁止改 git config）
+         旧文档记录的凭据文件在本机不存在，且 AGENTS.md 禁止改 git config）
 
 ### D. 发版 0.0.3
 
@@ -59,7 +59,7 @@
 
 ## 后续可选（另开任务，不在本轮）
 
-- 线上实例（（内网地址已脱敏））仍跑着 version 为空的旧镜像（早于 0.0.2），升级到 `ghcr.io/zhemed/new-api-own:0.0.3`
+- 线上实例仍跑着 version 为空的旧镜像（早于 0.0.2），升级到 `ghcr.io/zhemed/new-api-own:0.0.3`
   需要在那台机器上 `docker compose pull && docker compose up -d`（本机无 SSH 私钥）
 - 在有 bun 的机器上补跑前端 `typecheck` + `bun test`
 - 部署安全基线中依赖 SSH 的项目（防火墙规则、data/logs 权限）补做

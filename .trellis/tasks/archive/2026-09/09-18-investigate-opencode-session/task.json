@@ -1,8 +1,8 @@
 {
   "id": "investigate-opencode-session",
   "name": "investigate-opencode-session",
-  "title": "调查 x-opencode-session / （实例兜底值已脱敏） 渠道配置",
-  "description": "只读调查：查明『伪装 OpenCode 客户端访问 Zen 服务』的渠道配置从哪来——x-opencode-session 头的注入机制、（实例兜底值已脱敏） 这个值的来源、上游能看到什么、是不是有意配置、有没有风险",
+  "title": "调查 x-opencode-session / 实例专属兜底值 渠道配置",
+  "description": "只读调查：查明『伪装 OpenCode 客户端访问 Zen 服务』的渠道配置从哪来——x-opencode-session 头的注入机制、实例专属兜底值 这个值的来源、上游能看到什么、是不是有意配置、有没有风险",
   "status": "completed",
   "dev_type": null,
   "scope": null,

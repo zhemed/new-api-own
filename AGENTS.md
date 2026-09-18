@@ -209,4 +209,7 @@ Managed by Trellis. Edits outside this block are preserved; edits inside may be 
 4. **新克隆先装闸门**：`./scripts/install-git-hooks.sh`（`core.hooksPath` 是本地配置，不随仓库分发）。
 5. **不要用 `--no-verify` 绕过**：`./scripts/check-trellis-gate.sh` 与 `.github/workflows/trellis-gate.yml`
    会把漏锚点的提交扒出来并阻断。
+6. **部署细节不进仓库**（本仓库公开）：真实内网 IP / 内网域名 / 主机名、实例专属配置值、凭据位置、
+   运维机绝对路径，**连 `.trellis/` 的 PRD 与 journal 也不能写**；需要记录就写到非公开运维笔记。
+   规则与自检命令见 `MAINTENANCE.md`「仓库边界」。
 <!-- TRELLIS-GATE:END -->

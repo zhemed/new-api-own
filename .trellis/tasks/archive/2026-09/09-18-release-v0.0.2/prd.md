@@ -7,7 +7,7 @@
 
 ## Requirements
 
-1. `docker-compose.yml` 顶部注释里的 `（内网地址已脱敏）` 改为中性描述（公开仓库不带内网地址）。
+1. `docker-compose.yml` 顶部注释里的 `线上主机` 改为中性描述（公开仓库不带内网地址）。
 2. `VERSION` 由 `0.0.1` 推进到 `0.0.2`；发版约定为每次维护递增第三位（0.0.3、0.0.4 …），
    `VERSION` 不带 `v`、tag 带 `v`，两者版本一致。
 3. `docker-build.yml` 对同一镜像同时发布 `<tag>` 与去掉 `v` 的等值标签，并同步多架构清单与 cosign 签名。
@@ -19,7 +19,7 @@
 
 ## Acceptance Criteria
 
-- [x] `docker-compose.yml` 不再包含 `（内网地址已脱敏）`
+- [x] `docker-compose.yml` 不再包含 `线上主机`
 - [x] `VERSION` = `0.0.2`，发版约定写入 `MAINTENANCE.md`
 - [x] 本地实测：完整模块路径可注入版本、简写路径输出 `v0.0.0`（验证结论写进 `MAINTENANCE.md`）
 - [x] `v0.0.2` tag 已推送，`Release (Linux, macOS, Windows)` 运行成功

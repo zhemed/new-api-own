@@ -51,16 +51,16 @@ Flipped the four *_ENABLE rate-limit defaults to false in common/init.go and com
 [OK] **Completed**
 
 
-## Session 3: Audit: VERSION 0.0.1 origin and the （内网地址已脱敏） reference
+## Session 3: Audit: VERSION 0.0.1 origin and the 线上主机 reference
 <!-- trellis-session: v=2 fp=f0e0f973f72eb5e2 -->
 
 **Date**: 2026-09-18
-**Task**: Audit: VERSION 0.0.1 origin and the （内网地址已脱敏） reference
+**Task**: Audit: VERSION 0.0.1 origin and the 线上主机 reference
 **Branch**: `main`
 
 ### Summary
 
-Read-only audit. VERSION was an empty file from the self-maintained baseline (1092e46) until e1fcb53 (2026-09-12) set it to 0.0.1, which is why the built image reported an empty version. No git tags exist, so the tag-driven image workflow (which overwrites VERSION from the tag) has never run. The （内网地址已脱敏） comment in docker-compose.yml:4 came from 4a24792 (2026-08-13, host-network switch) and is the only real internal address in the repo.
+Read-only audit. VERSION was an empty file from the self-maintained baseline (1092e46) until e1fcb53 (2026-09-12) set it to 0.0.1, which is why the built image reported an empty version. No git tags exist, so the tag-driven image workflow (which overwrites VERSION from the tag) has never run. The 线上主机 comment in docker-compose.yml:4 came from 4a24792 (2026-08-13, host-network switch) and is the only real internal address in the repo.
 
 ### Git Commits
 
@@ -137,16 +137,16 @@ Ported the komari-style three-layer gate: .githooks/pre-commit + commit-msg reje
 [OK] **Completed**
 
 
-## Session 7: Investigation: x-opencode-session / （实例兜底值已脱敏） channel override
+## Session 7: Investigation: x-opencode-session / 实例专属兜底值 channel override
 <!-- trellis-session: v=2 fp=1041b2c7f8a1658f -->
 
 **Date**: 2026-09-18
-**Task**: Investigation: x-opencode-session / （实例兜底值已脱敏） channel override
+**Task**: Investigation: x-opencode-session / 实例专属兜底值 channel override
 **Branch**: `main`
 
 ### Summary
 
-Read-only investigation. The live （实例域名已脱敏） gateway runs a single channel (id=1 （渠道名已脱敏）, type=NewAPI, base_url https://opencode.ai/zen/go) whose param_override passes through x-opencode-session/Session-Id/X-Session-Id and falls back to the literal （实例兜底值已脱敏） when the client sends none. Evidence from the 2026-09-16 DB backup: the value appears exactly once in channels.param_override; the 09-12 00:41 backup is empty while the 10:41 one already has it, and commit 25c9aa1 (09-12 11:05) turned it into the reusable {client_header:NAME|DEFAULT} placeholder plus panel preset and the MAINTENANCE.md chapter. Upstream therefore sees our egress IP plus a session id, with the documented cost that every client without its own header shares one prompt-cache bucket. Blind spot: the value could not be re-read from the live DB (no SSH key to （内网地址已脱敏）); the live /api/status reports an empty version, i.e. an image built before the 09-12 version fill.
+Read-only investigation. The live 线上实例 gateway runs a single channel (id=1 上游渠道, type=NewAPI, base_url https://opencode.ai/zen/go) whose param_override passes through x-opencode-session/Session-Id/X-Session-Id and falls back to the literal 实例专属兜底值 when the client sends none. Evidence from the 2026-09-16 DB backup: the value appears exactly once in channels.param_override; the 09-12 00:41 backup is empty while the 10:41 one already has it, and commit 25c9aa1 (09-12 11:05) turned it into the reusable {client_header:NAME|DEFAULT} placeholder plus panel preset and the MAINTENANCE.md chapter. Upstream therefore sees our egress IP plus a session id, with the documented cost that every client without its own header shares one prompt-cache bucket. Blind spot: the value could not be re-read from the live DB (no SSH key to 线上主机); the live /api/status reports an empty version, i.e. an image built before the 09-12 version fill.
 
 ### Git Commits
 
@@ -166,7 +166,7 @@ Read-only investigation. The live （实例域名已脱敏） gateway runs a sin
 
 ### Summary
 
-Verified across every release outlet: VERSION is still 0.0.2, the only remote tag is v0.0.2, the only GitHub Release is v0.0.2 (Latest), GHCR carries only v0.0.2/0.0.2/latest, and the 09-18-maintenance-0.0.3 task is still in planning. Also noted that the live instance at （内网地址已脱敏） reports an empty version, i.e. a build older than 0.0.2, and that bun is absent on this machine so frontend checks cannot run here.
+Verified across every release outlet: VERSION is still 0.0.2, the only remote tag is v0.0.2, the only GitHub Release is v0.0.2 (Latest), GHCR carries only v0.0.2/0.0.2/latest, and the 09-18-maintenance-0.0.3 task is still in planning. Also noted that the live instance at 线上主机 reports an empty version, i.e. a build older than 0.0.2, and that bun is absent on this machine so frontend checks cannot run here.
 
 ### Git Commits
 
@@ -186,7 +186,7 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 
 ### Summary
 
-Ran the maintenance round and shipped 0.0.3: backend gates all green (go vet/build root + relaykit, make test), gate self-check passes, all 61 spec file:line references still valid, and three doc inaccuracies corrected (Go 1.26.6, no bun on this box, push via gh credential helper instead of the missing （本机凭据文件）). Frontend checks and vuln scans skipped for lack of bun/govulncheck; security-baseline items needing SSH to （内网地址已脱敏） left for a later task. Tagged v0.0.3: Release is Latest with Linux/arm64/macOS/Windows binaries, GHCR serves v0.0.3 and 0.0.3 plus latest, and both tags plus the downloaded binary report v0.0.3.
+Ran the maintenance round and shipped 0.0.3: backend gates all green (go vet/build root + relaykit, make test), gate self-check passes, all 61 spec file:line references still valid, and three doc inaccuracies corrected (Go 1.26.6, no bun on this box, push via gh credential helper instead of the credential path the docs used to mention). Frontend checks and vuln scans skipped for lack of bun/govulncheck; security-baseline items needing SSH to 线上主机 left for a later task. Tagged v0.0.3: Release is Latest with Linux/arm64/macOS/Windows binaries, GHCR serves v0.0.3 and 0.0.3 plus latest, and both tags plus the downloaded binary report v0.0.3.
 
 ### Git Commits
 

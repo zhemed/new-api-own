@@ -1,8 +1,8 @@
 {
   "id": "audit-version-and-ip",
   "name": "audit-version-and-ip",
-  "title": "排查版本号来源与 （内网地址已脱敏） 出处",
-  "description": "回答：版本号是否一直是 0.0.1（VERSION 文件与发布提交历史）；docker-compose 注释里的 （内网地址已脱敏） 从何而来、仓库内是否还有其他内部信息",
+  "title": "排查版本号来源与 线上主机 出处",
+  "description": "回答：版本号是否一直是 0.0.1（VERSION 文件与发布提交历史）；docker-compose 注释里的 线上主机 从何而来、仓库内是否还有其他内部信息",
   "status": "completed",
   "dev_type": null,
   "scope": null,

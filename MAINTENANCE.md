@@ -9,6 +9,7 @@
 3. **行为不变原则**：清理代码（lint/format/重构）时不得改变任何用户可见行为；无法保证等价时，宁可用 `oxlint-disable` 注释，也不改行为。
 4. **Docker 环境标准（AGENTS.md 强制）**：Docker Engine 29.7.2 + Docker Compose v5.4.0。需 Docker Engine 29.7.2 + Compose v5.4.0；一键安装：`curl -fsSL https://raw.githubusercontent.com/zhemed/new-api-own/main/install-docker.sh | bash`。
 5. **提交前必须通过质量门禁**（见下）。
+6. **部署细节不进仓库**：真实内网 IP / 内网域名 / 主机名、实例专属配置值、凭据位置、运维机绝对路径一律不写进本仓库——**包括 `.trellis/` 任务记录、PRD 与 journal**。规则与自检命令见「仓库边界」一节。
 
 ## 项目是什么
 
@@ -18,13 +19,36 @@
 - 独立模块：`relaykit/`（不得依赖根模块，改动后必须 `GOWORK=off` 单独构建）
 - 部署：公开镜像 `ghcr.io/zhemed/new-api-own`（无需登录，直接拉取），docker-compose 用 host 网络
 
+## 仓库边界：什么能写、什么不能写
+
+本仓库是**公开**的：任何进入提交的内容都能被检索到，且会留在 git 历史里 —— 包括 `.trellis/` 的任务记录、PRD 与 journal。
+
+| 可以写（通用示例） | 不能写（部署事实） |
+|---|---|
+| RFC1918 网段示例（`10.0.0.0/8`）、`example.com`、`127.0.0.1` | 真实内网 IP、内网域名、主机名 |
+| 占位口令（`123456`、`your-password`） | 任何真实口令、Token、密钥 |
+| 通用路径（`~/.bun/bin/bun`、`/app/logs`、`/data`） | 运维机绝对路径、备份目录、凭据文件位置 |
+| 公开上游服务的地址与其技术要求 | 实例专属配置值（会话兜底值、渠道名、账号标识） |
+
+需要记录部署事实时，写到**非公开位置**：本机运维笔记目录（不进 git）、或服务器上的运维文档；仓库里只保留"怎么做"的通用说明。
+
+提交前自检（仓库根执行；命中即需确认是否为通用示例）：
+
+```bash
+grep -rnE "10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.[0-9]|fc00::" \
+  --exclude-dir=.git --exclude-dir=node_modules . \
+  | grep -vE "ssrf_protection|trusted_proxies|_test\.go|locales|authentication\.md|\.env\.example"
+```
+
+（`common/ssrf_protection.go`、`middleware/trusted_proxies.go`、`.env.example`、`docs/authentication.md`、i18n 词条里的 RFC1918 都是**通用示例**，属正常内容。）
+
 ## 本机开发环境
 
 | 组件 | 位置/命令 |
 |---|---|
 | Go | `/usr/local/go/bin/go`（实测 1.26.6），需 `export HOME=/root PATH=$PATH:/usr/local/go/bin GOPATH=/root/go GOMODCACHE=/root/go/pkg/mod GOCACHE=/root/.cache/go-build` |
-| Bun | **当前这台机器（`ubuntu` / （本机地址已脱敏））未安装**（`~/.bun` 不存在）→ 前端 `bun run typecheck` / `bun test` 要换到有 bun 的机器或交给 CI；历史上本机路径为 `~/.bun/bin/bun`（1.3.14），执行前需 `export HOME=/root` |
-| GitHub 公开仓库 | 克隆无需凭据（`git clone https://github.com/zhemed/new-api-own.git`）；推送用 gh 的凭据助手且**只对本次命令生效**：`git -c credential.helper='!gh auth git-credential' push origin main`（`gh` 已登录 `zhemed`）。不要设置全局 `credential.helper`、也不要改 `git config`（AGENTS.md 明确禁止）；旧记录的 `（本机凭据文件）` 在本机**不存在** |
+| Bun | **当前这台机器未安装**（`~/.bun` 不存在）→ 前端 `bun run typecheck` / `bun test` 要换到有 bun 的机器或交给 CI；历史上本机路径为 `~/.bun/bin/bun`（1.3.14），执行前需 `export HOME=/root` |
+| GitHub 公开仓库 | 克隆无需凭据（`git clone https://github.com/zhemed/new-api-own.git`）；推送用 gh 的凭据助手且**只对本次命令生效**：`git -c credential.helper='!gh auth git-credential' push origin main`（`gh` 已登录 `zhemed`）。不要设置全局 `credential.helper`、也不要改 `git config`（AGENTS.md 明确禁止）；旧文档记录的凭据文件在本机**不存在** |
 
 ## 维护者接入（其他人 clone 之后如何开始）
 
@@ -304,7 +328,7 @@ x-opencode-session and cannot be routed efficiently
 
 ## 部署安全基线（必读）
 
-> 来源：2026-09-12 对线上实例（（实例域名已脱敏））的实测排查。**仓库当前配置默认不满足其中数项**，对外部署前请逐条确认。
+> 来源：2026-09-12 对线上自用实例的实测排查。**仓库当前配置默认不满足其中数项**，对外部署前请逐条确认。
 
 ### 1. 面板端口默认暴露在公网 ⚠️
 
@@ -374,4 +398,4 @@ stat -c '%A %n' data data/*.db 2>/dev/null
 1. 改代码 → 涉及文件 lint 0 error + typecheck 通过 → 相关 Go 测试/前端测试
 2. 行为变更必须补回归测试（后端 `testify`；前端放 `__tests__/` 目录）
 3. 提交信息用项目风格（`fix:` / `feat:` / `chore:` 前缀，描述变更与原因）
-4. 提交后推送：`export HOME=/root && git push origin main`（公开仓库，推送需凭据（`（本机凭据文件）`））
+4. 提交后推送：`git -c credential.helper='!gh auth git-credential' push origin main`（公开仓库；凭据说明见「本机开发环境」）
