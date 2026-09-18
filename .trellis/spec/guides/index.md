@@ -24,6 +24,7 @@ These guides help you **ask the right questions before coding**.
 | [Code Reuse Thinking Guide](./code-reuse-thinking-guide.md) | Identify patterns and reduce duplication | When you notice repeated patterns |
 | [Cross-Layer Thinking Guide](./cross-layer-thinking-guide.md) | Think through data flow across layers | Features spanning multiple layers |
 | [Trellis Gate Guide](./trellis-gate-guide.md) | Mandatory task workflow: create a task before any work, anchor every commit, self-check before closing | Before starting **any** work, before committing, before wrapping up |
+| [Trellis Manifest Guide](./trellis-manifest-guide.md) | Platform registration lives in `.trellis/.template-hashes.json`; how to detect and repair a platform that dropped out of the manifest | After any `trellis init` / `trellis update`, when a platform looks unregistered, before committing a manifest change |
 
 ---
 
