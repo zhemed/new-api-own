@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 10
+- **Total Sessions**: 11
 - **Last Active**: 2026-09-18
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~221 | Active |
+| `journal-1.md` | ~241 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 11 | 2026-09-18 | Reviewed the docker run deployment command | - | `main` |
 | 10 | 2026-09-18 | Purged deployment details from the repo and rewrote history | `d2ca7cf` | `main` |
 | 9 | 2026-09-18 | Maintenance round: released v0.0.3 | `3471112` | `main` |
 | 8 | 2026-09-18 | Status check: v0.0.3 not released yet | - | `main` |

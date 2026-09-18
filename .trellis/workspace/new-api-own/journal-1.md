@@ -219,3 +219,23 @@ Sanitized every tracked file (MAINTENANCE.md, archived task PRDs, journals) and 
 ### Status
 
 [OK] **Completed**
+
+
+## Session 11: Reviewed the docker run deployment command
+<!-- trellis-session: v=2 fp=9d5684f00a181308 -->
+
+**Date**: 2026-09-18
+**Task**: Reviewed the docker run deployment command
+**Branch**: `main`
+
+### Summary
+
+Reviewed the user's docker run command against docker-compose.yml, the Dockerfile and the code defaults. Key finding: without SQL_DSN the process falls back to SQLite at /data/one-api.db (model/main.go:148), so the command would boot a different database than the Postgres-backed live deployment; Redis, TZ, the four feature switches, health check, absolute volume path, container name conflict, image tag pinning and the security-baseline items were each checked and written up with a corrected command.
+
+### Git Commits
+
+(No commits - planning session)
+
+### Status
+
+[OK] **Completed**
