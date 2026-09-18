@@ -41,7 +41,12 @@ services:
       - SQL_DSN=postgresql://root:123456@127.0.0.1:5432/new-api
       - REDIS_CONN_STRING=redis://:123456@127.0.0.1:6379
       - TZ=Asia/Shanghai
+      # Rate limiters are intentionally off for this self-hosted deployment
+      # (trusted network). Set any of them to true to restore that limiter.
+      - GLOBAL_WEB_RATE_LIMIT_ENABLE=false
+      - GLOBAL_API_RATE_LIMIT_ENABLE=false
       - CRITICAL_RATE_LIMIT_ENABLE=false
+      - SEARCH_RATE_LIMIT_ENABLE=false
       - LOGIN_SESSION_NEVER_EXPIRES=true
       - ERROR_LOG_ENABLED=true
       - BATCH_UPDATE_ENABLED=true

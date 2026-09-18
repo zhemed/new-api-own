@@ -218,8 +218,10 @@ var (
 	DownloadRateLimitNum            = 10
 	DownloadRateLimitDuration int64 = 60
 
-	// Per-user search rate limit (applies after authentication, keyed by user ID)
-	SearchRateLimitEnable         = true
+	// Per-user search rate limit (applies after authentication, keyed by user ID).
+	// Disabled by default in this fork; InitEnv() re-reads it from
+	// SEARCH_RATE_LIMIT_ENABLE.
+	SearchRateLimitEnable         = false
 	SearchRateLimitNum            = 10
 	SearchRateLimitDuration int64 = 60
 )

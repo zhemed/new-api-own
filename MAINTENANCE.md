@@ -193,7 +193,8 @@ x-opencode-session and cannot be routed efficiently
 
 ## 自用部署注意事项
 
-- docker-compose 中 `CRITICAL_RATE_LIMIT_ENABLE=false` 是**有意的自用配置**（内网信任环境、方便频繁操作），不是缺陷；若仓库公开或对外提供服务需重新评估
+- 本 fork **默认关闭四组限流**，`docker-compose.yml` 亦显式声明为关闭：`GLOBAL_WEB_RATE_LIMIT_ENABLE`、`GLOBAL_API_RATE_LIMIT_ENABLE`、`CRITICAL_RATE_LIMIT_ENABLE`（登录/注册/重置密码/2FA/OAuth 等敏感操作）、`SEARCH_RATE_LIMIT_ENABLE`（搜索接口按用户限流）。这是**有意的自用配置**（内网信任环境、方便频繁操作），不是缺陷
+- 关闭后全局爆破式请求没有兜底：若仓库公开或对外提供服务，需把对应 `*_ENABLE` 设回 `true`（`*_RATE_LIMIT` 次数与 `*_DURATION` 秒数原值仍在，设置即可恢复，见 `.env.example` 的「限流配置」段）
 - 公开镜像可直接拉取，无需 `docker login`
 - 部署前确保 Docker 为标准版本（29.7.2 + v5.4.0）
 

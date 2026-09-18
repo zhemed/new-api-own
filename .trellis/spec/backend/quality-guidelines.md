@@ -114,6 +114,12 @@ output is embedded into the Go binary.
 - [ ] User-visible text is translated (backend `i18n/`, frontend `web/src/i18n/locales/*`).
 - [ ] Tests follow the testify + deterministic-fixture rules and assert a real contract.
 - [ ] Protected `new-api` / `QuantumNous` identifiers untouched.
+- [ ] **Rate limiters are intentionally off in this fork**: `GLOBAL_WEB_RATE_LIMIT_ENABLE`,
+      `GLOBAL_API_RATE_LIMIT_ENABLE`, `CRITICAL_RATE_LIMIT_ENABLE`, and `SEARCH_RATE_LIMIT_ENABLE` all
+      default to `false` (`common/init.go`, `docker-compose.yml`, documented in `MAINTENANCE.md`).
+      Do not flip them back on, and do not report the disabled state as a defect. A deployment exposed to
+      the public internet must set the matching `*_ENABLE=true` env var; the count and `*_DURATION`
+      values are kept in place for that.
 - [ ] **Docker standard**: the project pins Docker Engine 29.7.2 + Docker Compose v5.4.0
       (`install-docker.sh`, `AGENTS.md`). Do not run any docker command while the host does not match
       those versions; install and `apt-mark hold` first.
