@@ -198,6 +198,33 @@ x-opencode-session and cannot be routed efficiently
 - 公开镜像可直接拉取，无需 `docker login`
 - 部署前确保 Docker 为标准版本（29.7.2 + v5.4.0）
 
+## 发版流程（版本号第三位递增：0.0.2 → 0.0.3 → 0.0.4 …）
+
+1. 更新 `VERSION`（与即将打的 tag 一致，**不带** `v`），提交到 `main`
+2. 打注释 tag 并推送：
+
+   ```bash
+   git tag -a v0.0.3 -m "v0.0.3"
+   git push origin main v0.0.3
+   ```
+
+3. 推 tag 会自动触发两个工作流：
+
+   - `Release` → 在 GitHub **Releases** 页面生成该版本，附带 Linux amd64/arm64、macOS、Windows 二进制与 checksums
+   - `Publish Docker image (Multi-arch)` → 构建并推送 `ghcr.io/zhemed/new-api-own:v0.0.3`、`ghcr.io/zhemed/new-api-own:0.0.3`（去掉 `v` 的等值别名）与 `:latest`，多架构清单 + cosign 签名
+
+4. 校验：
+
+   ```bash
+   docker run --rm ghcr.io/zhemed/new-api-own:0.0.3 --version   # 应输出 v0.0.3
+   gh release view v0.0.3
+   ```
+
+5. 镜像内的版本号来自构建时的 tag：`Dockerfile` 把 `VERSION` 注入 Go ldflags（`common.Version`）与前端 `VITE_REACT_APP_VERSION`，而 CI 会用 tag 覆写 `VERSION` 文件内容，所以**必须走 tag 发版**；只改文件不推 tag 不会产生 Release，镜像里也会停在旧值。
+6. 版本注入的 `-ldflags -X` 必须写**完整模块路径** `github.com/QuantumNous/new-api/common.Version`；写成简写（`new-api/common.Version`）会被 Go 静默忽略，二进制版本停在内置默认值 `v0.0.0`（2026-09-18 修复 `release.yml` / `electron-build.yml`）。
+
+> 约定：`VERSION` 文件不带 `v`，tag 带 `v`，两者版本号一致；镜像同时提供 `v0.0.3` 与 `0.0.3` 两种拉取标签，指向同一份多架构清单。
+
 ## 部署安全基线（必读）
 
 > 来源：2026-09-12 对线上实例（（实例域名已脱敏））的实测排查。**仓库当前配置默认不满足其中数项**，对外部署前请逐条确认。

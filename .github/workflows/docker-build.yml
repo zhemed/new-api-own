@@ -28,6 +28,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     outputs:
       tag: ${{ steps.version.outputs.tag }}
+      tag_alias: ${{ steps.version.outputs.tag_alias }}
 
     permissions:
       packages: write
@@ -55,8 +56,14 @@ jobs:
           fi
           echo "TAG=${TAG}" >> $GITHUB_ENV
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          # Publish the same image under both `v0.0.2` and `0.0.2` so either can
+          # be pulled. A tag without a leading "v" is its own alias.
+          TAG_ALIAS="${TAG#v}"
+          [ -z "$TAG_ALIAS" ] && TAG_ALIAS="$TAG"
+          echo "TAG_ALIAS=${TAG_ALIAS}" >> $GITHUB_ENV
+          echo "tag_alias=${TAG_ALIAS}" >> $GITHUB_OUTPUT
           echo "${TAG}" > VERSION
-          echo "Building tag: ${TAG} for ${{ matrix.arch }}"
+          echo "Building tag: ${TAG} for ${{ matrix.arch }} (alias: ${TAG_ALIAS})"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
@@ -86,6 +93,7 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ github.repository }}:${{ env.TAG }}-${{ matrix.arch }}
+            ghcr.io/${{ github.repository }}:${{ env.TAG_ALIAS }}-${{ matrix.arch }}
             ghcr.io/${{ github.repository }}:latest-${{ matrix.arch }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
@@ -119,7 +127,9 @@ jobs:
 
     steps:
       - name: Set version
-        run: echo "TAG=${{ needs.build_single_arch.outputs.tag }}" >> $GITHUB_ENV
+        run: |
+          echo "TAG=${{ needs.build_single_arch.outputs.tag }}" >> $GITHUB_ENV
+          echo "TAG_ALIAS=${{ needs.build_single_arch.outputs.tag_alias }}" >> $GITHUB_ENV
 
       # GITHUB_TOKEN works once the new-api-own package is linked to this
       # repository (Package settings -> Connect repository). If you would rather
@@ -145,6 +155,15 @@ jobs:
             ghcr.io/${{ github.repository }}:latest-amd64 \
             ghcr.io/${{ github.repository }}:latest-arm64
 
+      # Same image, tag without the leading "v": `v0.0.2` and `0.0.2` both pull.
+      - name: Create & push manifest (alias without "v")
+        if: needs.build_single_arch.outputs.tag_alias != needs.build_single_arch.outputs.tag
+        run: |
+          docker buildx imagetools create \
+            -t ghcr.io/${{ github.repository }}:${TAG_ALIAS} \
+            ghcr.io/${{ github.repository }}:${TAG_ALIAS}-amd64 \
+            ghcr.io/${{ github.repository }}:${TAG_ALIAS}-arm64
+
       - name: Install cosign
         uses: sigstore/cosign-installer@v3
 
@@ -152,6 +171,9 @@ jobs:
         run: |
           cosign sign --yes ghcr.io/${{ github.repository }}:${TAG}
           cosign sign --yes ghcr.io/${{ github.repository }}:latest
+          if [ "${TAG_ALIAS}" != "${TAG}" ]; then
+            cosign sign --yes ghcr.io/${{ github.repository }}:${TAG_ALIAS}
+          fi
 
       - name: Manifest summary
         run: |

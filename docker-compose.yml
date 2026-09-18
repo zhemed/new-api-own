@@ -1,7 +1,7 @@
 # Docker 环境标准：Docker 29.7.2 + Compose v5.4.0（一键安装见 install-docker.sh）
 # New-API Docker Compose Configuration (host network mode)
 #
-# Host network deployment (mirrors the setup on （内网地址已脱敏）):
+# Host network deployment (self-hosted internal setup):
 #   - new-api / postgres / redis all use host networking
 #   - Databases listen on 127.0.0.1 only, NOT exposed to LAN
 #   - Access: http://<server-ip>:3000
