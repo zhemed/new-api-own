@@ -102,3 +102,21 @@ python3 ./.trellis/scripts/task.py archive 00-join-new-api-own
 can walk you through the workflow, show you the runtime mechanics under the
 hood, summarize the team's spec, or jump to what you're already curious about
 — which would you prefer?"
+
+---
+
+## 收尾记录：2026-09-18
+
+用户选择**直接收尾**本引导任务，未逐条走完上面四个主题（Trellis 是什么 / 运行时机制 /
+本项目规范 / 待办工作）。本任务因此按"跳过 onboarding 讲解"归档，属**用户决定**，不是未完成遗漏。
+
+本次会话实际做的工作不在本任务范围内，记在已归档任务 `09-18-dsh-platform-reinit`：
+
+- 核验结论：Trellis 脚手架、开发者身份、提交闸门、dsh/agents 技能、会话注入均正常；
+- 唯一缺口：`trellis init` 重建 `.trellis/.template-hashes.json` 时未登记任何平台，
+  `.dsh/**` 与 `.agents/skills/trellis-*` 静默失去托管；
+- 修复：证明 47 个平台文件与模板逐字节一致后等价并回平台 key，剔除 23 条运行态噪声，
+  补录 `.trellis/gates/enforce-from`；`trellis platforms` 重新列出 dsh；
+- 沉淀：`.trellis/spec/guides/trellis-manifest-guide.md`（含"重跑 init 修不回来"这个坑）。
+
+后续若要补 onboarding 内容（三阶段工作流、task 生命周期、spec 用法），直接问即可，不必重开任务。
