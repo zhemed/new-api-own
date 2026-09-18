@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 5
+- **Total Sessions**: 6
 - **Last Active**: 2026-09-18
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~115 | Active |
+| `journal-1.md` | ~137 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 6 | 2026-09-18 | Trellis commit gate enabled (3 layers) | `47c61db` | `main` |
 | 5 | 2026-09-18 | Maintainer onboarding flow documented and verified | `2bc0e1a` | `main` |
 | 4 | 2026-09-18 | Release v0.0.2: dual image tags, GitHub Release, version-injection fix | `6829e8e` | `main` |
 | 3 | 2026-09-18 | Audit: VERSION 0.0.1 origin and the （内网地址已脱敏） reference | - | `main` |

@@ -113,3 +113,25 @@ Verified push state (origin/main = f86cb24, tag v0.0.2 on remote), verified the 
 ### Status
 
 [OK] **Completed**
+
+
+## Session 6: Trellis commit gate enabled (3 layers)
+<!-- trellis-session: v=2 fp=a327a658fce5f880 -->
+
+**Date**: 2026-09-18
+**Task**: Trellis commit gate enabled (3 layers)
+**Branch**: `main`
+
+### Summary
+
+Ported the komari-style three-layer gate: .githooks/pre-commit + commit-msg reject commits without an in-progress task or without a valid [task:<slug>] anchor; scripts/check-trellis-gate.sh audits every commit after .trellis/gates/enforce-from; .github/workflows/trellis-gate.yml runs the same audit on push to main and PRs. Documented in MAINTENANCE.md 流程闸门, AGENTS.md TRELLIS-GATE block and .trellis/spec/guides/trellis-gate-guide.md. Verified all four paths: missing anchor rejected, unknown slug rejected, no in-progress task rejected, and a --no-verify bypass commit caught by the audit. Also opened the v0.0.3 maintenance round task.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `47c61db` | feat(process): Trellis 三层提交闸门（hooks + 审计脚本 + CI 兜底） [task:09-18-commit-gate] |
+
+### Status
+
+[OK] **Completed**
