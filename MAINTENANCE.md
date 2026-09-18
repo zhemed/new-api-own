@@ -22,9 +22,9 @@
 
 | 组件 | 位置/命令 |
 |---|---|
-| Go | `/usr/local/go/bin/go`（1.26.4），需 `export HOME=/root PATH=$PATH:/usr/local/go/bin GOPATH=/root/go GOMODCACHE=/root/go/pkg/mod GOCACHE=/root/.cache/go-build` |
-| Bun | `~/.bun/bin/bun`（1.3.14），所有前端命令前需 `export HOME=/root` |
-| GitHub 公开仓库 | 克隆无需凭据（`git clone https://github.com/zhemed/new-api-own.git`），推送需带 token（`https://zhemed:<token>@...`，token 在 `（本机凭据文件）`） |
+| Go | `/usr/local/go/bin/go`（实测 1.26.6），需 `export HOME=/root PATH=$PATH:/usr/local/go/bin GOPATH=/root/go GOMODCACHE=/root/go/pkg/mod GOCACHE=/root/.cache/go-build` |
+| Bun | **当前这台机器（`ubuntu` / （本机地址已脱敏））未安装**（`~/.bun` 不存在）→ 前端 `bun run typecheck` / `bun test` 要换到有 bun 的机器或交给 CI；历史上本机路径为 `~/.bun/bin/bun`（1.3.14），执行前需 `export HOME=/root` |
+| GitHub 公开仓库 | 克隆无需凭据（`git clone https://github.com/zhemed/new-api-own.git`）；推送用 gh 的凭据助手且**只对本次命令生效**：`git -c credential.helper='!gh auth git-credential' push origin main`（`gh` 已登录 `zhemed`）。不要设置全局 `credential.helper`、也不要改 `git config`（AGENTS.md 明确禁止）；旧记录的 `（本机凭据文件）` 在本机**不存在** |
 
 ## 维护者接入（其他人 clone 之后如何开始）
 
