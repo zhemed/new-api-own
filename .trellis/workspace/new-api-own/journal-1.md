@@ -361,3 +361,31 @@ Read-only discovery first, then replaced the stale v0.0.2 container with the reb
 ### Next Steps
 
 - 无进行中的 Trellis 任务；下一件事开工前先 task.py create
+
+
+## Session 17: 适配 komari 的一条命令 compose 部署
+<!-- trellis-session: v=2 fp=b4026f212ace0f45 -->
+
+**Date**: 2026-09-18
+**Task**: 适配 komari 的一条命令 compose 部署
+**Branch**: `main`
+
+### Summary
+
+把用户认可的 komari install-compose.sh 形态适配到 new-api-own：新增 install-compose.sh（321 行）+ docker-compose.yml 变量插值 + README/MAINTENANCE 同步。
+
+照抄会坏的四处已按本仓库事实改掉：① 三个服务而非一个 → 撞名预检覆盖 new-api/redis/postgres 并给 --name-prefix 作为共存出口；② 口令自生成（32 位纯 hex）写进 .env 600，重跑沿用绝不重新生成（Postgres 口令只在数据目录为空时生效，重生成会表现成「重装后数据全丢」）；③ 固定 COMPOSE_PROJECT_NAME（它决定 pg_data 卷名，跟目录走会让换目录看起来丢数据）；④ 版本不写字面量，按 --ref 上的 VERSION 推导，发版只需改 VERSION。komari 的亚秒唯一备份、拒绝覆盖、启动前预检、--no-start 干跑原样搬来。
+
+实测（临时目录 + 非默认项目名，已 down -v 清理，komari/litepan 未受影响）：三容器 healthy、/api/status 200；重跑被拒；顺序 6 次 --force 留 6 份唯一备份，而「秒级 + 无重试循环」的缺陷形态只剩 2 份；.env 口令经 psql 与 redis-cli 认证通过（判别性）；撞名在启动前拦下且既有容器未被删改；--force 前后 data/logs 与 pg_data 卷内容不变；无 .env 时 compose config 与改造前仅差三个 logging 块。
+
+一条初始断言被实测证伪并已改写（记录以免重犯）：设计初稿称「去掉亚秒精度即出现备份覆盖」，实测不成立 —— 单独去掉精度时重试循环仍能防住，缺陷形态需要两者同时缺席。教训：断言跟着证据改，不是反过来。未对任何真实部署执行安装，/opt/docker/new-api-own 未被创建。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a79b054` | feat(deploy): 一条命令 compose 部署（适配 komari 形态） [task:one-command-compose-deploy] |
+
+### Status
+
+[OK] **Completed**
