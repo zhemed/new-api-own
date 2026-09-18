@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 7
+- **Total Sessions**: 8
 - **Last Active**: 2026-09-18
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~157 | Active |
+| `journal-1.md` | ~177 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 8 | 2026-09-18 | Status check: v0.0.3 not released yet | - | `main` |
 | 7 | 2026-09-18 | Investigation: x-opencode-session / （实例兜底值已脱敏） channel override | - | `main` |
 | 6 | 2026-09-18 | Trellis commit gate enabled (3 layers) | `47c61db` | `main` |
 | 5 | 2026-09-18 | Maintainer onboarding flow documented and verified | `2bc0e1a` | `main` |

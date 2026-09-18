@@ -155,3 +155,23 @@ Read-only investigation. The live （实例域名已脱敏） gateway runs a sin
 ### Status
 
 [OK] **Completed**
+
+
+## Session 8: Status check: v0.0.3 not released yet
+<!-- trellis-session: v=2 fp=c3fccc598a0b0ba2 -->
+
+**Date**: 2026-09-18
+**Task**: Status check: v0.0.3 not released yet
+**Branch**: `main`
+
+### Summary
+
+Verified across every release outlet: VERSION is still 0.0.2, the only remote tag is v0.0.2, the only GitHub Release is v0.0.2 (Latest), GHCR carries only v0.0.2/0.0.2/latest, and the 09-18-maintenance-0.0.3 task is still in planning. Also noted that the live instance at （内网地址已脱敏） reports an empty version, i.e. a build older than 0.0.2, and that bun is absent on this machine so frontend checks cannot run here.
+
+### Git Commits
+
+(No commits - planning session)
+
+### Status
+
+[OK] **Completed**
