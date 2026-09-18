@@ -299,3 +299,35 @@ Read-only discovery first, then replaced the stale v0.0.2 container with the reb
 ### Status
 
 [OK] **Completed**
+
+
+## Session 15: 恢复 dsh 平台登记并提交 Trellis 初始化产物
+<!-- trellis-session: v=2 fp=8f12de5320e18987 -->
+
+**Date**: 2026-09-18
+**Task**: 恢复 dsh 平台登记并提交 Trellis 初始化产物
+**Branch**: `main`
+
+### Summary
+
+排查 new-api-own 初始化是否收尾：Trellis 脚手架/身份/闸门/技能齐备，但 22:33 的 init 重建 manifest 时未登记任何平台，.dsh/** 与 .agents/skills/trellis-* 失去托管。先按官方路径重跑 trellis init --dsh（exit 0 但无效），用 CLI 自身模板函数证明 47 个平台文件与模板逐字节一致后，等价并回 HEAD 的平台 key、剔除 23 条 pyc/.runtime 噪声、补录 enforce-from（净 diff +1 行）；trellis platforms 重新列出 dsh。新增 spec 指南 .trellis/spec/guides/trellis-manifest-guide.md 记录该坑。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `68bd1c7` | chore(trellis): 恢复 dsh 平台登记、剔除运行态噪声 [task:dsh-platform-reinit] |
+| `91a27a0` | docs(trellis): 新增 Trellis 平台登记与 manifest 维护指南 [task:dsh-platform-reinit] |
+| `8452f90` | chore(task): 纳入 init 产物与本任务记录 [task:dsh-platform-reinit] |
+
+### Testing
+
+- [OK] trellis platforms → dsh 已登记；getConfiguredPlatforms → ['dsh']；平台文件 sha256 汇总修复前后一致 925233d1…；./scripts/check-trellis-gate.sh 通过；工作区提交后 clean
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- join 引导任务 00-join-new-api-own 仍是 in_progress：若要收尾需用户决定是否 finish/archive
