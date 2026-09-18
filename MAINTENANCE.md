@@ -298,6 +298,10 @@ x-opencode-session and cannot be routed efficiently
 - 关闭后全局爆破式请求没有兜底：若仓库公开或对外提供服务，需把对应 `*_ENABLE` 设回 `true`（`*_RATE_LIMIT` 次数与 `*_DURATION` 秒数原值仍在，设置即可恢复，见 `.env.example` 的「限流配置」段）
 - 公开镜像可直接拉取，无需 `docker login`
 - 部署前确保 Docker 为标准版本（29.7.2 + v5.4.0）
+- **一条命令部署**：`install-compose.sh`（`curl | bash` 形态）建 `/opt/docker/new-api-own` →
+  生成随机 Postgres/Redis 口令写进 `.env`（600）→ 拉同 ref 的 `docker-compose.yml` → 起容器并等健康检查。
+  幂等（已有部署拒绝覆盖，`--force` 才重写且先备份）、固定 compose 项目名（它决定 `pg_data` 卷名）、
+  重跑**沿用**既有口令；`./data`、`./logs` 与数据库卷永不被脚本删除
 
 ## 发版流程（版本号第三位递增：0.0.2 → 0.0.3 → 0.0.4 …）
 
@@ -325,6 +329,10 @@ x-opencode-session and cannot be routed efficiently
 6. 版本注入的 `-ldflags -X` 必须写**完整模块路径** `github.com/QuantumNous/new-api/common.Version`；写成简写（`new-api/common.Version`）会被 Go 静默忽略，二进制版本停在内置默认值 `v0.0.0`（2026-09-18 修复 `release.yml` / `electron-build.yml`）。
 
 > 约定：`VERSION` 文件不带 `v`，tag 带 `v`，两者版本号一致；镜像同时提供 `v0.0.3` 与 `0.0.3` 两种拉取标签，指向同一份多架构清单。
+
+> `install-compose.sh` **不保存版本字面量**：它按 `--ref`（默认 `main`）取该 ref 上的 `VERSION`
+> 推导 `v<版本>`，所以发版只需改 `VERSION`，安装脚本无需跟着同步（`--tag` 用于钉死到历史版本）。
+> 这与 komari 那边"脚本里写 `DEFAULT_TAG` 再靠自检校验"的做法不同，是刻意的——少一个必然漂移的副本。
 
 ## 部署安全基线（必读）
 
@@ -371,6 +379,7 @@ chmod 600 data/*.db data/logs/* data/backup/* 2>/dev/null
 ```
 
 > 真正的防线是**目录 700**：即使应用后续新建的日志文件又是 644，非 root 也无法遍历进入该目录。
+> 用 `install-compose.sh` 部署时这一步是自动的（`data/`、`logs/` 在创建时即置 700，不依赖启动成功）。
 
 ### 3. 容器以 root 运行
 
