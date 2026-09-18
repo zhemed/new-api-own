@@ -49,3 +49,23 @@ Flipped the four *_ENABLE rate-limit defaults to false in common/init.go and com
 ### Status
 
 [OK] **Completed**
+
+
+## Session 3: Audit: VERSION 0.0.1 origin and the （内网地址已脱敏） reference
+<!-- trellis-session: v=2 fp=f0e0f973f72eb5e2 -->
+
+**Date**: 2026-09-18
+**Task**: Audit: VERSION 0.0.1 origin and the （内网地址已脱敏） reference
+**Branch**: `main`
+
+### Summary
+
+Read-only audit. VERSION was an empty file from the self-maintained baseline (1092e46) until e1fcb53 (2026-09-12) set it to 0.0.1, which is why the built image reported an empty version. No git tags exist, so the tag-driven image workflow (which overwrites VERSION from the tag) has never run. The （内网地址已脱敏） comment in docker-compose.yml:4 came from 4a24792 (2026-08-13, host-network switch) and is the only real internal address in the repo.
+
+### Git Commits
+
+(No commits - planning session)
+
+### Status
+
+[OK] **Completed**
