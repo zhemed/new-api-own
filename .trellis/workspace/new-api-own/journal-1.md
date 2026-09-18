@@ -175,3 +175,25 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Status
 
 [OK] **Completed**
+
+
+## Session 9: Maintenance round: released v0.0.3
+<!-- trellis-session: v=2 fp=acde6d8521f30c5a -->
+
+**Date**: 2026-09-18
+**Task**: Maintenance round: released v0.0.3
+**Branch**: `main`
+
+### Summary
+
+Ran the maintenance round and shipped 0.0.3: backend gates all green (go vet/build root + relaykit, make test), gate self-check passes, all 61 spec file:line references still valid, and three doc inaccuracies corrected (Go 1.26.6, no bun on this box, push via gh credential helper instead of the missing （本机凭据文件）). Frontend checks and vuln scans skipped for lack of bun/govulncheck; security-baseline items needing SSH to （内网地址已脱敏） left for a later task. Tagged v0.0.3: Release is Latest with Linux/arm64/macOS/Windows binaries, GHCR serves v0.0.3 and 0.0.3 plus latest, and both tags plus the downloaded binary report v0.0.3.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3471112` | chore(release): 0.0.3 维护轮次（版本递增 + 环境文档校正） [task:maintenance-0.0.3] |
+
+### Status
+
+[OK] **Completed**
