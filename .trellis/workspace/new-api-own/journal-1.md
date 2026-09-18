@@ -69,3 +69,25 @@ Read-only audit. VERSION was an empty file from the self-maintained baseline (10
 ### Status
 
 [OK] **Completed**
+
+
+## Session 4: Release v0.0.2: dual image tags, GitHub Release, version-injection fix
+<!-- trellis-session: v=2 fp=52f6fd9dfaf24603 -->
+
+**Date**: 2026-09-18
+**Task**: Release v0.0.2: dual image tags, GitHub Release, version-injection fix
+**Branch**: `main`
+
+### Summary
+
+Fixed the abbreviated -X ldflags path in release.yml/electron-build.yml that silently left every release binary at v0.0.0; bumped VERSION to 0.0.2; made docker-build.yml publish both v0.0.2 and 0.0.2 plus latest with multi-arch manifests and cosign signatures; replaced the internal IP in the compose comment; documented the release runbook in MAINTENANCE.md. Tagged and pushed v0.0.2: the GitHub Release carries Linux/macOS/Windows binaries and the GHCR image answers on both tags with version v0.0.2.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6829e8e` | chore(release): v0.0.2 发版准备（双标签镜像 + 修复版本注入 + 中性化注释） [task:09-18-release-v0.0.2] |
+
+### Status
+
+[OK] **Completed**
