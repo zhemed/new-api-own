@@ -70,7 +70,38 @@ CI 需要的一次性仓库设置（仓库所有者操作）：
 - GHCR 包 `new-api-own` 需与本仓库关联，或配置 `GHCR_TOKEN` secret（带 `write:packages`），否则 tag 构建推送镜像会 403；v0.0.2 已用内置 `GITHUB_TOKEN` 推送成功，说明当前关联有效
 - 可选：设置仓库变量 `GITCODE_REPOSITORY` 后，`Sync Release to GitCode` 工作流才会把每次 Release 同步到 GitCode（未设置时该工作流整体 skip）
 
-发版流程见下一节。
+发版流程与提交闸门见本文后续小节。
+
+## 流程闸门（Trellis 强制规则）
+
+调用 Trellis 不是口头承诺：**任何会话工作，包括只读调查（看代码、查日志、读库定位原因），开工第一步都必须先建 Trellis 任务**。唯一例外是用户明确说"这次跳过 Trellis"。
+
+| 层 | 实现 | 拦什么 | 绕过 |
+|---|---|---|---|
+| ① 当场拦 | `.githooks/pre-commit`、`.githooks/commit-msg`（`core.hooksPath=.githooks`） | 暂存区含**非 `.trellis/`** 改动时：没有 `status=in_progress` 的任务 → 拒绝；消息里没有 `[task:<slug>]` 或 slug 不存在 → 拒绝 | `git commit --no-verify`（git 内建，封不死） |
+| ② 事后审计 | `./scripts/check-trellis-gate.sh` | 逐个提交核对（跳过 merge 与纯 `.trellis/` 提交）：改动非 `.trellis/` 就必须带 `[task:…]` | 无法绕过：跑一次就暴露 |
+| ③ 远程兜底 | `.github/workflows/trellis-gate.yml`（push 到 main / 开 PR） | 同一次审计，在 GitHub 上直接标红 | 无法绕过（删工作流是可见动作） |
+
+**每个新克隆要跑一次**（`core.hooksPath` 是本地配置，不随仓库分发）：
+
+```bash
+./scripts/install-git-hooks.sh    # 装闸门
+./scripts/check-trellis-gate.sh   # 自检：闸门已装 + 提交可追溯
+```
+
+提交消息统一带任务锚点（slug = `.trellis/tasks/<MM-DD>-<slug>` 去掉日期前缀）：
+
+```
+feat: 一句话说明 [task:commit-gate]
+```
+
+刻意放行两类：**纯 `.trellis/` 改动**（journal、任务归档、闸门自身）与 **merge 提交**。
+
+审计起点记录在 `.trellis/gates/enforce-from`（启用闸门那一刻的提交 SHA），早于它的历史提交（上游与自维护基线）不在审计范围内。
+
+> **诚实边界**：机器能强制的只是"提交时必须有任务"。"只读调查也先建任务"没有可审计的产物，靠 `AGENTS.md` 强制段 + journal 留痕，**不是自动的**，别把它说成自动生效。
+
+规则细节与自证清单见 `.trellis/spec/guides/trellis-gate-guide.md`。
 
 ## 构建与测试
 

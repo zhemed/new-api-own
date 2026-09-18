@@ -194,3 +194,19 @@ If you're using Codex or another agent-capable tool, additional project-scoped h
 Managed by Trellis. Edits outside this block are preserved; edits inside may be overwritten by a future `trellis update`.
 
 <!-- TRELLIS:END -->
+
+<!-- TRELLIS-GATE:START 用户 2026-09-18 定调；本段在托管块之外，不会被 trellis update 覆盖 -->
+## Trellis 流程闸门（强制，不可协商）
+
+本项目已启用三层提交闸门，细节见 `MAINTENANCE.md`「流程闸门」与 `.trellis/spec/guides/trellis-gate-guide.md`。
+
+1. **开工先建任务**：任何会话工作——**包括只读调查**（看代码、查日志、读库定位原因、跑诊断命令）——第一步先执行
+   `python3 .trellis/scripts/task.py create "<标题>" --slug <slug> -d "<描述>"`，再 `task.py start <MM-DD-slug>`。
+   唯一例外：用户明确说"这次跳过 Trellis"。**不要自行判断"这次很小所以不用"。**
+2. **提交必须带任务锚点**：提交消息里必须有 `[task:<slug>]`（slug = `.trellis/tasks/<MM-DD>-<slug>` 去掉日期前缀）。
+   `.githooks/pre-commit` 与 `.githooks/commit-msg` 会当场拒绝不合规的提交。
+3. **收尾必须留痕**：`task.py finish` → `task.py archive <name> --skip-branch-validation` → 写 journal。
+4. **新克隆先装闸门**：`./scripts/install-git-hooks.sh`（`core.hooksPath` 是本地配置，不随仓库分发）。
+5. **不要用 `--no-verify` 绕过**：`./scripts/check-trellis-gate.sh` 与 `.github/workflows/trellis-gate.yml`
+   会把漏锚点的提交扒出来并阻断。
+<!-- TRELLIS-GATE:END -->
