@@ -279,3 +279,23 @@ The registry latest tag had regressed to v0.0.2 because a single force-push of b
 ### Status
 
 [OK] **Completed**
+
+
+## Session 14: Deployed v0.0.3 to the user's target host
+<!-- trellis-session: v=2 fp=3c17dcbc9ee02a2a -->
+
+**Date**: 2026-09-18
+**Task**: Deployed v0.0.3 to the user's target host
+**Branch**: `main`
+
+### Summary
+
+Read-only discovery first, then replaced the stale v0.0.2 container with the rebuilt v0.0.3 image on the host the user named, keeping the same single-container host-network shape and the existing SQLite data directory untouched. Verified afterwards: container running with RestartCount 0, docker exec --version and /api/status both report v0.0.3, port 3000 answers, and the data directory (with its database) is intact. The task record was renamed and redacted so the host name does not enter the public repository, and the password was used once over SSH without being written to any file.
+
+### Git Commits
+
+(No commits - planning session)
+
+### Status
+
+[OK] **Completed**

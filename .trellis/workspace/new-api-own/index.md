@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 13
+- **Total Sessions**: 14
 - **Last Active**: 2026-09-18
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~281 | Active |
+| `journal-1.md` | ~301 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 14 | 2026-09-18 | Deployed v0.0.3 to the user's target host | - | `main` |
 | 13 | 2026-09-18 | Rebuilt the v0.0.3 image so latest points at 0.0.3 again | - | `main` |
 | 12 | 2026-09-18 | Closed the deployment thread (command was never executed) | - | `main` |
 | 11 | 2026-09-18 | Reviewed the docker run deployment command | - | `main` |
