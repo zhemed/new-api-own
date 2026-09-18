@@ -239,3 +239,23 @@ Reviewed the user's docker run command against docker-compose.yml, the Dockerfil
 ### Status
 
 [OK] **Completed**
+
+
+## Session 12: Closed the deployment thread (command was never executed)
+<!-- trellis-session: v=2 fp=4091124e9e116f83 -->
+
+**Date**: 2026-09-18
+**Task**: Closed the deployment thread (command was never executed)
+**Branch**: `main`
+
+### Summary
+
+User confirmed the docker run command was never executed, so no rollback or cleanup of the live service is needed; the task was closed without touching production. Also cleaned the local scratch copies this session had created (temporary clones, the history-rewrite tables, an alias file and three change captures) and re-stated the rule that production facts are not written into this repository or any persistent store.
+
+### Git Commits
+
+(No commits - planning session)
+
+### Status
+
+[OK] **Completed**
