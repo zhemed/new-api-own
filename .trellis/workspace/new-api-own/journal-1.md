@@ -331,3 +331,33 @@ Read-only discovery first, then replaced the stale v0.0.2 container with the reb
 ### Next Steps
 
 - join 引导任务 00-join-new-api-own 仍是 in_progress：若要收尾需用户决定是否 finish/archive
+
+
+## Session 16: 收尾 join 引导任务
+<!-- trellis-session: v=2 fp=1b53a27d1950dc29 -->
+
+**Date**: 2026-09-18
+**Task**: 收尾 join 引导任务
+**Branch**: `main`
+
+### Summary
+
+按用户要求收尾 init 生成的 onboarding 任务 00-join-new-api-own：先在其 PRD 里补记收尾原因——跳过四个主题的讲解是用户决定、不是遗漏——并指向本次会话真实完成的工作（已归档任务 09-18-dsh-platform-reinit 的 dsh 平台登记修复），再 finish + archive（提交 5f19953）。至此 .trellis/tasks/ 下无进行中任务，工作区干净。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5f19953` | chore(task): archive 00-join-new-api-own |
+
+### Testing
+
+- [OK] task.py list → (no active tasks)；git status --porcelain → 空；journal-1.md 与 index.md 已更新并自动提交
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 无进行中的 Trellis 任务；下一件事开工前先 task.py create
