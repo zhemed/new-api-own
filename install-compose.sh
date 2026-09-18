@@ -263,13 +263,16 @@ if [ "$START" != 1 ]; then
 fi
 
 # ---------- 6. 容器名冲突预检（必须在 up 之前，起一半再报 Conflict 极难收拾）----------
+# 必须用 `docker container inspect`：`docker inspect` 同时匹配容器与**镜像**，而我们的容器名
+# redis / postgres 与 compose 自己要拉的镜像同名 —— 用 `docker inspect` 会把本地镜像当成容器，
+# 于是镜像一旦存在就永远误报"已有同名容器"，脚本从第二次起不可再运行（2026-09-18 实装时踩到）。
 for c in "${PREFIX}new-api" "${PREFIX}redis" "${PREFIX}postgres"; do
-  docker inspect "$c" >/dev/null 2>&1 || continue
-  existing_dir="$(docker inspect --format '{{index .Config.Labels "com.docker.compose.project.working_dir"}}' "$c" 2>/dev/null || true)"
+  docker container inspect "$c" >/dev/null 2>&1 || continue
+  existing_dir="$(docker container inspect --format '{{index .Config.Labels "com.docker.compose.project.working_dir"}}' "$c" 2>/dev/null || true)"
   [ "$existing_dir" = "$DIR" ] && continue
   die "已有同名容器 \"$c\"（项目目录：${existing_dir:-未知/非 compose}）。
       解法：加 --name-prefix <前缀> 让三容器与既有部署共存，或先自行处理该容器：
-        docker inspect $c --format '{{.Config.Image}}'
+        docker container inspect $c --format '{{.Config.Image}}'
         docker rm -f $c        # 仅在确认它不再需要时执行"
 done
 
@@ -283,7 +286,7 @@ docker compose up -d || die "compose up 失败：cd $DIR && docker compose logs"
 log "等待健康检查通过（上限 ${HEALTH_TIMEOUT}s）..."
 status=""
 for _ in $(seq 1 $((HEALTH_TIMEOUT / 2))); do
-  status="$(docker inspect --format '{{.State.Health.Status}}' "${PREFIX}new-api" 2>/dev/null || echo starting)"
+  status="$(docker container inspect --format '{{.State.Health.Status}}' "${PREFIX}new-api" 2>/dev/null || echo starting)"
   [ "$status" = "healthy" ] && break
   sleep 2
 done
