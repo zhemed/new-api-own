@@ -91,3 +91,25 @@ Fixed the abbreviated -X ldflags path in release.yml/electron-build.yml that sil
 ### Status
 
 [OK] **Completed**
+
+
+## Session 5: Maintainer onboarding flow documented and verified
+<!-- trellis-session: v=2 fp=82fd5bf554cfc413 -->
+
+**Date**: 2026-09-18
+**Task**: Maintainer onboarding flow documented and verified
+**Branch**: `main`
+
+### Summary
+
+Verified push state (origin/main = f86cb24, tag v0.0.2 on remote), verified the task workflow artifacts ship with the repo, and reproduced a fresh clone: without a developer identity get_context.py errors, while trellis init --dsh -u <name> -s -y writes the local identity, creates a 00-join-<name> onboarding task and leaves the tree clean except .template-hashes.json. Documented the whole path in MAINTENANCE.md (new 维护者接入 section) and README 维护.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2bc0e1a` | docs(maintenance): 维护者接入流程（clone → trellis init → 任务与发版） [task:09-18-maintainer-onboarding] |
+
+### Status
+
+[OK] **Completed**
