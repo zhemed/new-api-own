@@ -507,3 +507,31 @@ E2E 第一跑就撞出两个潜伏 bug 并修掉：read_env_value 在 .env 不�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 22: 回滚本机 new-api-own 实例
+<!-- trellis-session: v=2 fp=ab6bde9cdfbab332 -->
+
+**Date**: 2026-09-19
+**Task**: 回滚本机 new-api-own 实例
+**Branch**: `main`
+
+### Summary
+
+用户要求还原之前的部署方式并按流程走。仓库文件已在前一步回滚；本次把本机实例也回滚，恢复到我介入前的机器状态。
+
+先取证再动手：users=0 tokens=0 channels=0 logs=0 abilities=0，管理员数量 0（面板从未初始化），磁盘占用 228K；历史上唯一的 relay 请求是我自己复现 401 时发的本机探测（09:53:01，127.0.0.1）。确认零数据后才执行。
+
+执行：docker compose down -v（移除 new-api / postgres / redis 三个容器与 new-api-own_pg_data 命名卷）→ 删除项目目录。验证：/opt/docker 下只剩 komari，端口 3000 无监听，容器列表回到 komari + litepan，komari 与 litepan 全程未受影响，/opt/docker/komari 完好。
+
+明确未解决、需用户输入的两件事（不在本次回滚范围）：① 生产那台 x.miio.cc 的 401 —— 语义是"key 不在应答网关的令牌表里"，回滚文件不会把令牌找回来，令牌在旧数据库里；判定命令是 `docker logs <容器> | grep -i "using .* as database"`，若出现 "SQL_DSN not set, using SQLite as database" 就是退化成 SQLite（model/main.go:148），令牌表为空导致所有 key 失效。② 用户提到的"大量bug"具体是什么，还没有拿到清单，拿不到就无法避免以后重新引入。两件都等用户给信息，不去碰那台机器。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `770e26c` | revert(deploy): 回到迁移前的部署方式 [task:revert-to-previous-deploy] |
+
+### Status
+
+[OK] **Completed**

@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 21
+- **Total Sessions**: 22
 - **Last Active**: 2026-09-19
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~509 | Active |
+| `journal-1.md` | ~537 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 22 | 2026-09-19 | 回滚本机 new-api-own 实例 | `770e26c` | `main` |
 | 21 | 2026-09-19 | 回滚到迁移前的部署方式 | `770e26c` | `main` |
 | 20 | 2026-09-19 | 修正备份段两处真缺陷并让就绪判定走 TCP | `0595b46` | `main` |
 | 19 | 2026-09-19 | 落实部署评审 A1+B1-B8 并迁移本机部署 | `8bcd139` | `main` |
