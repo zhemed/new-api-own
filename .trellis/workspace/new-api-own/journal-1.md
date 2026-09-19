@@ -449,3 +449,33 @@ E2E 第一跑就撞出两个潜伏 bug 并修掉：read_env_value 在 .env 不�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 20: 修正备份段两处真缺陷并让就绪判定走 TCP
+<!-- trellis-session: v=2 fp=1b9bb888a1a74e88 -->
+
+**Date**: 2026-09-19
+**Task**: 修正备份段两处真缺陷并让就绪判定走 TCP
+**Branch**: `main`
+
+### Summary
+
+按评审意见修正 MAINTENANCE.md 备份段的两处真缺陷、加强三处，并修掉一条被评审点出的就绪判定缺陷。
+
+两处真缺陷都成立：① 物理备份原来只停应用不停数据库 —— 卷里是 PG 数据目录，停应用只停客户端写入，checkpoint/WAL/autovacuum/bgwriter 照跑，tar 出来不是一致快照，最坑的是它可能起得来、用一阵子才崩；改为整栈 stop 后 tar，并补上不停机的 pg_basebackup 作为一致物理备份的替代。② 卷名原来用 ${PWD##*/}_pg_data 推 —— 只在目录名=项目名时成立，与本仓库刻意固定 COMPOSE_PROJECT_NAME（为了"换目录不换卷"）的设计自相矛盾，重则 tar 到别的项目的卷；改为读 .env 的 COMPOSE_PROJECT_NAME + docker volume inspect 验证，并强调用 docker container inspect 而非 docker inspect。反例就在本会话：目录 /tmp/e2e-deploy 对应卷 e2e-napi-test_pg_data。
+
+三处加强：文件名带秒级时间戳 + 7 日/4 周保留 + "没演练过的备份不算备份"；验证从 head -20 升级为"还原到一次性容器逐表比对行数"；逻辑备份改 -Fc。
+
+附带修 compose.yaml：postgres 健康检查强制走 TCP。评审说官方镜像初始化时会先起一个只监听 unix socket 的临时实例，socket 探针会对它误报 ready —— 我塞了一个 pg_sleep(8) 的慢 init 脚本拉长窗口实测坐实：socket 探针报就绪(0)、TCP 探针报未就绪(2)，窗口约 7 秒。这正是上一轮 B6 加的健康检查踩的坑（depends_on: service_healthy 会被提前放行）。
+
+验证：备份配方真跑了一遍 —— pg_dump -Fc 产出 116 KB / 34 条 TABLE DATA，还原到一次性容器后 34 张表逐表行数完全一致；应用新健康检查到本机部署后 postgres 仍 healthy、/api/status 200、34 张表完好、komari/litepan 未受影响。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0595b46` | fix(docs,deploy): 修正备份段两处真缺陷 + postgres 就绪判定走 TCP [task:backup-section-hardening] |
+
+### Status
+
+[OK] **Completed**
