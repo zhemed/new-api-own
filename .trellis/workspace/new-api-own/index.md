@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 18
-- **Last Active**: 2026-09-18
+- **Total Sessions**: 19
+- **Last Active**: 2026-09-19
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~421 | Active |
+| `journal-1.md` | ~451 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 19 | 2026-09-19 | 落实部署评审 A1+B1-B8 并迁移本机部署 | `8bcd139` | `main` |
 | 18 | 2026-09-18 | 实装 /opt/docker/new-api-own 并修预检误报 | `c69e351` | `main` |
 | 17 | 2026-09-18 | 适配 komari 的一条命令 compose 部署 | `a79b054` | `main` |
 | 16 | 2026-09-18 | 收尾 join 引导任务 | `5f19953` | `main` |

@@ -419,3 +419,33 @@ Read-only discovery first, then replaced the stale v0.0.2 container with the reb
 ### Status
 
 [OK] **Completed**
+
+
+## Session 19: 落实部署评审 A1+B1-B8 并迁移本机部署
+<!-- trellis-session: v=2 fp=cdd2b6736030cb2f -->
+
+**Date**: 2026-09-19
+**Task**: 落实部署评审 A1+B1-B8 并迁移本机部署
+**Branch**: `main`
+
+### Summary
+
+对 9 条外部评审逐条对着代码核实后全量落地，另补两条评审没提到的自查，并在本机完成部署迁移。
+
+判定的关键分歧：A1（把 compose.yaml 当历史名，方向确实反了）成立，但严重度是中不是高；B1 成立，但要补充「pg 只 listen 127.0.0.1、redis 只 bind 127.0.0.1，弱口令不对外可达」这个事实，风险限定本机；B3 部分成立 —— AGENTS.md 的 Docker 标准就是固定版本且禁未达标操作，照它改会违背项目规则，改成「低于失败 / 等于过 / 高于同主版本告警放行 / 跨主版本仍需 --allow-docker-mismatch」；B5 只接受一半 —— redis:latest 确实该钉成 redis:7，但 postgres:15 钉主版本跟随 15.x 补丁流正是官方推荐做法，钉更细等于放弃补丁。另补 C1（上一轮只改 README.md，README.en.md 漏了）与 C2（脚本内 --tag 文案与实现矛盾）。
+
+改动：docker-compose.yml → compose.yaml（实测优先级 compose.yaml > compose.yml > docker-compose.yml > docker-compose.yaml，5 个文件引用同步）；四处口令改必填形式；健康检查未过改为 exit 1（真 bug：原来最后一条是 heredoc，永远隐式 exit 0）；默认沿用 .env 的 tag、新增 --upgrade；redis:7；pg_isready 与 redis-cli ping + depends_on condition；三服务 unless-stopped；MAINTENANCE 补数据备份与恢复段。
+
+E2E 第一跑就撞出两个潜伏 bug 并修掉：read_env_value 在 .env 不存在时让 sed 在 pipefail 下打断脚本（首次安装必然触发）；B1 改必填后脚本内部那步 compose 校验必然失败。还撞到一条环境事实并写进脚本提示：host 网络下 3000/6379/5432 全机唯一，--name-prefix 只解决容器名冲突、不能同机跑两套（临时栈 clean-room E2E 因此做不了，改为「不依赖端口的用例 + 探针 compose 验退出码 + 本机生产迁移做端到端」）。
+
+验证：六组版本语义用例；tag 复用（改 v9.9.9 后重跑保持、--upgrade 才变）；健康检查失败 exit=1；迁移后三容器全 healthy、/api/status 200、Postgres 34 张表与口令沿用完好、restart 全 unless-stopped、目录只剩 compose.yaml、komari/litepan 未受影响。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8bcd139` | feat(deploy): 落实部署评审 A1+B1-B8 与两处自查 [task:review-compose-deploy-findings] |
+
+### Status
+
+[OK] **Completed**
