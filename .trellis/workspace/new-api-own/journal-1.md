@@ -479,3 +479,31 @@ E2E 第一跑就撞出两个潜伏 bug 并修掉：read_env_value 在 .env 不�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 21: 回滚到迁移前的部署方式
+<!-- trellis-session: v=2 fp=26274b8c53814e71 -->
+
+**Date**: 2026-09-19
+**Task**: 回滚到迁移前的部署方式
+**Branch**: `main`
+
+### Summary
+
+用户判定迁移后出现大量问题，要求还原之前的部署方式。按用户指令回滚，未做任何"先解释再说服"的处理。
+
+回滚内容：删除 install-compose.sh 与 compose.yaml；恢复 docker-compose.yml（口令兜底 123456、restart: always、redis:latest、无 redis/postgres 健康检查、depends_on 无条件、镜像 :latest）；README.md / README.en.md / MAINTENANCE.md / docs/installation/BT.md 恢复迁移前内容。五个文件与基线提交 30eedcd 的 diff 均为空，`docker compose config` 在无 .env 时重新可用。
+
+明确未做（数据安全）：没有删除或修改 /opt/docker/new-api-own 下的任何文件与卷，本机运行的容器未动。回滚只针对仓库文件。
+
+同时如实告知用户一件与回滚无关但关键的事：x.miio.cc 那个 401 是「key 不在应答网关的令牌表里」，回滚仓库文件不会把令牌找回来——令牌在旧数据库里。本机这套实例是全新的空库（tokens=0 users=0），且本机没有 80/443 监听，x.miio.cc 由另一台在应答；那台可用 `docker logs <容器> | grep -i "using .* as database"` 一眼看出连的是 Postgres 还是退化成 SQLite（本仓库 model/main.go:148 的行为），这是"面板数据全丢/令牌全失效"类症状的第一判据。等用户再决定是否让我继续查那台。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `770e26c` | revert(deploy): 回到迁移前的部署方式 [task:revert-to-previous-deploy] |
+
+### Status
+
+[OK] **Completed**
