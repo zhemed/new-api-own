@@ -25,29 +25,7 @@
 curl -fsSL https://raw.githubusercontent.com/zhemed/new-api-own/main/install-docker.sh | bash
 ```
 
-### 方式一：一条命令部署（推荐）
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/zhemed/new-api-own/main/install-compose.sh | sudo bash
-```
-
-装到 `/opt/docker/new-api-own`。脚本会：生成随机数据库口令并写入 `.env`（600；重跑**沿用**既有口令，
-绝不重新生成）→ 拉取同 ref 的 [compose.yaml](./compose.yaml) → 启动 new-api + PostgreSQL + Redis →
-等到健康检查通过 → 收紧 `data/`、`logs/` 权限。
-
-**重跑不等于升级**：已有 `.env` 时默认沿用其中的镜像 tag，只改配置重跑不会动版本；要升级用
-`--upgrade`（按该 ref 上的 `VERSION`）或 `--tag v0.0.3` 钉死。
-
-已有部署默认**拒绝覆盖**，`--force` 才重写并先备份；`./data`、`./logs` 与 `pg_data` 卷永不被删除。
-参数见 `--help`（`--dir` 换目录、`--project-name` 换项目名、`--name-prefix` 让容器名共存、
-`--no-start` 干跑、`--tag`/`--upgrade` 控制版本）。
-
-健康检查没通过时脚本**以非 0 退出**（容器留在原地供排查，不自动回滚），便于接自动化。
-
-> 部署前请读 [MAINTENANCE.md](./MAINTENANCE.md) 的「部署安全基线」：默认 host 网络会把面板暴露在
-> 所有网卡上（含公网），且 `/api/status` 无需认证即可读。
-
-### 方式二：Docker 镜像（单容器，无需源码）
+### 方式一：Docker 镜像（推荐，无需源码）
 
 ```bash
 docker run -d --name new-api --restart always \
@@ -59,7 +37,7 @@ docker run -d --name new-api --restart always \
 - 默认使用 SQLite，数据保存在 `./data` 目录
 - 部署完成后访问 `http://localhost:3000`
 
-### 方式三：源码构建（需要仓库访问权限）
+### 方式二：源码构建（需要仓库访问权限）
 
 ```bash
 git clone https://github.com/zhemed/new-api-own.git
@@ -74,21 +52,11 @@ docker run -d --name new-api --restart always \
 
 ### 生产部署参考
 
-仓库内的 [compose.yaml](./compose.yaml) 是 host 网络模式 + PostgreSQL/Redis 的生产配置。
-`POSTGRES_PASSWORD` 与 `REDIS_PASSWORD` 是**必填**的 —— 刻意不给默认值：缺失时
-`docker compose config` / `up` 直接失败，而不是用一个人尽皆知的弱口令把数据库超级用户起起来。
-所以手工部署必须先建 `.env`：
+仓库内的 `docker-compose.yml` 是 host 网络模式 + PostgreSQL/Redis 的生产配置，按需调整默认密码后使用：
 
 ```bash
-cat > .env <<'EOF'
-POSTGRES_PASSWORD=<换成随机值，如 openssl rand -hex 16>
-REDIS_PASSWORD=<换成随机值>
-EOF
-docker compose up -d
+docker-compose up -d
 ```
-
-文件名用 `compose.yaml`（Compose v2 的首选名；实测优先级 `compose.yaml` > `compose.yml` >
-`docker-compose.yml` > `docker-compose.yaml`，多文件并存会告警）。
 
 ## 维护
 

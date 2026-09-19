@@ -1,0 +1,84 @@
+# Docker 环境标准：Docker 29.7.2 + Compose v5.4.0（一键安装见 install-docker.sh）
+# New-API Docker Compose Configuration (host network mode)
+#
+# Host network deployment (self-hosted internal setup):
+#   - new-api / postgres / redis all use host networking
+#   - Databases listen on 127.0.0.1 only, NOT exposed to LAN
+#   - Access: http://<server-ip>:3000
+#
+# Uses our own image: ghcr.io/zhemed/new-api-own:latest
+#
+# IMPORTANT: change all default passwords (123456) before production!
+#
+# SECURITY - host networking puts the panel on every interface.
+#   new-api listens on *:3000, so http://<public-ip>:3000/ is reachable from the
+#   internet unless the host firewall blocks it; a reverse proxy in front does NOT
+#   close that direct port. /api/status also answers without authentication, so an
+#   exposed panel leaks configuration. Minimal hardening (keep host networking):
+#     nft add table ip filter
+#     nft add chain ip filter INPUT '{ type filter hook input priority filter; policy accept; }'
+#     nft add rule ip filter INPUT iif lo accept
+#     nft add rule ip filter INPUT tcp dport 3000 drop
+#   To bind loopback only, drop `network_mode: host` for new-api and use
+#     ports: ["127.0.0.1:3000:3000"]
+#   (redis/postgres must then move off host networking as well).
+#   Data files hold plaintext upstream API keys - keep them root-only:
+#     chmod 700 data data/logs && chmod 600 data/*.db data/logs/*
+#   See the "部署安全基线" section in MAINTENANCE.md.
+
+services:
+  new-api:
+    image: ghcr.io/zhemed/new-api-own:latest
+    pull_policy: always
+    container_name: new-api
+    restart: always
+    network_mode: host
+    command: --log-dir /app/logs
+    volumes:
+      - ./data:/data
+      - ./logs:/app/logs
+    environment:
+      - SQL_DSN=postgresql://root:123456@127.0.0.1:5432/new-api
+      - REDIS_CONN_STRING=redis://:123456@127.0.0.1:6379
+      - TZ=Asia/Shanghai
+      # Rate limiters are intentionally off for this self-hosted deployment
+      # (trusted network). Set any of them to true to restore that limiter.
+      - GLOBAL_WEB_RATE_LIMIT_ENABLE=false
+      - GLOBAL_API_RATE_LIMIT_ENABLE=false
+      - CRITICAL_RATE_LIMIT_ENABLE=false
+      - SEARCH_RATE_LIMIT_ENABLE=false
+      - LOGIN_SESSION_NEVER_EXPIRES=true
+      - ERROR_LOG_ENABLED=true
+      - BATCH_UPDATE_ENABLED=true
+      - NODE_NAME=new-api-node-1
+    depends_on:
+      - redis
+      - postgres
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:3000/api/status | grep -o '\"success\":\\s*true' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: always
+    network_mode: host
+    command: ["redis-server", "--requirepass", "123456", "--bind", "127.0.0.1", "::1"]
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    restart: always
+    network_mode: host
+    command: ["postgres", "-c", "listen_addresses=127.0.0.1"]
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: new-api
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+volumes:
+  pg_data:

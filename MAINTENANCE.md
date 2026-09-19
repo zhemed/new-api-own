@@ -294,14 +294,10 @@ x-opencode-session and cannot be routed efficiently
 
 ## 自用部署注意事项
 
-- 本 fork **默认关闭四组限流**，`compose.yaml` 亦显式声明为关闭：`GLOBAL_WEB_RATE_LIMIT_ENABLE`、`GLOBAL_API_RATE_LIMIT_ENABLE`、`CRITICAL_RATE_LIMIT_ENABLE`（登录/注册/重置密码/2FA/OAuth 等敏感操作）、`SEARCH_RATE_LIMIT_ENABLE`（搜索接口按用户限流）。这是**有意的自用配置**（内网信任环境、方便频繁操作），不是缺陷
+- 本 fork **默认关闭四组限流**，`docker-compose.yml` 亦显式声明为关闭：`GLOBAL_WEB_RATE_LIMIT_ENABLE`、`GLOBAL_API_RATE_LIMIT_ENABLE`、`CRITICAL_RATE_LIMIT_ENABLE`（登录/注册/重置密码/2FA/OAuth 等敏感操作）、`SEARCH_RATE_LIMIT_ENABLE`（搜索接口按用户限流）。这是**有意的自用配置**（内网信任环境、方便频繁操作），不是缺陷
 - 关闭后全局爆破式请求没有兜底：若仓库公开或对外提供服务，需把对应 `*_ENABLE` 设回 `true`（`*_RATE_LIMIT` 次数与 `*_DURATION` 秒数原值仍在，设置即可恢复，见 `.env.example` 的「限流配置」段）
 - 公开镜像可直接拉取，无需 `docker login`
 - 部署前确保 Docker 为标准版本（29.7.2 + v5.4.0）
-- **一条命令部署**：`install-compose.sh`（`curl | bash` 形态）建 `/opt/docker/new-api-own` →
-  生成随机 Postgres/Redis 口令写进 `.env`（600）→ 拉同 ref 的 `compose.yaml` → 起容器并等健康检查。
-  幂等（已有部署拒绝覆盖，`--force` 才重写且先备份）、固定 compose 项目名（它决定 `pg_data` 卷名）、
-  重跑**沿用**既有口令；`./data`、`./logs` 与数据库卷永不被脚本删除
 
 ## 发版流程（版本号第三位递增：0.0.2 → 0.0.3 → 0.0.4 …）
 
@@ -330,17 +326,13 @@ x-opencode-session and cannot be routed efficiently
 
 > 约定：`VERSION` 文件不带 `v`，tag 带 `v`，两者版本号一致；镜像同时提供 `v0.0.3` 与 `0.0.3` 两种拉取标签，指向同一份多架构清单。
 
-> `install-compose.sh` **不保存版本字面量**：它按 `--ref`（默认 `main`）取该 ref 上的 `VERSION`
-> 推导 `v<版本>`，所以发版只需改 `VERSION`，安装脚本无需跟着同步（`--tag` 用于钉死到历史版本）。
-> 这与 komari 那边"脚本里写 `DEFAULT_TAG` 再靠自检校验"的做法不同，是刻意的——少一个必然漂移的副本。
-
 ## 部署安全基线（必读）
 
 > 来源：2026-09-12 对线上自用实例的实测排查。**仓库当前配置默认不满足其中数项**，对外部署前请逐条确认。
 
 ### 1. 面板端口默认暴露在公网 ⚠️
 
-`compose.yaml` 用 `network_mode: host`，NewAPI 自身直接监听 `*:3000`（所有网卡，含公网 IP）。
+`docker-compose.yml` 用 `network_mode: host`，NewAPI 自身直接监听 `*:3000`（所有网卡，含公网 IP）。
 
 **关键认知：反向代理（lucky / nginx / caddy）只是"额外开一个入口"，不会关闭这个直连端口。** 反代到 `127.0.0.1:3000` 与 `3000` 是否对外可达，是两件互相独立的事。
 
@@ -363,7 +355,7 @@ nft add rule ip filter INPUT iif lo accept
 nft add rule ip filter INPUT tcp dport 3000 drop      # 或改成白名单 accept
 
 # 方案 B（推荐）：只绑本地，交给反代转发
-# compose.yaml 中把 new-api 的 network_mode: host 改为：
+# docker-compose.yml 中把 new-api 的 network_mode: host 改为：
 #   ports:
 #     - "127.0.0.1:3000:3000"
 # 注意：此时 redis / postgres 不能再依赖 host 网络，需一并改为容器网络 + 内部地址
@@ -379,7 +371,6 @@ chmod 600 data/*.db data/logs/* data/backup/* 2>/dev/null
 ```
 
 > 真正的防线是**目录 700**：即使应用后续新建的日志文件又是 644，非 root 也无法遍历进入该目录。
-> 用 `install-compose.sh` 部署时这一步是自动的（`data/`、`logs/` 在创建时即置 700，不依赖启动成功）。
 
 ### 3. 容器以 root 运行
 
@@ -387,13 +378,7 @@ chmod 600 data/*.db data/logs/* data/backup/* 2>/dev/null
 
 ### 4. 默认口令必须替换
 
-**已改为强制**：`compose.yaml` 里 `POSTGRES_PASSWORD` / `REDIS_PASSWORD` 用 `${VAR:?…}` 必填形式，
-**没有兜底默认值**。缺 `.env` 时 `docker compose config` / `up` 直接失败并打印原因，而不是用弱口令
-把数据库超级用户起起来。`install-compose.sh` 会自动生成 32 位纯 hex 口令写进 `.env`（600）；
-手工部署请自己建 `.env`（见 README）。
-
-> 仍然成立的一点：数据库只 `listen_addresses=127.0.0.1` / `--bind 127.0.0.1 ::1`，
-> 弱口令**不对外可达** —— 风险限定在本机其他用户/进程，但"静默起出弱口令超级用户"本身就得堵。
+compose 中 Postgres / Redis 口令均为 `123456`，仅有一行注释提醒。对外提供服务前务必替换，并同步修改 `SQL_DSN` 与 `REDIS_CONN_STRING`。
 
 ### 5. 部署自检清单
 
@@ -407,111 +392,6 @@ nft list ruleset | grep -q 'hook input' || echo '⚠️ 无 INPUT 链，入站�
 # 数据文件权限（应为 700 / 600）
 stat -c '%A %n' data data/*.db 2>/dev/null
 ```
-
-## 数据备份与恢复（唯一有状态的东西）
-
-部署里只有两处状态：**Postgres 命名卷**（`<项目名>_pg_data`：账号、渠道、令牌、计费与审计）
-与**绑定挂载的 `data/` + `logs/`**（上传物、日志、面板自身产出的备份）。
-`install-compose.sh` 的备份只覆盖 compose/.env **配置文件**，数据要自己按下面做。
-
-### 0. 先确定卷名：**别用目录名推**
-
-卷名是 `<项目名>_pg_data`，而**项目名由 `.env` 的 `COMPOSE_PROJECT_NAME` 决定，不是目录名** ——
-本仓库的安装脚本恰恰把项目名固定成 `new-api-own`，所以目录改名后卷名不变。用 `${PWD##*/}` 推卷名，
-轻则找不到卷，**重则 tar 到另一个同名项目的卷上**。
-
-```bash
-cd /opt/docker/new-api-own                # 或你实际的项目目录
-PROJECT=$(sed -n 's/^COMPOSE_PROJECT_NAME=//p' .env); PROJECT=${PROJECT:-${PWD##*/}}
-VOL="${PROJECT}_pg_data"
-docker volume inspect "$VOL" >/dev/null || echo "⚠️ 卷 $VOL 不存在，先核对 .env"
-
-# 以容器实际挂载为准（最权威）：
-# docker container inspect postgres \
-#   --format '{{range .Mounts}}{{if eq .Destination "/var/lib/postgresql/data"}}{{.Name}}{{end}}{{end}}'
-```
-
-> 是 `docker container inspect`，**不是** `docker inspect` —— 后者同时匹配镜像，而容器名
-> `postgres` / `redis` 与镜像同名，会返回一个镜像对象（这个坑在安装脚本里踩过一次）。
-
-### 1. 逻辑备份（首选：不停机、可跨版本、可单表恢复）
-
-```bash
-TS=$(date -u +%Y%m%dT%H%M%SZ)             # 精确到秒：同一天重跑不会互相覆盖
-docker compose exec -T postgres pg_dump -Fc -U root -d new-api > "pg-$TS.dump"
-```
-
-`-Fc`（custom 格式）自带压缩，且能用 `pg_restore -l` 列 TOC、按表选择性恢复；纯文本格式做不到。
-所以不要用 `pg_dump | gzip`。
-
-### 2. 物理备份（换机器/整卷搬运用；**必须先停数据库**）
-
-卷里就是 Postgres 的数据目录，**不能热拷**：即使停掉应用，数据库自己仍在写（checkpoint、WAL、
-autovacuum、bgwriter），tar 出来不是一致快照。这种"半写坏"的备份最坑的地方是**它可能起得来**，
-用一阵子才崩。
-
-```bash
-docker compose stop                       # 停整栈；PG 收到 SIGTERM 会干净关闭，此时卷才可安全拷贝
-docker run --rm -v "$VOL":/v -v "$PWD":/backup alpine \
-  tar czf "/backup/pgdata-$TS.tar.gz" -C /v .
-docker compose up -d
-```
-
-> 不想停机就用 `pg_basebackup`（在线、一致，官方支持的物理备份姿势）：
-> ```bash
-> docker compose exec -T postgres pg_basebackup -U root -D - -Ft -X fetch > "base-$TS.tar"
-> ```
-
-### 3. 绑定挂载的数据与日志
-
-```bash
-tar czf "files-$TS.tar.gz" data logs
-chmod 600 ./*.dump ./*.tar.gz ./*.tar      # 含明文上游 Key
-```
-
-### 4. 验证：文件"像有内容"不等于"能还原"
-
-`pg_restore -l` 只能证明 TOC 读得出来。真正的验证是**还原到一次性容器后逐表比对行数**：
-
-```bash
-docker run -d --name pg-verify -e POSTGRES_PASSWORD=verify -e POSTGRES_DB=new-api postgres:15
-
-# 就绪判定必须能跑**真实查询**：官方镜像初始化时会先起一个临时实例（只监听 unix socket），
-# 不带 -h 的 pg_isready 会对它误报 ready，紧接着它就被关掉。所以用真实查询 + 重试。
-until docker exec pg-verify psql -U postgres -d new-api -c 'select 1' >/dev/null 2>&1; do sleep 2; done
-
-docker exec -i pg-verify pg_restore -U postgres -d new-api --no-owner < "pg-$TS.dump"
-
-COUNT_SQL="select relname||'='||(xpath('/row/c/text()', query_to_xml(format('select count(*) as c from %I.%I', schemaname, relname), false, true, '')))[1]::text from pg_stat_user_tables order by 1"
-docker exec postgres  psql -U root    -d new-api -tAc "$COUNT_SQL" > /tmp/prod.counts
-docker exec pg-verify psql -U postgres -d new-api -tAc "$COUNT_SQL" > /tmp/verify.counts
-diff /tmp/prod.counts /tmp/verify.counts && echo "✅ 逐表行数一致"
-docker rm -f pg-verify
-```
-
-### 5. 保留与演练
-
-- 文件名带**秒级**时间戳；保留 **7 份日备 + 4 份周备**，更旧的归档到异机/对象存储。
-- **没演练过的备份不算备份**：每季度至少真还原一次（第 4 节就是一次完整演练），记下耗时与失败点。
-- 恢复前先停应用（`docker compose stop`），避免恢复过程中被写入。
-- 面板自身的「备份」产出落在 `data/backup/`，同样含密钥，权限按 §2 处理。
-- 备份不要长期只放同机：数据目录 700 那条防线在机器丢失/磁盘损坏面前不起作用。
-
-### 6. 恢复
-
-```bash
-# 逻辑备份（空库，或已确认可覆盖）：
-docker compose exec -T postgres pg_restore -U root -d new-api --clean --if-exists < "pg-$TS.dump"
-
-# 物理备份：先 down，再整卷替换
-docker compose down
-docker volume rm "$VOL" && docker volume create "$VOL"
-docker run --rm -v "$VOL":/v -v "$PWD":/backup alpine sh -c "tar xzf /backup/pgdata-$TS.tar.gz -C /v"
-docker compose up -d
-```
-
-> 物理备份是**整个数据目录的二进制快照**，只能还原到同大版本 Postgres（本项目钉 `postgres:15`）；
-> 跨大版本请走逻辑备份。
 
 ## 工作流
 
