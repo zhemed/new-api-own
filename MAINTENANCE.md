@@ -411,45 +411,107 @@ stat -c '%A %n' data data/*.db 2>/dev/null
 ## 数据备份与恢复（唯一有状态的东西）
 
 部署里只有两处状态：**Postgres 命名卷**（`<项目名>_pg_data`：账号、渠道、令牌、计费与审计）
-与**绑定挂载的 `data/` + `logs/`**（SQLite 时代的库文件、上传物、日志）。
+与**绑定挂载的 `data/` + `logs/`**（上传物、日志、面板自身产出的备份）。
 `install-compose.sh` 的备份只覆盖 compose/.env **配置文件**，数据要自己按下面做。
 
+### 0. 先确定卷名：**别用目录名推**
+
+卷名是 `<项目名>_pg_data`，而**项目名由 `.env` 的 `COMPOSE_PROJECT_NAME` 决定，不是目录名** ——
+本仓库的安装脚本恰恰把项目名固定成 `new-api-own`，所以目录改名后卷名不变。用 `${PWD##*/}` 推卷名，
+轻则找不到卷，**重则 tar 到另一个同名项目的卷上**。
+
 ```bash
-cd /opt/docker/new-api-own          # 或者你实际的项目目录
+cd /opt/docker/new-api-own                # 或你实际的项目目录
+PROJECT=$(sed -n 's/^COMPOSE_PROJECT_NAME=//p' .env); PROJECT=${PROJECT:-${PWD##*/}}
+VOL="${PROJECT}_pg_data"
+docker volume inspect "$VOL" >/dev/null || echo "⚠️ 卷 $VOL 不存在，先核对 .env"
 
-# 1) 数据库逻辑备份（推荐：可跨版本、可单库恢复）
-docker compose exec -T postgres pg_dump -U root new-api | gzip > "pg-$(date +%F).sql.gz"
-
-# 2) 卷的物理备份（整目录，换机器时更省事；需先停应用避免写坏）
-docker compose stop new-api
-docker run --rm -v "${PWD##*/}_pg_data":/v -v "$PWD":/backup alpine \
-  tar czf "/backup/pgdata-$(date +%F).tar.gz" -C /v .
-docker compose start new-api
-
-# 3) 绑定挂载的数据与日志
-tar czf "files-$(date +%F).tar.gz" data logs
-
-chmod 600 ./*.sql.gz ./*.tar.gz      # 备份里含明文上游 Key 与库口令上下文
+# 以容器实际挂载为准（最权威）：
+# docker container inspect postgres \
+#   --format '{{range .Mounts}}{{if eq .Destination "/var/lib/postgresql/data"}}{{.Name}}{{end}}{{end}}'
 ```
 
-恢复：
+> 是 `docker container inspect`，**不是** `docker inspect` —— 后者同时匹配镜像，而容器名
+> `postgres` / `redis` 与镜像同名，会返回一个镜像对象（这个坑在安装脚本里踩过一次）。
+
+### 1. 逻辑备份（首选：不停机、可跨版本、可单表恢复）
 
 ```bash
-# 从逻辑备份恢复（空库或已确认可覆盖时）
-gunzip -c pg-YYYY-MM-DD.sql.gz | docker compose exec -T postgres psql -U root -d new-api
+TS=$(date -u +%Y%m%dT%H%M%SZ)             # 精确到秒：同一天重跑不会互相覆盖
+docker compose exec -T postgres pg_dump -Fc -U root -d new-api > "pg-$TS.dump"
+```
 
-# 从卷的物理备份恢复
-docker compose down
-docker run --rm -v "${PWD##*/}_pg_data":/v -v "$PWD":/backup alpine \
-  sh -c 'rm -rf /v/* && tar xzf /backup/pgdata-YYYY-MM-DD.tar.gz -C /v'
+`-Fc`（custom 格式）自带压缩，且能用 `pg_restore -l` 列 TOC、按表选择性恢复；纯文本格式做不到。
+所以不要用 `pg_dump | gzip`。
+
+### 2. 物理备份（换机器/整卷搬运用；**必须先停数据库**）
+
+卷里就是 Postgres 的数据目录，**不能热拷**：即使停掉应用，数据库自己仍在写（checkpoint、WAL、
+autovacuum、bgwriter），tar 出来不是一致快照。这种"半写坏"的备份最坑的地方是**它可能起得来**，
+用一阵子才崩。
+
+```bash
+docker compose stop                       # 停整栈；PG 收到 SIGTERM 会干净关闭，此时卷才可安全拷贝
+docker run --rm -v "$VOL":/v -v "$PWD":/backup alpine \
+  tar czf "/backup/pgdata-$TS.tar.gz" -C /v .
 docker compose up -d
 ```
 
-- **验证备份可用**，别只看文件存在：`gunzip -c pg-*.sql.gz | head -20` 应能见到 `CREATE TABLE`；
-  物理备份用 `tar tzf` 列一次目录。
-- 面板自身的「备份」功能产出也落在 `data/backup/`，同样含密钥，权限按 §2 处理。
-- 恢复前先停应用（`docker compose stop new-api`），避免恢复过程中被写入。
-- 备份不要长期只放同机：数据目录 700 的那条防线在机器丢失/磁盘损坏面前不起作用。
+> 不想停机就用 `pg_basebackup`（在线、一致，官方支持的物理备份姿势）：
+> ```bash
+> docker compose exec -T postgres pg_basebackup -U root -D - -Ft -X fetch > "base-$TS.tar"
+> ```
+
+### 3. 绑定挂载的数据与日志
+
+```bash
+tar czf "files-$TS.tar.gz" data logs
+chmod 600 ./*.dump ./*.tar.gz ./*.tar      # 含明文上游 Key
+```
+
+### 4. 验证：文件"像有内容"不等于"能还原"
+
+`pg_restore -l` 只能证明 TOC 读得出来。真正的验证是**还原到一次性容器后逐表比对行数**：
+
+```bash
+docker run -d --name pg-verify -e POSTGRES_PASSWORD=verify -e POSTGRES_DB=new-api postgres:15
+
+# 就绪判定必须能跑**真实查询**：官方镜像初始化时会先起一个临时实例（只监听 unix socket），
+# 不带 -h 的 pg_isready 会对它误报 ready，紧接着它就被关掉。所以用真实查询 + 重试。
+until docker exec pg-verify psql -U postgres -d new-api -c 'select 1' >/dev/null 2>&1; do sleep 2; done
+
+docker exec -i pg-verify pg_restore -U postgres -d new-api --no-owner < "pg-$TS.dump"
+
+COUNT_SQL="select relname||'='||(xpath('/row/c/text()', query_to_xml(format('select count(*) as c from %I.%I', schemaname, relname), false, true, '')))[1]::text from pg_stat_user_tables order by 1"
+docker exec postgres  psql -U root    -d new-api -tAc "$COUNT_SQL" > /tmp/prod.counts
+docker exec pg-verify psql -U postgres -d new-api -tAc "$COUNT_SQL" > /tmp/verify.counts
+diff /tmp/prod.counts /tmp/verify.counts && echo "✅ 逐表行数一致"
+docker rm -f pg-verify
+```
+
+### 5. 保留与演练
+
+- 文件名带**秒级**时间戳；保留 **7 份日备 + 4 份周备**，更旧的归档到异机/对象存储。
+- **没演练过的备份不算备份**：每季度至少真还原一次（第 4 节就是一次完整演练），记下耗时与失败点。
+- 恢复前先停应用（`docker compose stop`），避免恢复过程中被写入。
+- 面板自身的「备份」产出落在 `data/backup/`，同样含密钥，权限按 §2 处理。
+- 备份不要长期只放同机：数据目录 700 那条防线在机器丢失/磁盘损坏面前不起作用。
+
+### 6. 恢复
+
+```bash
+# 逻辑备份（空库，或已确认可覆盖）：
+docker compose exec -T postgres pg_restore -U root -d new-api --clean --if-exists < "pg-$TS.dump"
+
+# 物理备份：先 down，再整卷替换
+docker compose down
+docker volume rm "$VOL" && docker volume create "$VOL"
+docker run --rm -v "$VOL":/v -v "$PWD":/backup alpine sh -c "tar xzf /backup/pgdata-$TS.tar.gz -C /v"
+docker compose up -d
+```
+
+> 物理备份是**整个数据目录的二进制快照**，只能还原到同大版本 Postgres（本项目钉 `postgres:15`）；
+> 跨大版本请走逻辑备份。
 
 ## 工作流
 

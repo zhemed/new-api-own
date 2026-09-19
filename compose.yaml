@@ -115,7 +115,10 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U root -d new-api"]
+      # 强制走 TCP（-h 127.0.0.1）：官方镜像初始化时会先起一个**临时实例**跑 init 脚本，
+      # 它只监听 unix socket —— 不带 -h 时 pg_isready 会对它误报 ready，紧接着它就被关掉，
+      # 于是"刚 healthy 又没了"。TCP 探测不会命中那个临时实例。
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U root -d new-api"]
       interval: 10s
       timeout: 5s
       retries: 6
