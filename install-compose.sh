@@ -5,18 +5,21 @@
 #   curl -fsSL https://raw.githubusercontent.com/zhemed/new-api-own/main/install-compose.sh | sudo bash
 #
 # 它做的事：预检 Docker/Compose → 建项目目录（默认 /opt/docker/new-api-own，750）
-#   → 生成或沿用 .env（随机口令，600）→ 拉取同 ref 的 docker-compose.yml
+#   → 生成或沿用 .env（随机口令，600）→ 拉取同 ref 的 compose.yaml
 #   → docker compose up -d → 等 new-api 健康检查通过 → 收紧数据目录权限 → 打印运维信息。
 #
 # 参数（也可用环境变量；括号内为对应环境变量）：
 #   --dir <路径>          项目目录（默认 /opt/docker/new-api-own；NEW_API_COMPOSE_DIR）
 #   --ref <git ref>       取 compose 与 VERSION 的 ref（默认 main；NEW_API_COMPOSE_REF）
 #   --raw-base <URL>      取文件的来源基址（默认官方 raw 地址；NEW_API_RAW_BASE）——fork 或镜像源时用
-#   --tag <镜像 tag>      镜像 tag（默认按 ref 上 VERSION 推导 v<版本>；NEW_API_IMAGE_TAG）
+#   --tag <镜像 tag>      钉死镜像 tag（最高优先级；NEW_API_IMAGE_TAG）
+#   --upgrade             显式升级到 ref 上 VERSION 指向的版本（默认沿用既有 .env 的 tag）
 #   --project-name <名>   compose 项目名，决定 pg_data 卷名（默认 new-api-own；NEW_API_PROJECT_NAME）
-#   --name-prefix <前缀>  三个容器名统一加前缀（默认无；NEW_API_NAME_PREFIX）
+#   --name-prefix <前缀>  三个容器名统一加前缀（默认无；NEW_API_NAME_PREFIX）。
+#                         注意：host 网络下 3000/6379/5432 是**全机唯一**的，前缀只解决容器名
+#                         冲突，**不能**让两套部署在同一台机器上共存
 #   --tz <时区>           容器时区（默认取宿主机 /etc/timezone；NEW_API_TZ）
-#   --allow-docker-mismatch  在非标准 Docker 环境上强行部署（本仓库标准：29.7.2 + v5.4.0）
+#   --allow-docker-mismatch  在低于/跨主版本标准的 Docker 环境上强行部署（本仓库标准：29.7.2 + v5.4.0）
 #   --force               已有部署时覆盖 compose（默认拒绝；旧文件先备份成 .bak-<时间戳>-<微秒>）
 #   --no-start            干跑：只写文件，不启动，也不做容器名预检
 #   -h, --help            显示本帮助
@@ -25,6 +28,7 @@
 #   * 已有部署默认拒绝覆盖；--force 也**绝不**删除或覆盖 ./data、./logs 与 pg_data 命名卷；
 #   * .env 已存在则沿用既有口令，**绝不重新生成** —— Postgres 口令只在数据目录为空时生效，
 #     重生成会让应用连不上自己的库，现场表现是"重装后面板里数据全丢"，极难自查；
+#   * .env 已存在且未给 --tag/--upgrade 时，**镜像 tag 也不变** —— 重跑不等于隐式升级；
 #   * compose 项目名不变更（它决定 pg_data 的卷名，改了等于换一个新空卷）；
 #   * 口令不打印到输出、不写进仓库。
 #
@@ -45,6 +49,7 @@ TZ_VALUE="${NEW_API_TZ:-}"
 FORCE=0
 START=1
 ALLOW_MISMATCH=0
+UPGRADE=0
 
 log()  { printf '%s\n' "$*"; }
 ok()   { printf '\033[32m%s\033[0m\n' "$*"; }
@@ -67,7 +72,12 @@ usage() {
 rand_hex() { head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n'; }
 
 # 从 .env 取值：只做行匹配，不 eval，避免执行 .env 里的内容。
-read_env_value() { sed -n "s/^$1=//p" "$2" 2>/dev/null | head -n 1; }
+# 文件不存在必须**静默返回空**：调用点包含"首次安装"路径，而此时 .env 还不存在；
+# 早期版本少了这个守卫，sed 在 pipefail 下会把整个脚本带断（exit 2）。
+read_env_value() {
+  [ -f "$2" ] || return 0
+  sed -n "s/^$1=//p" "$2" 2>/dev/null | head -n 1 || true
+}
 
 # 唯一到微秒的备份名；同一秒内连跑多次也不会互相覆盖（只到秒时"保留最近 N 份"会形同虚设）。
 unique_backup_name() {
@@ -115,6 +125,7 @@ while [ $# -gt 0 ]; do
     --name-prefix) PREFIX="${2:?--name-prefix 需要前缀}"; shift 2 ;;
     --tz) TZ_VALUE="${2:?--tz 需要时区}"; shift 2 ;;
     --allow-docker-mismatch) ALLOW_MISMATCH=1; shift ;;
+    --upgrade) UPGRADE=1; shift ;;
     --force) FORCE=1; shift ;;
     --no-start) START=0; shift ;;
     -h | --help) usage; exit 0 ;;
@@ -139,35 +150,52 @@ fi
 command -v docker >/dev/null 2>&1 || die "未找到 docker：先装 Docker Engine + Compose v2（见 README / https://docs.docker.com/engine/install/）"
 docker compose version >/dev/null 2>&1 || die "未找到 docker compose（v2）：需要 docker-compose-plugin"
 
-DOCKER_VER="$(docker --version 2>/dev/null | grep -oP 'Docker version \K[0-9.]+' || echo missing)"
-COMPOSE_VER="$(docker compose version 2>/dev/null | grep -oP 'Docker Compose version \K\S+' || echo missing)"
-if [ "$DOCKER_VER" != "$REQUIRED_DOCKER" ] || [ "$COMPOSE_VER" != "$REQUIRED_COMPOSE" ]; then
+DOCKER_VER="$(docker --version 2>/dev/null | grep -oP 'Docker version \K[0-9.]+' || echo 0.0.0)"
+COMPOSE_VER="$(docker compose version 2>/dev/null | grep -oP 'Docker Compose version \K\S+' || echo 0.0.0)"
+COMPOSE_VER="${COMPOSE_VER#v}"
+
+# 版本语义：低于标准 → 失败；等于标准 → 通过；高于标准且**同主版本** → 告警放行；
+# 跨主版本（升级或降级）→ 仍需 --allow-docker-mismatch。
+# 用字面相等比较会因为上游发一个补丁版就硬失败，太脆；完全放开又违背 AGENTS.md 的
+# 「Docker 环境标准」。解析不出来时按 0.0.0 处理，自然落进"低于标准"。
+version_ge() { [ "$1" = "$2" ] && return 0; [ "$(printf '%s\n%s\n' "$2" "$1" | sort -V | tail -n1)" = "$1" ]; }
+major_of() { printf '%s' "${1#v}" | cut -d. -f1; }
+
+mismatch_reason=""
+if ! version_ge "$DOCKER_VER" "$REQUIRED_DOCKER"; then
+  mismatch_reason="Docker $DOCKER_VER 低于标准 $REQUIRED_DOCKER"
+elif [ "$DOCKER_VER" != "$REQUIRED_DOCKER" ] && [ "$(major_of "$DOCKER_VER")" != "$(major_of "$REQUIRED_DOCKER")" ]; then
+  mismatch_reason="Docker $DOCKER_VER 与本仓库标准 $REQUIRED_DOCKER 跨主版本"
+elif ! version_ge "$COMPOSE_VER" "${REQUIRED_COMPOSE#v}"; then
+  mismatch_reason="Compose v$COMPOSE_VER 低于标准 $REQUIRED_COMPOSE"
+elif [ "$COMPOSE_VER" != "${REQUIRED_COMPOSE#v}" ] && [ "$(major_of "$COMPOSE_VER")" != "$(major_of "$REQUIRED_COMPOSE")" ]; then
+  mismatch_reason="Compose v$COMPOSE_VER 与本仓库标准 $REQUIRED_COMPOSE 跨主版本"
+fi
+
+if [ -n "$mismatch_reason" ]; then
   if [ "$ALLOW_MISMATCH" = 1 ]; then
-    warn "Docker 环境非标准：实测 Docker $DOCKER_VER / Compose $COMPOSE_VER，标准为 Docker $REQUIRED_DOCKER + Compose $REQUIRED_COMPOSE（已按 --allow-docker-mismatch 继续）"
+    warn "$mismatch_reason（已按 --allow-docker-mismatch 继续）"
   else
-    die "Docker 环境未达标：实测 Docker $DOCKER_VER / Compose $COMPOSE_VER，本仓库标准是 Docker $REQUIRED_DOCKER + Compose $REQUIRED_COMPOSE。
+    die "Docker 环境不满足本仓库标准（Docker $REQUIRED_DOCKER + Compose $REQUIRED_COMPOSE）：$mismatch_reason
       装标准环境：curl -fsSL ${RAW_BASE}/${REF}/install-docker.sh | bash
-      确实要在非标准环境部署：加 --allow-docker-mismatch"
+      确实要在此环境部署：加 --allow-docker-mismatch"
   fi
+elif [ "$DOCKER_VER" != "$REQUIRED_DOCKER" ] || [ "$COMPOSE_VER" != "${REQUIRED_COMPOSE#v}" ]; then
+  warn "Docker/Compose 高于本仓库标准但同主版本，按兼容继续：Docker $DOCKER_VER / Compose v$COMPOSE_VER（标准 $REQUIRED_DOCKER / $REQUIRED_COMPOSE）"
 fi
 
-# ---------- 2. 解析版本（不写字面量，避免与 VERSION 漂移）----------
-if [ -z "$TAG" ]; then
-  version_raw="$(curl -fsSL "${RAW_BASE}/${REF}/VERSION" 2>/dev/null || true)"
-  version_trimmed="$(printf '%s' "$version_raw" | tr -d '[:space:]')"
-  [ -n "$version_trimmed" ] || die "取不到 ${REF} 上的 VERSION 文件；请显式指定版本：--tag <镜像 tag>"
-  TAG="v${version_trimmed}"
-fi
-
-# ---------- 3. 先拉 compose（坏 ref 要在动文件系统之前失败）----------
+# ---------- 2. 先拉 compose（坏 ref 要在动文件系统之前失败）----------
 tmp_compose="$(mktemp)"
 tmp_env="$(mktemp)"
 trap 'rm -f "$tmp_compose" "$tmp_env"' EXIT
-curl -fsSL "${RAW_BASE}/${REF}/docker-compose.yml" -o "$tmp_compose" \
-  || die "拉取 ${REF} 的 docker-compose.yml 失败：检查 ref 是否存在、网络是否可达"
-[ -s "$tmp_compose" ] || die "拉取到的 docker-compose.yml 是空文件"
-docker compose -f "$tmp_compose" config >/dev/null 2>&1 \
-  || die "拉取到的 docker-compose.yml 不是合法的 compose 文件（ref=$REF）；这通常意味着 ref 下没有我们这个文件"
+curl -fsSL "${RAW_BASE}/${REF}/compose.yaml" -o "$tmp_compose" \
+  || die "拉取 ${REF} 的 compose.yaml 失败：检查 ref 是否存在、网络是否可达"
+[ -s "$tmp_compose" ] || die "拉取到的 compose.yaml 是空文件"
+# 语法/结构校验。compose.yaml 里 POSTGRES_PASSWORD / REDIS_PASSWORD 是必填的（${VAR:?...}），
+# 所以这里给**占位值**让 config 能跑通 —— 不落盘、不写进 .env、不影响后面生成的真口令。
+POSTGRES_PASSWORD=placeholder REDIS_PASSWORD=placeholder \
+  docker compose -f "$tmp_compose" config >/dev/null 2>&1 \
+  || die "拉取到的 compose.yaml 不是合法的 compose 文件（ref=$REF）；这通常意味着 ref 下没有我们这个文件"
 
 # ---------- 4. 项目目录与 .env ----------
 mkdir -p "$DIR" "$DIR/data" "$DIR/logs"
@@ -197,6 +225,28 @@ else
   RD_PW="$(rand_hex)"
 fi
 
+# ---------- 镜像 tag：默认沿用既有 .env，重跑不等于隐式升级 ----------
+# 优先级：--tag > 既有 .env 的 tag（除非 --upgrade）> ref 上的 VERSION。
+# 原来只要没给 --tag 就按 ref 的 VERSION 重算，于是"只想改一下配置重跑一次"也可能把
+# 镜像换成新版本 —— 升级必须是显式动作（评审 B4）。
+EXISTING_TAG="$(read_env_value NEW_API_IMAGE_TAG "$ENV_FILE")"
+if [ -n "$TAG" ]; then
+  TAG_SOURCE="--tag 指定"
+elif [ -n "$EXISTING_TAG" ] && [ "$UPGRADE" != 1 ]; then
+  TAG="$EXISTING_TAG"
+  TAG_SOURCE="沿用既有 .env 的 tag（未升级；要升级用 --upgrade 或 --tag）"
+else
+  version_raw="$(curl -fsSL "${RAW_BASE}/${REF}/VERSION" 2>/dev/null || true)"
+  version_trimmed="$(printf '%s' "$version_raw" | tr -d '[:space:]')"
+  [ -n "$version_trimmed" ] || die "取不到 ${REF} 上的 VERSION 文件；请显式指定版本：--tag <镜像 tag>"
+  TAG="v${version_trimmed}"
+  if [ "$UPGRADE" = 1 ]; then
+    TAG_SOURCE="--upgrade：按 $REF 的 VERSION"
+  else
+    TAG_SOURCE="首次安装：按 $REF 的 VERSION"
+  fi
+fi
+
 cat > "$tmp_env" <<EOF
 # 由 install-compose.sh 生成（$(date -u +%Y-%m-%dT%H:%M:%SZ)）
 # 本文件含数据库口令：权限 600，不要提交进任何仓库。
@@ -211,9 +261,11 @@ POSTGRES_CONTAINER_NAME=${PREFIX}postgres
 EOF
 
 # ---------- 5. 写文件（已有部署默认拒绝覆盖）----------
-COMPOSE_FILE="$DIR/docker-compose.yml"
+# 主名用 compose.yaml：Compose v2 的**首选**名。本机实测（compose 5.4.0）优先级为
+# compose.yaml > compose.yml > docker-compose.yml > docker-compose.yaml，且多文件并存会告警。
+COMPOSE_FILE="$DIR/compose.yaml"
 LEGACY_NAMES=()
-for f in compose.yaml compose.yml docker-compose.yaml; do
+for f in compose.yml docker-compose.yml docker-compose.yaml; do
   [ -f "$DIR/$f" ] && LEGACY_NAMES+=("$f")
 done
 EXISTS=0
@@ -222,12 +274,14 @@ EXISTS=0
 
 if [ "$EXISTS" = 1 ] && [ "$FORCE" != 1 ]; then
   if [ "${#LEGACY_NAMES[@]}" -gt 0 ]; then
-    die "项目目录里已有 compose 文件：${LEGACY_NAMES[*]}
-      本脚本用的是 docker-compose.yml；多个 compose 文件名并存会让每条 compose 命令都告警。
-      迁移方式（只留一个；改名后容器上的配置标签仍指向旧路径，需要一次重建）：
+    die "项目目录里已有旧名的 compose 文件：${LEGACY_NAMES[*]}
+      本脚本用的是 compose.yaml（Compose v2 的首选名；实测优先级
+      compose.yaml > compose.yml > docker-compose.yml > docker-compose.yaml）。
+      多个 compose 文件名并存会让每条 compose 命令都告警，所以只留一个。
+      迁移既有部署（改名后容器上的配置标签仍指向旧路径，需要**一次重建**）：
         mv $DIR/${LEGACY_NAMES[0]} $COMPOSE_FILE
         cd $DIR && docker compose up -d --force-recreate
-      确实要覆盖：加 --force（会把已有文件逐个改名成 .bak-<时间戳> 再写新的）"
+      确实要覆盖：加 --force（会把旧名文件逐个改名成 .bak-<时间戳>-<微秒> 再写新的）"
   else
     die "$COMPOSE_FILE 已存在（可能是现有部署）。要覆盖请加 --force（会先备份）；
       只想启停请直接在该目录跑 docker compose up -d / down。"
@@ -235,7 +289,7 @@ if [ "$EXISTS" = 1 ] && [ "$FORCE" != 1 ]; then
 fi
 
 if [ "$EXISTS" = 1 ] && [ "$FORCE" = 1 ]; then
-  for f in docker-compose.yml "${LEGACY_NAMES[@]}"; do
+  for f in compose.yaml "${LEGACY_NAMES[@]}"; do
     [ -f "$DIR/$f" ] || continue
     backup_existing "$f"
   done
@@ -281,7 +335,10 @@ cd "$DIR"
 log "拉取镜像..."
 docker compose pull || die "拉取镜像失败：检查网络与 ghcr.io 可达性（公开镜像无需登录）"
 log "启动容器..."
-docker compose up -d || die "compose up 失败：cd $DIR && docker compose logs"
+docker compose up -d || die "compose up 失败：cd $DIR && docker compose logs
+      若日志是 redis/postgres 反复退出且写着 'Address already in use'：host 网络下
+      3000/6379/5432 全机唯一，同机已有另一套部署（别的 compose 项目 / systemd / 手工进程）。
+      排查：ss -tlnp | grep -E ':(3000|6379|5432)' 与 docker ps"
 
 log "等待健康检查通过（上限 ${HEALTH_TIMEOUT}s）..."
 status=""
@@ -295,24 +352,29 @@ chmod 600 "$DIR/data"/*.db "$DIR/logs"/* 2>/dev/null || true
 
 if [ "$status" = "healthy" ]; then
   ok "new-api 健康（healthy）"
+  banner="部署完成"
 else
-  warn "健康检查尚未通过（status=$status）。下一步：cd $DIR && docker compose logs new-api --tail=100"
+  warn "健康检查未通过（status=$status）——容器保留在原地供排查，不自动回滚。
+      下一步：cd $DIR && docker compose logs new-api --tail=100"
+  banner="部署未完成：健康检查未通过（status=$status）"
 fi
 
 cat <<EOF
 
 ------------------------------------------------------------------------
-部署完成
+$banner
   面板地址:   http://<主机>:3000   （首次访问完成初始化）
   项目目录:   $DIR
   数据目录:   $DIR/data 与 $DIR/logs（含明文上游 Key，权限已收紧为 700）
   数据库:     命名卷 ${PROJECT}_pg_data
+  镜像 tag:   $TAG（$TAG_SOURCE）
   常用命令:   cd $DIR && docker compose logs -f / ps / restart / down
 
-升级（钉 tag 部署，回滚有落点）:
-  cd $DIR && docker compose pull && docker compose up -d
-  换版本:     改 .env 的 NEW_API_IMAGE_TAG，或重跑本脚本加 --tag vX.Y.Z
-  回滚:       把 NEW_API_IMAGE_TAG 改回旧版本后 pull + up -d（数据在卷里，不受影响）
+升级（默认钉 tag，重跑不会自己换版本）:
+  平级重跑:   本脚本默认沿用 .env 里的 tag，只修配置不会动版本
+  升到新版本: 重跑加 --upgrade（按 ref 的 VERSION），或 --tag vX.Y.Z 钉死
+  手工:       cd $DIR && docker compose pull && docker compose up -d
+  回滚:       把 .env 的 NEW_API_IMAGE_TAG 改回旧版本后 pull + up -d（数据在卷里，不受影响）
 
 安全基线（MAINTENANCE.md「部署安全基线」，本脚本不自动改网络形态）:
   * new-api 用 host 网络，监听 *:3000，/api/status 无需认证即可读；反代不会关掉这个直连端口。
@@ -322,3 +384,7 @@ cat <<EOF
   * 容器仍以 root 运行（Dockerfile 未设 USER），沿用现状。
 ------------------------------------------------------------------------
 EOF
+
+# 健康检查没过必须以非 0 结束：上面最后一条命令是 heredoc，不加这句就永远隐式 exit 0，
+# CI/自动化会把"起不来"当成功（评审 B2）。
+[ "$status" = "healthy" ] || exit 1

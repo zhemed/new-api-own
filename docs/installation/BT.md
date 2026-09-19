@@ -51,7 +51,7 @@
 ### 方法二：使用 Docker Compose
 
 1. 在宝塔面板中创建网站目录，如 `/www/wwwroot/new-api`
-2. 创建 `docker-compose.yml` 文件：
+2. 创建 `compose.yaml` 文件（Compose v2 的首选文件名）：
 
 ```yaml
 version: '3'
@@ -73,7 +73,7 @@ services:
 
 ```bash
 cd /www/wwwroot/new-api
-docker-compose up -d
+docker compose up -d
 ```
 
 ***
@@ -129,7 +129,7 @@ volumes:
 docker pull ghcr.io/zhemed/new-api-own:latest
 
 # 重启容器
-docker-compose down && docker-compose up -d
+docker compose down && docker compose up -d
 ```
 
 ***

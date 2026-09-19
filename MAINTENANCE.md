@@ -294,12 +294,12 @@ x-opencode-session and cannot be routed efficiently
 
 ## 自用部署注意事项
 
-- 本 fork **默认关闭四组限流**，`docker-compose.yml` 亦显式声明为关闭：`GLOBAL_WEB_RATE_LIMIT_ENABLE`、`GLOBAL_API_RATE_LIMIT_ENABLE`、`CRITICAL_RATE_LIMIT_ENABLE`（登录/注册/重置密码/2FA/OAuth 等敏感操作）、`SEARCH_RATE_LIMIT_ENABLE`（搜索接口按用户限流）。这是**有意的自用配置**（内网信任环境、方便频繁操作），不是缺陷
+- 本 fork **默认关闭四组限流**，`compose.yaml` 亦显式声明为关闭：`GLOBAL_WEB_RATE_LIMIT_ENABLE`、`GLOBAL_API_RATE_LIMIT_ENABLE`、`CRITICAL_RATE_LIMIT_ENABLE`（登录/注册/重置密码/2FA/OAuth 等敏感操作）、`SEARCH_RATE_LIMIT_ENABLE`（搜索接口按用户限流）。这是**有意的自用配置**（内网信任环境、方便频繁操作），不是缺陷
 - 关闭后全局爆破式请求没有兜底：若仓库公开或对外提供服务，需把对应 `*_ENABLE` 设回 `true`（`*_RATE_LIMIT` 次数与 `*_DURATION` 秒数原值仍在，设置即可恢复，见 `.env.example` 的「限流配置」段）
 - 公开镜像可直接拉取，无需 `docker login`
 - 部署前确保 Docker 为标准版本（29.7.2 + v5.4.0）
 - **一条命令部署**：`install-compose.sh`（`curl | bash` 形态）建 `/opt/docker/new-api-own` →
-  生成随机 Postgres/Redis 口令写进 `.env`（600）→ 拉同 ref 的 `docker-compose.yml` → 起容器并等健康检查。
+  生成随机 Postgres/Redis 口令写进 `.env`（600）→ 拉同 ref 的 `compose.yaml` → 起容器并等健康检查。
   幂等（已有部署拒绝覆盖，`--force` 才重写且先备份）、固定 compose 项目名（它决定 `pg_data` 卷名）、
   重跑**沿用**既有口令；`./data`、`./logs` 与数据库卷永不被脚本删除
 
@@ -340,7 +340,7 @@ x-opencode-session and cannot be routed efficiently
 
 ### 1. 面板端口默认暴露在公网 ⚠️
 
-`docker-compose.yml` 用 `network_mode: host`，NewAPI 自身直接监听 `*:3000`（所有网卡，含公网 IP）。
+`compose.yaml` 用 `network_mode: host`，NewAPI 自身直接监听 `*:3000`（所有网卡，含公网 IP）。
 
 **关键认知：反向代理（lucky / nginx / caddy）只是"额外开一个入口"，不会关闭这个直连端口。** 反代到 `127.0.0.1:3000` 与 `3000` 是否对外可达，是两件互相独立的事。
 
@@ -363,7 +363,7 @@ nft add rule ip filter INPUT iif lo accept
 nft add rule ip filter INPUT tcp dport 3000 drop      # 或改成白名单 accept
 
 # 方案 B（推荐）：只绑本地，交给反代转发
-# docker-compose.yml 中把 new-api 的 network_mode: host 改为：
+# compose.yaml 中把 new-api 的 network_mode: host 改为：
 #   ports:
 #     - "127.0.0.1:3000:3000"
 # 注意：此时 redis / postgres 不能再依赖 host 网络，需一并改为容器网络 + 内部地址
@@ -387,7 +387,13 @@ chmod 600 data/*.db data/logs/* data/backup/* 2>/dev/null
 
 ### 4. 默认口令必须替换
 
-compose 中 Postgres / Redis 口令均为 `123456`，仅有一行注释提醒。对外提供服务前务必替换，并同步修改 `SQL_DSN` 与 `REDIS_CONN_STRING`。
+**已改为强制**：`compose.yaml` 里 `POSTGRES_PASSWORD` / `REDIS_PASSWORD` 用 `${VAR:?…}` 必填形式，
+**没有兜底默认值**。缺 `.env` 时 `docker compose config` / `up` 直接失败并打印原因，而不是用弱口令
+把数据库超级用户起起来。`install-compose.sh` 会自动生成 32 位纯 hex 口令写进 `.env`（600）；
+手工部署请自己建 `.env`（见 README）。
+
+> 仍然成立的一点：数据库只 `listen_addresses=127.0.0.1` / `--bind 127.0.0.1 ::1`，
+> 弱口令**不对外可达** —— 风险限定在本机其他用户/进程，但"静默起出弱口令超级用户"本身就得堵。
 
 ### 5. 部署自检清单
 
@@ -401,6 +407,49 @@ nft list ruleset | grep -q 'hook input' || echo '⚠️ 无 INPUT 链，入站�
 # 数据文件权限（应为 700 / 600）
 stat -c '%A %n' data data/*.db 2>/dev/null
 ```
+
+## 数据备份与恢复（唯一有状态的东西）
+
+部署里只有两处状态：**Postgres 命名卷**（`<项目名>_pg_data`：账号、渠道、令牌、计费与审计）
+与**绑定挂载的 `data/` + `logs/`**（SQLite 时代的库文件、上传物、日志）。
+`install-compose.sh` 的备份只覆盖 compose/.env **配置文件**，数据要自己按下面做。
+
+```bash
+cd /opt/docker/new-api-own          # 或者你实际的项目目录
+
+# 1) 数据库逻辑备份（推荐：可跨版本、可单库恢复）
+docker compose exec -T postgres pg_dump -U root new-api | gzip > "pg-$(date +%F).sql.gz"
+
+# 2) 卷的物理备份（整目录，换机器时更省事；需先停应用避免写坏）
+docker compose stop new-api
+docker run --rm -v "${PWD##*/}_pg_data":/v -v "$PWD":/backup alpine \
+  tar czf "/backup/pgdata-$(date +%F).tar.gz" -C /v .
+docker compose start new-api
+
+# 3) 绑定挂载的数据与日志
+tar czf "files-$(date +%F).tar.gz" data logs
+
+chmod 600 ./*.sql.gz ./*.tar.gz      # 备份里含明文上游 Key 与库口令上下文
+```
+
+恢复：
+
+```bash
+# 从逻辑备份恢复（空库或已确认可覆盖时）
+gunzip -c pg-YYYY-MM-DD.sql.gz | docker compose exec -T postgres psql -U root -d new-api
+
+# 从卷的物理备份恢复
+docker compose down
+docker run --rm -v "${PWD##*/}_pg_data":/v -v "$PWD":/backup alpine \
+  sh -c 'rm -rf /v/* && tar xzf /backup/pgdata-YYYY-MM-DD.tar.gz -C /v'
+docker compose up -d
+```
+
+- **验证备份可用**，别只看文件存在：`gunzip -c pg-*.sql.gz | head -20` 应能见到 `CREATE TABLE`；
+  物理备份用 `tar tzf` 列一次目录。
+- 面板自身的「备份」功能产出也落在 `data/backup/`，同样含密钥，权限按 §2 处理。
+- 恢复前先停应用（`docker compose stop new-api`），避免恢复过程中被写入。
+- 备份不要长期只放同机：数据目录 700 的那条防线在机器丢失/磁盘损坏面前不起作用。
 
 ## 工作流
 
