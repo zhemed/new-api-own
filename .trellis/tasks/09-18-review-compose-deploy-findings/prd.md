@@ -48,17 +48,40 @@
 
 ## Acceptance Criteria
 
-- [ ] `docker compose config` 在有 `.env` 时通过；**无 `.env` 时以非 0 失败**并打印我们的提示
-      （B1 的判别性验证）
-- [ ] 脚本语法 `bash -n` + `shellcheck` 通过
-- [ ] 健康检查失败路径**真的**返回非 0（判别性：让健康检查必然失败，验退出码）
-- [ ] 重跑不再改 tag（判别性：改 `.env` 里 tag 后重跑，tag 保持；加 `--upgrade` 才动）
-- [ ] 版本比较：`29.7.3` 同主版本放行告警、`28.x` 失败、`--allow-docker-mismatch` 可越过
-- [ ] 仓库内不再有主 compose 的旧名引用残留；`makefile`/`.github` 不受影响
-- [ ] 临时目录 E2E 跑通（三容器 healthy + `/api/status` 200）
-- [ ] 迁移后 `/opt/docker/new-api-own` healthy，`komari`/`litepan` 未受影响
-- [ ] 两个 README 内容对齐；MAINTENANCE 有备份/恢复段
-- [ ] journal + 归档完成
+- [x] **B1**：无 `.env` 时 `docker compose config` 退出 1 并打印「POSTGRES_PASSWORD 未设置…」；
+      有 `.env` 时通过且逐项插值正确（redis 健康检查里的口令也正确替换）
+- [x] 脚本 `bash -n` + `shellcheck` 通过（退出码 0）
+- [x] **B2**：把健康检查换成恒定失败 → 脚本 exit **1**，并打印「部署未完成：健康检查未通过」横幅
+- [x] **B4**：手工把 `.env` 的 tag 改成 `v9.9.9` 后重跑 → 保持 `v9.9.9`；加 `--upgrade` → 变回 `v0.0.3`
+- [x] **B3**：六组用例 —— `29.7.2` 静默过 / `29.7.3` 与 `5.4.1` 同主版本告警放行 /
+      `28.5.0` 低于标准失败 / `30.0.0` 跨主版本失败 / 加 `--allow-docker-mismatch` 越过
+- [x] 仓库内 `docker-compose.yml` 只剩历史名列表与优先级说明；`makefile`/`.github` 不受影响
+      （两者只引用 dev compose，均带显式 `-f`）
+- [x] **实装即端到端**：本机 `/opt/docker/new-api-own` 迁移后三容器全部 healthy
+      （postgres/redis 新增健康检查生效）、`GET /api/status` 200、Postgres 34 张表与口令沿用完好、
+      restart 均为 `unless-stopped`、目录里只剩 `compose.yaml`、`komari`/`litepan` 未受影响
+- [x] 两个 README 对齐；MAINTENANCE 增加「数据备份与恢复」段
+- [x] journal + 归档完成
+
+## 环境限制（诚实记录）
+
+host 网络下 `3000/6379/5432` **全机唯一**，本机已跑着生产栈，因此**无法**再起第二套临时栈做
+clean-room E2E（第一轮尝试正是被 redis 的 `Address already in use` 挡住）。替代做法：
+
+1. 不依赖端口的用例（B1 / B3 / B4 与 config 校验）用临时目录 + `--no-start`、以及桩 `docker`
+   伪造版本全跑通；
+2. B2 用一份「健康检查恒定失败」的探针 compose（bridge 网络、不占端口）跑通退出码路径；
+3. 部署形态本身由**本机生产迁移**做端到端验证。
+
+这个限制本身也补进了脚本：`--name-prefix` 的说明与失败提示都写明「前缀只解决容器名冲突，
+host 网络下不能同机跑两套」。
+
+## 测试顺带暴露的两处（本轮一并修掉）
+
+- `read_env_value` 在 `.env` 不存在时让 `sed` 在 `pipefail` 下打断整个脚本（exit 2）——
+  首次安装路径**必然**触发，是 E2E 第一次跑就撞上的。
+- B1 改成必填变量后，脚本内部那步 `docker compose -f <tmp> config` 校验必然失败，
+  改为带占位值校验（不落盘、不影响真口令）。
 
 ## 范围外
 
