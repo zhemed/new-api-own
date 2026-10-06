@@ -20,6 +20,10 @@ cd "$repo" || exit 0
 staged="$(git diff --cached --name-only)"
 [ -z "$staged" ] && exit 0
 
+# 部署方式闸门（第二道，按内容/文件名拦）：本项目只允许一种部署方式——
+# docker run + 公开镜像；compose / helm / k8s 形态一律拒绝（回滚也带不回来）。
+"$repo/scripts/forbid-extra-deploy-methods.sh" || exit 1
+
 # 纯 .trellis/ 改动 → 放行
 if ! printf '%s\n' "$staged" | grep -qv '^\.trellis/'; then exit 0; fi
 

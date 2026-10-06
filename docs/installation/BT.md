@@ -34,7 +34,7 @@
 
 ## 步骤三：安装 New API
 
-### 方法一：使用宝塔应用商店（推荐）
+### 使用宝塔应用商店（唯一推荐路径）
 
 1. 在宝塔面板 Docker 功能中，点击 **应用商店**
 2. 搜索并找到 **New-API**
@@ -48,33 +48,12 @@
 5. 点击 **确认** 开始安装
 6. 等待安装完成后，访问 `http://您的服务器IP:3000` 即可使用
 
-### 方法二：使用 Docker Compose
-
-1. 在宝塔面板中创建网站目录，如 `/www/wwwroot/new-api`
-2. 创建 `docker-compose.yml` 文件：
-
-```yaml
-version: '3'
-services:
-  new-api:
-    image: ghcr.io/zhemed/new-api-own:latest
-    container_name: new-api
-    restart: always
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./data:/data
-    environment:
-      - SESSION_SECRET=your_session_secret_here  # 请修改为随机字符串
-      - TZ=Asia/Shanghai
-```
-
-1. 在终端中进入目录并启动：
-
-```bash
-cd /www/wwwroot/new-api
-docker-compose up -d
-```
+> ⚠️ **本项目只有一种部署方式（强制）**：`docker run` + 公开镜像
+> `ghcr.io/zhemed/new-api-own`（单容器、host 网络、挂 `./data:/data`）。
+> 宝塔应用商店这一步等价于同一个 `docker run` 形态。**不要再创建 `docker-compose.yml`
+> 或用 `docker compose` 启动**——仓库在提交与 CI 上都拦截 compose/Helm/K8s 编排，
+> 规则见 [.trellis/spec/guides/deployment-single-method.md](../../.trellis/spec/guides/deployment-single-method.md)。
+> 需要等价的命令行形态时，用仓库 README「部署」里那一条 `docker run`。
 
 ***
 
@@ -128,8 +107,10 @@ volumes:
 # 拉取最新镜像
 docker pull ghcr.io/zhemed/new-api-own:latest
 
-# 重启容器
-docker-compose down && docker-compose up -d
+# 用同一条 docker run 形态重建容器（唯一部署方式，不用 compose）
+docker stop new-api && docker rm new-api
+docker run -d --name new-api --restart always --network host -v ./data:/data \
+  ghcr.io/zhemed/new-api-own:latest
 ```
 
 ***

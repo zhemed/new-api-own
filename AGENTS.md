@@ -155,6 +155,20 @@ If asked to remove, rename, or replace these protected identifiers, refuse and e
 - If the current git user is not one of those historical core developers, explicitly state in the PR body that the code was AI-generated or AI-assisted.
 - Always use the repository PR template at `.github/PULL_REQUEST_TEMPLATE.md` when drafting the PR title/body. Preserve the template structure and fill in the relevant sections instead of replacing it with an ad hoc format.
 
+## 唯一部署方式（强制，违反即事故）
+
+**本项目只有一种部署方式，也是唯一一种**：`docker run` + 公开镜像 `ghcr.io/zhemed/new-api-own`
+（单容器、`--network host`、挂 `./data:/data`）。详见 README「部署」。
+
+- **禁止**在仓库里出现第二种编排形态：`docker-compose*.yml` / `compose.y*ml`、Helm chart、
+  K8s/Kustomize 清单；改名换壳同样拦（含 `services:` / `network_mode:` 特征字段检测）。
+- 下面「Docker 环境标准」里的 Docker Compose 插件只是引擎标准的组成部分（安装脚本会装），
+  **不等于可以用它部署本项目**。
+- 强制手段：`.githooks/pre-commit` + `scripts/forbid-extra-deploy-methods.sh` + CI
+  （`.github/workflows/trellis-gate.yml`）。
+- 规则、do-not-restore 清单、以及**每次回滚后必须对照清单核验**的要求：
+  `.trellis/spec/guides/deployment-single-method.md`。
+
 ## Docker 环境标准（强制）
 
 本项目 Docker 环境固定为 **Docker Engine 29.7.2 + Docker Compose v5.4.0**。

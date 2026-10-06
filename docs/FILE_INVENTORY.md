@@ -8,7 +8,7 @@
 |------|-----------|------|------|------|
 | **核心运行时** | `common(59)/constant(14)/controller(87)/dto(4)/i18n(5)/logger(1)/middleware(33)/model(73)/oauth(9)/relay(238)/relaykit(132)/router(10)/service(89)/setting(53)/types(3)/main.go` | ~811 | Go 后端分层 + 40+ 渠道适配 + 独立 `relaykit` 模块 | **保留**，仅死码标记 |
 | **前端** | `web/src/features(645)/components(217)/routes(59)/lib(42)/hooks(21)/...` + `web/*` 配置 | 1072 | React 19 + Rsbuild + Base UI 23 功能域 | **保留** |
-| **构建部署** | `Dockerfile/.dev, docker-compose*.yml, install-docker.sh, new-api.service, makefile, go.mod/sum, VERSION` | 9 | 29.7.2+v5.4.0 标准 + 构建注入 | **保留** |
+| **构建部署** | `Dockerfile/.dev, install-docker.sh, scripts/forbid-extra-deploy-methods.sh, new-api.service, makefile, go.mod/sum, VERSION` | 9 | 29.7.2 标准 + 构建注入；部署方式唯一（禁止 compose，见 `.trellis/spec/guides/deployment-single-method.md`）| **保留** |
 | **文档配置** | `README*, AGENTS.md, CLAUDE.md, MAINTENANCE.md, LICENSE/NOTICE/THIRD-PARTY, .git*, .dockerignore, .env.example` | 13 | 项目规范与合规 | **保留**（受保护标识） |
 | **AI 协作** | `.agents/skills/{i18n-translate,shadcn-ui,vercel-react-best-practices}` | 14 | Agent 能力 | **保留**（已跟踪） |
 | **遗留兼容** | `bin/migration_*.sql(2)+time_test.sh`, `electron(12)`, `docs/translation-glossary.*`, `docs/AUDIT_REPORT.md` | ~20 | 历史迁移/桌面壳/词表/本次审计 | **保留或归档** |

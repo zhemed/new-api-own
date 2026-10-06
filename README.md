@@ -15,9 +15,13 @@
 
 ## 部署
 
+> **唯一部署方式（强制）**：`docker run` + 公开镜像，单容器、host 网络、数据挂 `./data`。
+> 不提供也不接受第二种形态（compose / Helm / K8s）；`scripts/forbid-extra-deploy-methods.sh`
+> 在提交与 CI 上拦截，规则见 [.trellis/spec/guides/deployment-single-method.md](./.trellis/spec/guides/deployment-single-method.md)。
+
 ### 环境要求
 
-- Docker **29.7.2** + Docker Compose **v5.4.0**（项目标准版本）
+- Docker **29.7.2**（项目标准版本）
 
 一键安装：
 
@@ -25,7 +29,7 @@
 curl -fsSL https://raw.githubusercontent.com/zhemed/new-api-own/main/install-docker.sh | bash
 ```
 
-### 方式一：Docker 镜像（推荐，无需源码）
+### 部署命令（无需源码）
 
 ```bash
 docker run -d --name new-api --restart always \
@@ -36,27 +40,11 @@ docker run -d --name new-api --restart always \
 
 - 默认使用 SQLite，数据保存在 `./data` 目录
 - 部署完成后访问 `http://localhost:3000`
+- 自建镜像时（需要仓库访问权限）先 `docker build -t new-api-own .`，再把上面的镜像名换成
+  `new-api-own` —— **命令形态不变**，这不是第二种部署方式
 
-### 方式二：源码构建（需要仓库访问权限）
-
-```bash
-git clone https://github.com/zhemed/new-api-own.git
-cd new-api-own
-
-# 单容器方式：构建并运行
-docker build -t new-api-own .
-docker run -d --name new-api --restart always \
-  --network host \
-  -v ./data:/data new-api-own
-```
-
-### 生产部署参考
-
-仓库内的 `docker-compose.yml` 是 host 网络模式 + PostgreSQL/Redis 的生产配置，按需调整默认密码后使用：
-
-```bash
-docker-compose up -d
-```
+可选环境变量（按需追加 `-e`）：限流开关、缓存、日志承载方式等见 [`.env.example`](./.env.example)
+与 [MAINTENANCE.md](./MAINTENANCE.md)。
 
 ## 维护
 

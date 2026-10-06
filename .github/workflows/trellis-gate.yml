@@ -27,3 +27,8 @@ jobs:
 
       - name: 审计提交是否都绑定了 Trellis 任务
         run: ./scripts/check-trellis-gate.sh --audit-only
+
+      # 部署方式唯一性（同样可被 --no-verify 绕过的部分，在这里兜底）：
+      # compose / helm / k8s 等第二种编排形态一律拒绝，含"改名换壳"的检测。
+      - name: 检查部署方式唯一（禁止 compose/集群编排）
+        run: ./scripts/forbid-extra-deploy-methods.sh

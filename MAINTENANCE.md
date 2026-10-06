@@ -7,8 +7,9 @@
 1. **绝不同步上游**：未经仓库所有者明确许可，禁止对 QuantumNous/new-api（或任何上游）执行 fetch / merge / rebase / cherry-pick。上游改动一律不关注、不引入。
 2. **不修改受保护标识**：new-api 与 QuantumNous 的名称、品牌、署名（README、许可头、包路径、Docker 镜像名、文档等）一律不得改动（见 `AGENTS.md` Project Governance）。
 3. **行为不变原则**：清理代码（lint/format/重构）时不得改变任何用户可见行为；无法保证等价时，宁可用 `oxlint-disable` 注释，也不改行为。
-4. **Docker 环境标准（AGENTS.md 强制）**：Docker Engine 29.7.2 + Docker Compose v5.4.0。需 Docker Engine 29.7.2 + Compose v5.4.0；一键安装：`curl -fsSL https://raw.githubusercontent.com/zhemed/new-api-own/main/install-docker.sh | bash`。
-5. **提交前必须通过质量门禁**（见下）。
+4. **Docker 环境标准（AGENTS.md 强制）**：Docker Engine 29.7.2。一键安装：`curl -fsSL https://raw.githubusercontent.com/zhemed/new-api-own/main/install-docker.sh | bash`。
+5. **唯一部署方式（强制）**：只允许 `docker run` + 公开镜像 `ghcr.io/zhemed/new-api-own`（单容器、host 网络、挂 `./data:/data`）。**禁止** compose / Helm / K8s 等第二种编排形态；`scripts/forbid-extra-deploy-methods.sh` 在提交与 CI 上拦截。规则、do-not-restore 清单与"回滚后必须核验"要求见 `.trellis/spec/guides/deployment-single-method.md`。
+6. **提交前必须通过质量门禁**（见下）。
 
 ## 项目是什么
 
@@ -16,7 +17,7 @@
 - 后端：Go 1.25.1、Gin、GORM v2；前端：React 19 + TS + Rsbuild（`web/`，包管理用 Bun）
 - 数据库：SQLite / MySQL / PostgreSQL 三库兼容；缓存：Redis + 内存
 - 独立模块：`relaykit/`（不得依赖根模块，改动后必须 `GOWORK=off` 单独构建）
-- 部署：公开镜像 `ghcr.io/zhemed/new-api-own`（无需登录，直接拉取），docker-compose 用 host 网络
+- 部署：唯一方式 `docker run` + 公开镜像 `ghcr.io/zhemed/new-api-own`（无需登录，直接拉取），单容器 + host 网络；见 `.trellis/spec/guides/deployment-single-method.md`
 
 ## 本机开发环境
 
@@ -323,7 +324,7 @@ x-opencode-session and cannot be routed efficiently
 
 ## 自用部署注意事项
 
-- 本 fork **默认关闭四组限流**，`docker-compose.yml` 亦显式声明为关闭：`GLOBAL_WEB_RATE_LIMIT_ENABLE`、`GLOBAL_API_RATE_LIMIT_ENABLE`、`CRITICAL_RATE_LIMIT_ENABLE`（登录/注册/重置密码/2FA/OAuth 等敏感操作）、`SEARCH_RATE_LIMIT_ENABLE`（搜索接口按用户限流）。这是**有意的自用配置**（内网信任环境、方便频繁操作），不是缺陷
+- 本 fork **默认关闭四组限流**（`common/init.go` 默认值即为 false，`.env.example` 已列出）：`GLOBAL_WEB_RATE_LIMIT_ENABLE`、`GLOBAL_API_RATE_LIMIT_ENABLE`、`CRITICAL_RATE_LIMIT_ENABLE`（登录/注册/重置密码/2FA/OAuth 等敏感操作）、`SEARCH_RATE_LIMIT_ENABLE`（搜索接口按用户限流）。这是**有意的自用配置**（内网信任环境、方便频繁操作），不是缺陷
 - 关闭后全局爆破式请求没有兜底：若仓库公开或对外提供服务，需把对应 `*_ENABLE` 设回 `true`（`*_RATE_LIMIT` 次数与 `*_DURATION` 秒数原值仍在，设置即可恢复，见 `.env.example` 的「限流配置」段）
 - 公开镜像可直接拉取，无需 `docker login`
 - 部署前确保 Docker 为标准版本（29.7.2 + v5.4.0）
@@ -361,7 +362,7 @@ x-opencode-session and cannot be routed efficiently
 
 ### 1. 面板端口默认暴露在公网 ⚠️
 
-`docker-compose.yml` 用 `network_mode: host`，NewAPI 自身直接监听 `*:3000`（所有网卡，含公网 IP）。
+`docker run` 部署命令里的 `--network host` 让 NewAPI 自身直接监听 `*:3000`（所有网卡，含公网 IP）。
 
 **关键认知：反向代理（lucky / nginx / caddy）只是"额外开一个入口"，不会关闭这个直连端口。** 反代到 `127.0.0.1:3000` 与 `3000` 是否对外可达，是两件互相独立的事。
 
@@ -384,10 +385,9 @@ nft add rule ip filter INPUT iif lo accept
 nft add rule ip filter INPUT tcp dport 3000 drop      # 或改成白名单 accept
 
 # 方案 B（推荐）：只绑本地，交给反代转发
-# docker-compose.yml 中把 new-api 的 network_mode: host 改为：
-#   ports:
-#     - "127.0.0.1:3000:3000"
-# 注意：此时 redis / postgres 不能再依赖 host 网络，需一并改为容器网络 + 内部地址
+# 去掉 --network host，改用端口映射：
+#   -p 127.0.0.1:3000:3000
+# 注意：若另起了 Postgres / Redis，它们要么各自限制监听地址，要么一并改为容器网络
 ```
 
 ### 2. 数据目录含明文密钥，必须收紧权限
@@ -407,7 +407,7 @@ chmod 600 data/*.db data/logs/* data/backup/* 2>/dev/null
 
 ### 4. 默认口令必须替换
 
-compose 中 Postgres / Redis 口令均为 `123456`，仅有一行注释提醒。对外提供服务前务必替换，并同步修改 `SQL_DSN` 与 `REDIS_CONN_STRING`。
+唯一部署方式默认走 SQLite（`./data`），不含 Postgres / Redis。若你另外起 MySQL / PostgreSQL / Redis 并接上（`SQL_DSN`、`REDIS_CONN_STRING`），**必须替换它们的默认口令**，不要沿用示例值。
 
 ### 5. 部署自检清单
 

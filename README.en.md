@@ -15,9 +15,14 @@ A self-hosted LLM gateway and AI asset management platform: multi-model aggregat
 
 ## Deployment
 
+> **One deployment method only (enforced)**: `docker run` with the published image — a single
+> container, host networking, `./data` mounted. Compose / Helm / K8s manifests are rejected by
+> both the commit hook and CI (`scripts/forbid-extra-deploy-methods.sh`); see
+> [.trellis/spec/guides/deployment-single-method.md](./.trellis/spec/guides/deployment-single-method.md).
+
 ### Requirements
 
-- Docker **29.7.2** + Docker Compose **v5.4.0** (standard)
+- Docker **29.7.2**
 
 One-click install:
 
@@ -25,7 +30,7 @@ One-click install:
 curl -fsSL https://raw.githubusercontent.com/zhemed/new-api-own/main/install-docker.sh | bash
 ```
 
-### Option 1: Docker image (recommended, no source needed)
+### Deploy (no source needed)
 
 ```bash
 docker run -d --name new-api --restart always \
@@ -36,27 +41,11 @@ docker run -d --name new-api --restart always \
 
 - SQLite by default; data is stored in `./data`
 - After deployment, visit `http://localhost:3000`
+- Building your own image (`docker build -t new-api-own .`) then running it is the **same**
+  `docker run` form, not a second deployment method
 
-### Option 2: Build from source (requires repository access)
-
-```bash
-git clone https://github.com/zhemed/new-api-own.git
-cd new-api-own
-
-# Single-container build and run
-docker build -t new-api-own .
-docker run -d --name new-api --restart always \
-  --network host \
-  -v ./data:/data new-api-own
-```
-
-### Production deployment reference
-
-The `docker-compose.yml` in this repository is a host-network production setup with PostgreSQL/Redis. Adjust the default passwords before use:
-
-```bash
-docker-compose up -d
-```
+Optional environment variables (append `-e ...`): see [`.env.example`](./.env.example) and
+[MAINTENANCE.md](./MAINTENANCE.md).
 
 ## Maintained by
 
