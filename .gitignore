@@ -42,3 +42,5 @@ go.work.sum
 
 # 本地试跑实例（工作区内的临时实例目录）
 /.local-instance/
+.verify-baseline/
+.verify-*/
