@@ -20,13 +20,14 @@ import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 
 import DOMPurify from 'dompurify'
-import { Window } from 'happy-dom'
+import { JSDOM } from 'jsdom'
 
-// Setup DOMPurify with happy-dom window
-// happy-dom's Window is structurally narrower than DOMPurify's WindowLike, so
-// bridge the two explicitly instead of casting to the DOM lib's Window.
-const domWindow = new Window() as unknown as Parameters<typeof DOMPurify>[0]
+// DOMPurify 需要它认可的 DOM 才真正消毒：happy-dom 下 isSupported=false，
+// sanitize() 会退化成"原样返回"，这两个用例此前从未真正验证过消毒（已实测）。
+// 这里改用 jsdom，断言保持不变，只是让被测行为真的成立。
+const domWindow = new JSDOM('').window as unknown as Parameters<typeof DOMPurify>[0]
 const purify = DOMPurify(domWindow)
+assert.equal(purify.isSupported, true, 'jsdom window must support DOMPurify')
 
 describe('footer XSS sanitization', () => {
   test('sanitizes script tag injection', () => {

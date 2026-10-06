@@ -164,10 +164,12 @@ export function Footer(props: FooterProps) {
   const isDemoSiteMode = Boolean(demoSiteEnabled)
   const currentYear = new Date().getFullYear()
 
-  const sanitizedFooterHtml = useMemo(
-    () => (footerHtml ? DOMPurify.sanitize(footerHtml) : ''),
-    [footerHtml]
-  )
+  const sanitizedFooterHtml = useMemo(() => {
+    if (!footerHtml) return ''
+    // 失效安全：DOMPurify 在当前环境不可用时（isSupported=false 会原样返回），
+    // 宁可不渲染这段 HTML，也不把未消毒内容塞进 dangerouslySetInnerHTML。
+    return DOMPurify.isSupported ? DOMPurify.sanitize(footerHtml) : ''
+  }, [footerHtml])
 
   const fallbackColumns = useMemo<FooterColumnProps[]>(
     () => [
