@@ -95,9 +95,18 @@ type ServerLogInfo = {
   total_size: number
   oldest_time?: string
   newest_time?: string
+  /** Database log payload estimate in bytes (see `model.LogPayloadUsage`). */
+  memory_log_bytes?: number
+  /** Effective byte budget; 0 (or absent) means no budget is configured. */
+  memory_log_max_bytes?: number
+  /** Rows currently held by the database log. */
+  memory_log_rows?: number
 }
 
 const HOURS_IN_DAY = 24
+
+/** Share of the budget at which the usage line turns into a soft warning. */
+const MEMORY_LOG_NEAR_LIMIT_RATIO = 0.9
 
 function formatBytes(bytes: number, decimals = 2): string {
   if (!bytes || Number.isNaN(bytes)) return '0 Bytes'
@@ -142,7 +151,7 @@ function isActiveLogCleanupTask(task: LogCleanupTask | null) {
 export function LogSettingsSection({
   defaultEnabled,
 }: LogSettingsSectionProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const updateOption = useUpdateOption()
   const form = useForm<LogSettingsFormValues>({
     resolver: zodResolver(logSettingsSchema),
@@ -334,6 +343,37 @@ export function LogSettingsSection({
     }
   }
 
+  // Read-only database-log footprint. The server reports it regardless of the
+  // disk log directory, so this line is deliberately independent of `enabled`.
+  const memoryLogBytes = serverLogInfo?.memory_log_bytes
+  const memoryLogLimit = serverLogInfo?.memory_log_max_bytes ?? 0
+  const memoryLogRows = serverLogInfo?.memory_log_rows ?? 0
+  // A server that does not report the field yet renders nothing here, so an
+  // older backend never produces a misleading "0 Bytes / no limit" line.
+  const hasMemoryLogUsage =
+    typeof memoryLogBytes === 'number' && Number.isFinite(memoryLogBytes)
+
+  let memoryLogText = ''
+  let memoryLogNearLimit = false
+  if (hasMemoryLogUsage) {
+    if (memoryLogLimit > 0) {
+      memoryLogText = t(
+        'Memory log usage {{usage}} / limit {{limit}} ({{rows}} rows)',
+        {
+          usage: formatBytes(memoryLogBytes),
+          limit: formatBytes(memoryLogLimit),
+          rows: memoryLogRows.toLocaleString(i18n.language),
+        }
+      )
+      memoryLogNearLimit =
+        memoryLogBytes >= memoryLogLimit * MEMORY_LOG_NEAR_LIMIT_RATIO
+    } else {
+      memoryLogText = t('Memory log usage {{usage}} (no limit configured)', {
+        usage: formatBytes(memoryLogBytes),
+      })
+    }
+  }
+
   return (
     <SettingsSection title={t('Log Maintenance')}>
       <Form {...form}>
@@ -438,6 +478,23 @@ export function LogSettingsSection({
             )}
           </p>
         </div>
+
+        {hasMemoryLogUsage && (
+          <p
+            data-testid='memory-log-usage'
+            className='text-muted-foreground text-sm'
+          >
+            <span className='tabular-nums'>{memoryLogText}</span>
+            {memoryLogNearLimit && (
+              <span
+                data-testid='memory-log-near-limit'
+                className='ms-2 text-amber-600 dark:text-amber-500'
+              >
+                {t('Approaching the limit')}
+              </span>
+            )}
+          </p>
+        )}
 
         {serverLogInfo !== null &&
           (serverLogInfo.enabled ? (
