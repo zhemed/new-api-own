@@ -24,6 +24,7 @@ func TestLogCleanupSchedulingStaysOptInOnDisk(t *testing.T) {
 	t.Setenv("LOG_CLEANUP_INTERVAL", "")
 	t.Setenv("LOG_CLEANUP_RETENTION_DAYS", "")
 	t.Setenv("LOG_MEMORY_MAX_ROWS", "")
+	t.Setenv("LOG_MEMORY_MAX_BYTES", "")
 
 	handler := logCleanupHandler{}
 	assert.False(t, handler.Enabled())
@@ -56,6 +57,7 @@ func TestLogCleanupSchedulingDefaultsForInMemoryLogs(t *testing.T) {
 	t.Setenv("LOG_CLEANUP_INTERVAL", "")
 	t.Setenv("LOG_CLEANUP_RETENTION_DAYS", "")
 	t.Setenv("LOG_MEMORY_MAX_ROWS", "")
+	t.Setenv("LOG_MEMORY_MAX_BYTES", "")
 
 	handler := logCleanupHandler{}
 	assert.True(t, handler.Enabled(), "in-memory logs must be cleaned automatically")
@@ -78,4 +80,50 @@ func TestLogCleanupSchedulingWithoutRetentionKeepsOnlyTheRowCap(t *testing.T) {
 	payload := newScheduledCleanupPayload(t)
 	assert.Equal(t, int64(1), payload.TargetTimestamp, "cutoff must not delete any row by age")
 	assert.Equal(t, int64(defaultLogCleanupMemoryMaxRows), payload.MaxRows)
+}
+
+// TestLogCleanupSchedulingDisabledByByteBudget pins the byte-budget default: a
+// payload byte budget (LOG_MEMORY_MAX_BYTES) turns the scheduled cleanup off,
+// because the write path trims as soon as the budget is exceeded. This holds for
+// an in-memory log database too, where the timer used to be the safety net.
+func TestLogCleanupSchedulingDisabledByByteBudget(t *testing.T) {
+	t.Setenv("LOG_SQL_DSN", "memory")
+	t.Setenv("LOG_CLEANUP_INTERVAL", "")
+	t.Setenv("LOG_MEMORY_MAX_BYTES", "200MB")
+	t.Setenv("LOG_MEMORY_MAX_ROWS", "")
+
+	handler := logCleanupHandler{}
+	assert.False(t, handler.Enabled(), "配置字节预算后不应再跑定时清理")
+	assert.Zero(t, handler.Interval())
+
+	// 行数上限仍作为次级约束保留。
+	assert.Equal(t, int64(defaultLogCleanupMemoryMaxRows), newScheduledCleanupPayload(t).MaxRows)
+}
+
+// TestLogCleanupSchedulingExplicitIntervalWinsOverByteBudget pins that an
+// explicitly configured LOG_CLEANUP_INTERVAL still runs with a byte budget set.
+func TestLogCleanupSchedulingExplicitIntervalWinsOverByteBudget(t *testing.T) {
+	t.Setenv("LOG_SQL_DSN", "memory")
+	t.Setenv("LOG_CLEANUP_INTERVAL", "10m")
+	t.Setenv("LOG_MEMORY_MAX_BYTES", "200MB")
+	t.Setenv("LOG_MEMORY_MAX_ROWS", "")
+
+	handler := logCleanupHandler{}
+	assert.True(t, handler.Enabled())
+	assert.Equal(t, 10*time.Minute, handler.Interval())
+}
+
+// TestLogCleanupSchedulingUnchangedWithoutByteBudget pins backward
+// compatibility: without a byte budget nothing changes (in-memory logs keep the
+// 5-minute cadence and the 200k row cap).
+func TestLogCleanupSchedulingUnchangedWithoutByteBudget(t *testing.T) {
+	t.Setenv("LOG_SQL_DSN", "memory")
+	t.Setenv("LOG_CLEANUP_INTERVAL", "")
+	t.Setenv("LOG_MEMORY_MAX_BYTES", "")
+	t.Setenv("LOG_MEMORY_MAX_ROWS", "")
+
+	handler := logCleanupHandler{}
+	assert.True(t, handler.Enabled())
+	assert.Equal(t, defaultLogCleanupMemoryInterval, handler.Interval())
+	assert.Equal(t, int64(defaultLogCleanupMemoryMaxRows), newScheduledCleanupPayload(t).MaxRows)
 }

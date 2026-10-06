@@ -100,7 +100,12 @@ func ensureLogRequestId(log *Log) {
 
 func createLog(log *Log) error {
 	ensureLogRequestId(log)
-	return LOG_DB.Create(log).Error
+	if err := LOG_DB.Create(log).Error; err != nil {
+		return err
+	}
+	// 写入成功后累加载荷估算（O(1)，不阻塞、不做 IO）；超预算时异步触发裁剪。
+	noteLogPayloadBytes(log)
+	return nil
 }
 
 func clickHouseLogOrder(prefix string) string {

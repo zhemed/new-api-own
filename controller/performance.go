@@ -13,6 +13,7 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/logger"
+	"github.com/QuantumNous/new-api/model"
 	"github.com/gin-gonic/gin"
 )
 
@@ -191,6 +192,14 @@ type LogFilesResponse struct {
 	OldestTime *time.Time    `json:"oldest_time,omitempty"`
 	NewestTime *time.Time    `json:"newest_time,omitempty"`
 	Files      []LogFileInfo `json:"files"`
+
+	// 数据库日志（含 LOG_SQL_DSN=memory 的内存日志）的载荷占用，供面板显示"当前用量 / 预算"。
+	// 与写入触发裁剪用的是同一个计数器与同一个估算口径：只统计文本字段 len 之和 + 每行固定开销，
+	// **不含** SQLite 页、索引、WAL 等存储开销，因此是载荷估算而不是实际进程内存占用。
+	// MemoryLogMaxBytes 为 0 表示未配置预算（LOG_MEMORY_MAX_BYTES 未设=关闭）。
+	MemoryLogBytes    int64 `json:"memory_log_bytes"`
+	MemoryLogMaxBytes int64 `json:"memory_log_max_bytes"`
+	MemoryLogRows     int64 `json:"memory_log_rows"`
 }
 
 // getLogFiles 读取日志目录中的日志文件列表
@@ -230,8 +239,16 @@ func getLogFiles() ([]LogFileInfo, error) {
 
 // GetLogFiles 获取日志文件列表
 func GetLogFiles(c *gin.Context) {
+	// 数据库日志的载荷用量与磁盘日志文件无关，两种模式下都要回填（面板靠它显示内存日志占用）。
+	payloadUsage := model.LogPayloadUsage(c.Request.Context())
+	resp := LogFilesResponse{
+		MemoryLogBytes:    payloadUsage.Bytes,
+		MemoryLogMaxBytes: payloadUsage.Budget,
+		MemoryLogRows:     payloadUsage.Rows,
+	}
 	if *common.LogDir == "" {
-		common.ApiSuccess(c, LogFilesResponse{Enabled: false})
+		resp.Enabled = false
+		common.ApiSuccess(c, resp)
 		return
 	}
 	files, err := getLogFiles()
@@ -250,13 +267,11 @@ func GetLogFiles(c *gin.Context) {
 			newest = f.ModTime
 		}
 	}
-	resp := LogFilesResponse{
-		LogDir:    *common.LogDir,
-		Enabled:   true,
-		FileCount: len(files),
-		TotalSize: totalSize,
-		Files:     files,
-	}
+	resp.LogDir = *common.LogDir
+	resp.Enabled = true
+	resp.FileCount = len(files)
+	resp.TotalSize = totalSize
+	resp.Files = files
 	if len(files) > 0 {
 		resp.OldestTime = &oldest
 		resp.NewestTime = &newest

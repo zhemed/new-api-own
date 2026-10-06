@@ -27,17 +27,20 @@ const (
 	systemTaskStaleLockInterval = 30 * time.Second
 
 	logCleanupIntervalEnv      = "LOG_CLEANUP_INTERVAL"
-	logCleanupRetentionDaysEnv = "LOG_CLEANUP_RETENTION_DAYS"
-	logCleanupMaxRowsEnv       = "LOG_MEMORY_MAX_ROWS"
+	logCleanupRetentionDaysEnv = model.LogRetentionDaysEnv
+	logCleanupMaxRowsEnv       = model.LogMemoryMaxRowsEnv
 	secondsPerDay              = 86400
 
-	// defaultLogCleanupRetentionDays applies once scheduled cleanup is on.
-	defaultLogCleanupRetentionDays = 7
+	// defaultLogCleanupRetentionDays applies once scheduled cleanup is on. It is
+	// shared with the write-triggered payload trim, which runs retention in the
+	// same pass.
+	defaultLogCleanupRetentionDays = model.DefaultLogRetentionDays
 	// defaultLogCleanupMemoryInterval keeps an in-memory log table close to the
 	// configured cap without waiting for a full retention window.
 	defaultLogCleanupMemoryInterval = 5 * time.Minute
-	// defaultLogCleanupMemoryMaxRows bounds RAM when logs live in memory.
-	defaultLogCleanupMemoryMaxRows = 200000
+	// defaultLogCleanupMemoryMaxRows bounds RAM when logs live in memory. Kept as
+	// an alias of the model-level default so both cleanup paths share one value.
+	defaultLogCleanupMemoryMaxRows = model.DefaultLogMemoryMaxRows
 )
 
 // SystemTaskHandler executes a claimed task of a specific type. Run owns the
@@ -127,9 +130,17 @@ func init() {
 // logCleanupInterval returns how often the scheduled cleanup runs. It is opt-in
 // on disk (LOG_CLEANUP_INTERVAL, default off) and defaults to a short cadence
 // for an in-memory log database, where unbounded growth costs RAM.
+//
+// A configured payload byte budget (LOG_MEMORY_MAX_BYTES) switches the default
+// off: trimming then happens on the write path as soon as the budget is
+// exceeded, so a timer would only add periodic work. An explicit
+// LOG_CLEANUP_INTERVAL still wins.
 func logCleanupInterval() time.Duration {
 	if interval := common.GetEnvOrDefaultDuration(logCleanupIntervalEnv, 0); interval > 0 {
 		return interval
+	}
+	if model.LogPayloadBudgetBytes() > 0 {
+		return 0
 	}
 	if model.UsingInMemoryLogDatabase() {
 		return defaultLogCleanupMemoryInterval
@@ -137,30 +148,13 @@ func logCleanupInterval() time.Duration {
 	return 0
 }
 
-// logCleanupMaxRows returns the row cap enforced by each cleanup run: the
-// explicit LOG_MEMORY_MAX_ROWS value wins, otherwise an in-memory log database
-// falls back to a bounded default and on-disk logs stay uncapped.
+// logCleanupMaxRows returns the row cap enforced by each cleanup run. The policy
+// (explicit LOG_MEMORY_MAX_ROWS wins, in-memory default, ClickHouse opt-out)
+// lives in model.LogRowCap so the scheduled run and the write-triggered payload
+// pass enforce exactly the same cap.
 func logCleanupMaxRows() int64 {
-	if configured := common.GetEnvOrDefault(logCleanupMaxRowsEnv, 0); configured > 0 {
-		// ClickHouse 的 DELETE 是重写 data part 的 mutation，且 TrimLogToMaxRows 没有 CH
-		// 方言分支（见 model/log.go 的 TrimLogToMaxRows 注释）——显式忽略而不是让它失败。
-		if common.UsingLogDatabase(common.DatabaseTypeClickHouse) {
-			warnClickHouseRowCapOnce.Do(func() {
-				logger.LogWarn(context.Background(), fmt.Sprintf(
-					"%s is ignored for the ClickHouse log database: row-cap trimming has no ClickHouse branch; use retention (LOG_CLEANUP_RETENTION_DAYS) instead",
-					logCleanupMaxRowsEnv))
-			})
-			return 0
-		}
-		return int64(configured)
-	}
-	if model.UsingInMemoryLogDatabase() {
-		return defaultLogCleanupMemoryMaxRows
-	}
-	return 0
+	return model.LogRowCap()
 }
-
-var warnClickHouseRowCapOnce sync.Once
 
 var logRetentionWarnOnce sync.Once
 
@@ -170,6 +164,12 @@ var logRetentionWarnOnce sync.Once
 func warnLogRetentionRisks() {
 	logRetentionWarnOnce.Do(func() {
 		if !model.UsingInMemoryLogDatabase() {
+			return
+		}
+		if budget := model.LogPayloadBudgetBytes(); budget > 0 {
+			logger.LogWarn(context.Background(), fmt.Sprintf(
+				"usage logs are held in RAM (LOG_SQL_DSN=memory): they are lost on restart; %s=%d bytes is trimmed on write (no scheduled cleanup), row cap %d",
+				model.LogMemoryMaxBytesEnv, budget, logCleanupMaxRows()))
 			return
 		}
 		if cap := logCleanupMaxRows(); cap > 0 {
