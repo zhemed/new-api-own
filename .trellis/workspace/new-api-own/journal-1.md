@@ -603,3 +603,38 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 剩余未验证：3020 演示实例仍是旧构建，真机页面验证需重启实例（未获授权，已询问用户）
+
+
+## Session 21: 本机演示实例真机验证通过（0.0.6）；生产升级经用户选择跳过
+<!-- trellis-session: v=2 fp=134ed8e31e9626d9 -->
+
+**Date**: 2026-10-06
+**Task**: 本机演示实例真机验证通过（0.0.6）；生产升级经用户选择跳过
+**Branch**: `main`
+
+### Summary
+
+按用户选择（重启演示实例 + 生产升级）执行：①演示实例用当前代码重建并重启，保持原有环境变量（从 /proc 读取、未打印未落盘），/api/status=200 且 version=0.0.6，首页真机渲染正常并截图；产物级验证：实例实际发出的 index.*.js 命中修复过的 i18n 键，构建产物命中恢复的 data-auto-group-frame。过程中首次登录 409（默认会话上限被冒烟测试占满），重启时恢复 200/1000 后登录接口 200。②登录后页面未能验证（无头标签页会话未保持、curl 建 key 401），属会话机制而非产品缺陷。③生产：用户选择跳过；本机无 new-api 容器（生产在别处），已在任务里留下升级与回滚命令。
+
+### Main Changes
+
+- 未改任何代码/配置：本轮只有实例重启与验证；仓库工作树干净、HEAD 未变
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1addd9f` | chore: record journal |
+
+### Testing
+
+- [OK] [OK] /api/status HTTP 200, version=0.0.6；首页真机渲染 + 截图
+- [OK] [OK] 实例发出产物含本轮 i18n 修复键与恢复的 Auto 帧标记
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 生产升级待用户日后需要时执行（命令与回滚点已留档）；登录后页面验证可改由用户浏览器自行确认

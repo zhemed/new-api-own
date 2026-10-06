@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 20
+- **Total Sessions**: 21
 - **Last Active**: 2026-10-06
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~605 | Active |
+| `journal-1.md` | ~640 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 21 | 2026-10-06 | 本机演示实例真机验证通过（0.0.6）；生产升级经用户选择跳过 | `1addd9f` | `main` |
 | 20 | 2026-10-06 | 团队处理开放项：前端恢复功能+补齐 5 个缺键，后端堵住 sora 计费上界绕过 | `90a4f19` | `main` |
 | 19 | 2026-10-06 | 团队复查本轮改动：删码安全、消毒逻辑站得住，但我的机制描述错了 | `d04893a` | `main` |
 | 18 | 2026-10-06 | 补齐前端工具链：bun+jsdom+knip，抓出消毒测试失效并清 33 个死文件 | `58e028d` | `main` |
