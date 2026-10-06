@@ -209,3 +209,38 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 等用户选定路线（零代码两步 / 加内存库支持 / 先不动）
+
+
+## Session 10: 弱盘日志：LOG_SQL_DSN 支持内存库/独立 SQLite + 清理可调度
+<!-- trellis-session: v=2 fp=0a894300c12e6c8a -->
+
+**Date**: 2026-10-06
+**Task**: 弱盘日志：LOG_SQL_DSN 支持内存库/独立 SQLite + 清理可调度
+**Branch**: `main`
+
+### Summary
+
+按用户选定路线 B 实现：LOG_SQL_DSN 新增 memory / :memory: / sqlite:<path> 三种日志专用形态（仅日志库，主库不受影响）；内存模式强制钉一条连接（MaxOpen=1/MaxIdle=1/ConnMaxLifetime=0）避免日志表运行中消失；logCleanupHandler 接入系统任务调度器，内存模式默认 5m 周期 + 20 万行上限，LOG_CLEANUP_INTERVAL/LOG_CLEANUP_RETENTION_DAYS/LOG_MEMORY_MAX_ROWS 可调。
+
+### Main Changes
+
+- 新增 model.TrimLogToMaxRows、common.GetEnvOrDefaultDuration、内存模式启动 WARN 与 RAM 告警
+- MAINTENANCE.md 记录配置/风险与 WAL+NORMAL 降 fsync（并记录 _busy_timeout=30000 实际未生效）
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- [OK] [OK] 8 个新单元用例通过，含负向对照（不钉连接时内存库连表消失）
+- [OK] [OK] 启动冒烟：memory 形态写入/读取/上限自动裁到 5 行；sqlite: 形态 /dev/shm 下生成 -wal/-shm
+- [OK] [OK] gofmt/vet/build 全绿，make test exit=0（38 包 ok）
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 改动仍在工作区未提交：等用户决定是否提交/推送/发布

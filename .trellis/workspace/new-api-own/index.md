@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 9
+- **Total Sessions**: 10
 - **Last Active**: 2026-10-06
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~211 | Active |
+| `journal-1.md` | ~246 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 10 | 2026-10-06 | 弱盘日志：LOG_SQL_DSN 支持内存库/独立 SQLite + 清理可调度 | - | `main` |
 | 9 | 2026-10-06 | 评估：弱盘机器把日志放内存 | - | `main` |
 | 8 | 2026-09-18 | Status check: v0.0.3 not released yet | - | `main` |
 | 7 | 2026-09-18 | Investigation: x-opencode-session / （实例兜底值已脱敏） channel override | - | `main` |
