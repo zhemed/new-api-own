@@ -175,3 +175,37 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Status
 
 [OK] **Completed**
+
+
+## Session 9: 评估：弱盘机器把日志放内存
+<!-- trellis-session: v=2 fp=93442baa6bedabd1 -->
+
+**Date**: 2026-10-06
+**Task**: 评估：弱盘机器把日志放内存
+**Branch**: `main`
+
+### Summary
+
+评估结论：两类日志（应用日志追加写 vs 用量日志每行一事务+fsync）；弱盘痛点在 fsync。零代码可做：应用日志 -log-dir 关闭或走 tmpfs；日志库 DSN 加 _pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)（本机实测 delete/FULL(2) → wal/NORMAL(1)）。日志整体进内存：主库非 SQLite 时纯配置可达（LOG_SQL_DSN=local + SQLITE_PATH=/dev/shm/...），主库即 SQLite 时需小改支持 SQLite 文件/内存库；内存方案需先解决自动裁剪（清理任务当前是手动触发）。不建议整库 tmpfs 或 MySQL datadir 上 tmpfs。
+
+### Main Changes
+
+- 本机探针实测 PRAGMA 可经 DSN 配置，并发现默认 DSN 的 _busy_timeout=30000 未生效（读回 5000）
+- 记录内存方案风险：重启即失、无自动上限、多节点各自为政、日志含计费 quota 时不可丢
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- [OK] [OK] 只读评估：未改代码/配置，未重启服务，未访问外部主机
+- [OK] [OK] 探针目录已删除，工作树仅剩 .trellis 记录
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 等用户选定路线（零代码两步 / 加内存库支持 / 先不动）
