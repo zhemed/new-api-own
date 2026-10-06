@@ -52,3 +52,24 @@
 2. 本次发现的本地隐患已记录：本机 `latest` 标签陈旧指向 0.0.3，在这台机器上 `docker run …:latest`
    会复用旧标签而不会拉到 0.0.6（需 `docker pull` 或改用固定 tag/摘要）；
 3. 团队委派前必须先回答"这个委派能让用户看到什么变化"，否则不发。
+
+## 执行（2026-10-06）
+
+用户选择：**运行实例暂不升级**（未选项即不动）、**本机 latest 标签刷新到 0.0.6**。
+
+| 项 | 结果 |
+|---|---|
+| `docker pull ghcr.io/zhemed/new-api-own:latest` | 拉到摘要 `sha256:a74d0a6c…` = registry 0.0.6 |
+| 本机 `latest` 标签 | 由陈旧的 `3d04916fe29a`(0.0.3) → **`a74d0a6c0940`(0.0.6)**，隐患消除 |
+| 回滚点 | `ghcr.io/zhemed/new-api-own:v0.0.3` **仍在本机**（`3d04916fe29a…`）|
+| 镜像内版本元数据（新增证据） | OCI label `org.opencontainers.image.version = **v0.0.6**`，`revision=755727f` → 证明镜像内部确实是 0.0.6，不只是标签对得上 |
+| 用户运行中的实例 | **未动**（用户未选择升级）|
+
+## 下次要升级时的命令（唯一部署方式）
+
+```bash
+docker pull ghcr.io/zhemed/new-api-own:0.0.6
+docker rm -f new-api
+docker run -d --name new-api --restart always --network host -v ./data:/data ghcr.io/zhemed/new-api-own:0.0.6
+# 异常回滚：把 0.0.6 换成 v0.0.3 重跑最后两条
+```
