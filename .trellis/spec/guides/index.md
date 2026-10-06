@@ -24,6 +24,7 @@ These guides help you **ask the right questions before coding**.
 | [Code Reuse Thinking Guide](./code-reuse-thinking-guide.md) | Identify patterns and reduce duplication | When you notice repeated patterns |
 | [Cross-Layer Thinking Guide](./cross-layer-thinking-guide.md) | Think through data flow across layers | Features spanning multiple layers |
 | [Trellis Gate Guide](./trellis-gate-guide.md) | Mandatory task workflow: create a task before any work, anchor every commit, self-check before closing | Before starting **any** work, before committing, before wrapping up |
+| [Deployment Single Method](./deployment-single-method.md) | Only one deployment method is allowed (`docker run` + published image); compose/Helm/K8s/systemd are blocked by hook + CI; do-not-restore list and post-rollback verification | Before touching deployment, Dockerfiles, workflows, or **after any rollback** |
 
 ---
 

@@ -339,10 +339,17 @@ x-opencode-session and cannot be routed efficiently
    git push origin main v0.0.3
    ```
 
-3. 推 tag 会自动触发两个工作流：
+3. 推 tag **只自动触发一个工作流**（触发面已刻意收敛，避免每次发版扇出）：
 
-   - `Release` → 在 GitHub **Releases** 页面生成该版本，附带 Linux amd64/arm64、macOS、Windows 二进制与 checksums
-   - `Publish Docker image (Multi-arch)` → 构建并推送 `ghcr.io/zhemed/new-api-own:v0.0.3`、`ghcr.io/zhemed/new-api-own:0.0.3`（去掉 `v` 的等值别名）与 `:latest`，多架构清单 + cosign 签名
+   - `Publish Docker image (Multi-arch)` → 构建并推送 `ghcr.io/zhemed/new-api-own:v0.0.3`、
+     `ghcr.io/zhemed/new-api-own:0.0.3`（去掉 `v` 的等值别名）与 `:latest`，多架构清单 + cosign 签名
+
+   下面三个工作流 `on:` 只保留 `workflow_dispatch`，**要手动 Run workflow**：
+
+   - `Release` → 三平台二进制 + checksums（**必须在 tag ref 上运行**：`gh workflow run release.yml --ref v0.0.3`，
+     否则上传步骤因 `if: startsWith(github.ref, 'refs/tags/')` 被跳过）
+   - `Build Electron App` → Electron 安装包
+   - `Sync Release to GitCode` → 同步到 GitCode（还需仓库变量 `GITCODE_REPOSITORY`；未设置时整体 skip）
 
 4. 校验：
 

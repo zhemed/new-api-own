@@ -52,3 +52,19 @@
 - 维护者开始时：`python3 .trellis/scripts/task.py start 09-18-maintenance-0.0.3`（状态 `planning` → `in_progress`）。
 - 本轮内如需改代码，闸门允许（本任务处于 in_progress），提交消息统一带 `[task:maintenance-0.0.3]`。
 - 维护中发现的新问题不要顺手做：`task.py create` 另开任务，保持本轮范围清晰。
+
+## 收尾说明（2026-10-06 归档）
+
+本任务（0.0.3 维护轮次）的**交付已完成**：`VERSION=0.0.3`、tag `v0.0.3` 已推送、
+GitHub Release `v0.0.3` 可见、GHCR `0.0.3` 与 `v0.0.3` 均在、镜像内版本自报 `v0.0.3`（本日复核通过）。
+
+清单里**未勾选的条目按以下原因结清**（不留悬空项）：
+
+- 涉及 `docker-compose.yml` 的条目（如"四个 env 声明在 compose 里"）→ **已被取代**：
+  2026-10-06 用户定调"只有一种部署方式"，compose 文件已删除，规则见
+  `.trellis/spec/guides/deployment-single-method.md`；限流默认值本身未变（`common/init.go` 四处 `*_ENABLE=false`）。
+- 涉及"推 tag 自动跑 `Release` 工作流"的条目 → **已被取代**：触发面刻意收敛，
+  `Release` / `Electron` / `GitCode 同步` 改为仅手动触发（`gh workflow run release.yml --ref <tag>`），
+  推 tag 只跑镜像构建（本日已更新 README 与 MAINTENANCE 的发版流程）。
+- 其余条目（本机/前端工具链核对、依赖扫描等）属**当时一次性的环境核对**，
+  已由当日执行结果与后续任务（`09-18-*`、`10-06-*`）覆盖，不再回溯勾选。

@@ -65,4 +65,15 @@ git tag -a v0.0.3 -m "v0.0.3"
 git push origin main v0.0.3
 ```
 
-CI 会生成 GitHub Release（Linux/macOS/Windows 二进制 + checksums），并向 `ghcr.io/zhemed/new-api-own` 发布 `v0.0.3` 与 `0.0.3` 双标签镜像（多架构 + cosign 签名）。
+推 tag **只自动触发镜像构建**：向 `ghcr.io/zhemed/new-api-own` 发布 `v<版本>`、`<版本>` 与 `:latest`
+（多架构清单 + cosign 签名）。
+
+**三平台二进制 / Electron / GitCode 同步已改为手动触发**（避免每次发版扇出多个工作流）：
+
+```bash
+# Release（必须在 tag ref 上运行，否则上传步骤会被 if: refs/tags/ 跳过）
+gh workflow run release.yml --ref v0.0.3
+# Electron 打包 / GitCode 同步同理，按需手动运行
+gh workflow run electron-build.yml
+gh workflow run sync-release-to-gitcode.yml -f tag_name=v0.0.3
+```
