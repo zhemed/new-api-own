@@ -12,6 +12,10 @@ const config: KnipConfig = {
     'src/**/__tests__/**/*.{ts,tsx}',
   ],
   ignore: [
+    // shadcn 底座组件：按需引入、相当一部分当前无引用，属成套件而非散乱死码。
+    // 注意（2026-10-06 复核）：被 ignore 的树不可见会导致"未使用依赖"误报
+    // （recharts / tokenlens / @xyflow/react / embla-carousel-react / react-resizable-panels），
+    // 不要据此删除这些依赖。
     'src/components/ui/**',
     // 成套 AI 组件库（22 文件）：当前无引用，但删除会连带清掉一批依赖，
     // 属产品决策范围，先登记为 ignore 而非静默删除（2026-10-06）。

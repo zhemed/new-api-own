@@ -229,9 +229,9 @@ LOG_SQL_DSN='sqlite:/dev/shm/newapi-logs.db?_pragma=journal_mode(WAL)&_pragma=sy
 | 客户端请求 DTO 用非指针标量 + `omitempty` | `relay/common/relay_info.go:849`（`Duration`）、`dto/video.go:10-12` | 与 AGENTS.md 的 DTO 指针规则不符，但改指针会波及全部 task adaptor；计费不变量已另有钳制（`relay/relay_task.go:121-127`、`relay/common/relay_utils.go:153`） |
 | 日志裁剪的 `DELETE ... LIMIT` 仅 MySQL 生效 | `model/log.go:TrimLogToMaxRows` | GORM 的 SQLite/PG 方言会丢 LIMIT；已在注释写明"不可依赖 limit 限制单次工作量" |
 | ClickHouse 日志库不支持行数上限 | `service/system_task.go:logCleanupMaxRows` | 不做 CH 分支（无法离线验证 CH 版本行为）；显式返回 0 并打一次性 WARN，改用保留天数 |
-| 前端孤儿模块 | `web/src/**` | 2026-10-06 已装 bun 并跑 knip：删掉 33 个确证无人引用的文件；`ui/`、`ai-elements/`（成套组件库）与 `i18n/static-keys.ts`（i18n 工具链的键登记表）、`routeTree.gen.ts`（生成物）登记为 knip `ignore`，不删 |
+| 前端孤儿模块 | `web/src/**` | 2026-10-06 已装 bun 并跑 knip：本轮删掉 33 个确证无人引用的文件（`208483c`），复核阶段又追加删除 1 个（`web/src/hooks/use-mobile.tsx`）；`ui/`（shadcn 底座）、`ai-elements/`（成套组件库）、`routeTree.gen.ts`（生成物）登记为 knip `ignore`，不删。i18n 工具链的键登记表 `i18n/static-keys.ts` **没有**登记 ignore（knip 仍把它列在 `Unused files` 里），属刻意保留 |
 | 3 个 api-key group 表格测试失败（既有）| `web/src/features/keys/components/__tests__/api-key-group-cell.test.tsx` | 组件里 `AutoGroupBadge` 与动效环**被注释掉**，测试仍断言旧设计；恢复功能属产品决策，改测试又会掩盖差异——保持失败并在此留痕 |
-| footer XSS 测试曾经永远失败 | `web/src/components/layout/components/__tests__/footer.test.tsx` | 原用 happy-dom：`DOMPurify.isSupported=false`，`sanitize()` 原样返回，两个用例从未真正验证消毒。已改用 jsdom（断言未改）并加 `isSupported` 前置断言；同时给 `footer.tsx` 加失效安全（不支持时不注入原始 HTML）|
+| footer XSS 测试曾经永远失败 | `web/src/components/layout/components/__tests__/footer.test.tsx` | 原用 happy-dom：`purify.isSupported` 虽为 true，但消毒不完整（实测 `<script>` 原样保留），两个用例长期失败=从未真正验证消毒（复核员在基线 `0941a4f` 上原样复跑：1 pass / 2 fail）。已改用 jsdom（断言未改）并加 `isSupported` 前置断言；同时给 `footer.tsx` 加失效安全（不支持时不注入原始 HTML）|
 
 ### 前端工具链（2026-10-06 起本机可用）
 
@@ -239,9 +239,9 @@ LOG_SQL_DSN='sqlite:/dev/shm/newapi-logs.db?_pragma=journal_mode(WAL)&_pragma=sy
 cd web && bun install --frozen-lockfile   # 需要 bun；本机已装 1.4.2
 bun run typecheck   # tsgo -b
 bun run lint        # oxlint（0 error / 21 warning 为当前基线）
-bun test            # node:test + happy-dom；当前 151 pass / 3 fail（3 个为上述既有失败）
+bun test            # node:test（DOM 用 happy-dom，footer 用例改用 jsdom）；当前 151 pass / 3 fail（3 个为上述既有失败）
 bun run build       # rsbuild，漏删引用会在此报错——删代码后必须跑
-bun run knip        # 死码分析；测试入口与应用入口已在 knip.config.ts 声明
+bun run knip        # 死码分析；测试入口与应用入口已在 knip.config.ts 声明。2026-10-06 实测仍以 1 退出：9 unused files / 313 unused exports / 6+2 unused deps（基线告警，非本轮引入）
 ```
 
 ## 质量门禁现状（2026-08-18 基线）

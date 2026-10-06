@@ -166,8 +166,9 @@ export function Footer(props: FooterProps) {
 
   const sanitizedFooterHtml = useMemo(() => {
     if (!footerHtml) return ''
-    // 失效安全：DOMPurify 在当前环境不可用时（isSupported=false 会原样返回），
-    // 宁可不渲染这段 HTML，也不把未消毒内容塞进 dangerouslySetInnerHTML。
+    // 失效安全：DOMPurify 在不受支持的环境里 isSupported=false，此时 sanitize()
+    // 会把输入原样返回（dompurify 源码分支），直接注入等于没消毒——宁可不渲染这段
+    // 自定义 HTML（法务链接与版权署名不在此列，照常渲染）。
     return DOMPurify.isSupported ? DOMPurify.sanitize(footerHtml) : ''
   }, [footerHtml])
 

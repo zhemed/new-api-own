@@ -24,8 +24,11 @@ bun run typecheck
 bun test
 ```
 
-CI creates an empty `web/dist/index.html` before building the root module, because the frontend build
-output is embedded into the Go binary.
+The root module embeds the frontend build output (`//go:embed web/dist`,
+`//go:embed web/dist/index.html` in `main.go:42,45`), and `web/dist` is gitignored
+(`web/.gitignore`). A local `go build ./...` therefore only works after `bun run build` has
+produced `web/dist/index.html`; the image build produces it in the frontend builder stage
+(`Dockerfile:9,28`) before the Go stage runs.
 
 ---
 
@@ -105,8 +108,10 @@ output is embedded into the Go binary.
 ## Code Review Checklist
 
 - [ ] Layer boundaries respected (no SQL in controllers, no `controller/` imports from services).
-- [ ] `go vet`, root build, `relaykit` independent build, and `make test` green; frontend `typecheck` +
-      `bun test` green when `web/` changed.
+- [ ] `go vet`, root build, `relaykit` independent build, and `make test` green; frontend `typecheck` green
+      and `bun test` at its documented baseline when `web/` changed — 151 pass / 3 known pre-existing
+      failures in `web/src/features/keys/components/__tests__/api-key-group-cell.test.tsx` (see
+      `MAINTENANCE.md` 已知不一致).
 - [ ] JSON goes through `common.*`; no new direct `encoding/json` calls.
 - [ ] DB statements work on all three databases; migrations are guarded and re-runnable.
 - [ ] Billing paths bound user input, use the quota math helpers, and surface saturation clamps.
