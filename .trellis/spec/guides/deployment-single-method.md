@@ -23,7 +23,9 @@ docker run -d --name new-api --restart always \
 
 - `docker-compose*.yml` / `compose.y*ml`：**曾两删三回**，见下"事故记录"；
 - Helm chart、K8s/Kustomize 清单（`charts/`、`helm/`、`k8s/`、`kubernetes/`、`manifests/`）；
-- 任何带 compose 特征字段（`services:`、`network_mode:`）的 YAML（改名换壳也算）。
+- 任何带 compose 特征字段（`services:`、`network_mode:`）的 YAML（改名换壳也算）；
+- **裸机 / systemd 形态**：根级 `*.service` / `*.timer` / `*.socket`，或 `systemd/`、`deploy/`、`etc/`
+  目录下的 unit 文件（2026-10-06 用户定调："一并删掉"）。
 
 要新增部署形态，必须**先改本规则并取得仓库所有者明确同意**，再动文件。
 
@@ -43,6 +45,7 @@ docker run -d --name new-api --restart always \
 |---|---|---|
 | `docker-compose.yml` | 2026-09-20（`843f988`） | "移除生产 compose 编排，改 docker run" |
 | `docker-compose.dev.yml` | 2026-10-06 | 同一条"唯一部署方式"约束 |
+| `new-api.service`（systemd unit）| 2026-10-06 | 裸机/systemd 视为第二种部署方式，闸门一并拦 |
 | `v0.0.4`–`v0.0.8` 的镜像版本与 tag（旧批次）| 2026-10-06 | 用户要求的全套回滚（此条为历史批次，勿与后续同名 tag 混淆）|
 
 **新增条目**：任何被用户点名"删掉/不要了"的东西，当轮就要登记进本表。

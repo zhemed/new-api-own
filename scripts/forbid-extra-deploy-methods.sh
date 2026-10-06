@@ -32,6 +32,14 @@ if [ -n "$by_content" ]; then
   fail=1
 fi
 
+# 裸机 / systemd 也是第二种部署方式：根级 unit 文件，或 systemd|deploy|etc 目录下的 unit
+by_unit=$(git ls-files | grep -E '(^|/)(systemd|deploy|etc)/.*\.(service|timer|socket)$|^[^/]+\.(service|timer|socket)$' || true)
+if [ -n "$by_unit" ]; then
+  echo "❌ 出现 systemd unit（裸机部署形态，本项目只允许 docker run + 公开镜像）："
+  printf '%s\n' "$by_unit" | sed 's/^/   /'
+  fail=1
+fi
+
 if [ "$fail" -ne 0 ]; then
   echo ""
   echo "   规则：.trellis/spec/guides/deployment-single-method.md"

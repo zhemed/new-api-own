@@ -160,8 +160,9 @@ If asked to remove, rename, or replace these protected identifiers, refuse and e
 **本项目只有一种部署方式，也是唯一一种**：`docker run` + 公开镜像 `ghcr.io/zhemed/new-api-own`
 （单容器、`--network host`、挂 `./data:/data`）。详见 README「部署」。
 
-- **禁止**在仓库里出现第二种编排形态：`docker-compose*.yml` / `compose.y*ml`、Helm chart、
-  K8s/Kustomize 清单；改名换壳同样拦（含 `services:` / `network_mode:` 特征字段检测）。
+- **禁止**在仓库里出现第二种形态：`docker-compose*.yml` / `compose.y*ml`、Helm chart、
+  K8s/Kustomize 清单、裸机/systemd unit（根级 `*.service`/`*.timer`/`*.socket` 或 `systemd/`、`deploy/`、`etc/` 下的 unit）；
+  改名换壳同样拦（含 `services:` / `network_mode:` 特征字段检测）。
 - 下面「Docker 环境标准」里的 Docker Compose 插件只是引擎标准的组成部分（安装脚本会装），
   **不等于可以用它部署本项目**。
 - 强制手段：`.githooks/pre-commit` + `scripts/forbid-extra-deploy-methods.sh` + CI
