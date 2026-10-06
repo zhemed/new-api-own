@@ -26,7 +26,9 @@ import { JSDOM } from 'jsdom'
 // 但消毒并不完整（实测 <script> 原样保留、href 序列化被改写），这两个用例因此长期
 // 失败=零保护（复核员在 0941a4f 上原样复跑：1 pass / 2 fail）。改用 jsdom 后 3/3 通过，
 // 断言与基线逐行一致，只是让被测行为真的成立。
-const domWindow = new JSDOM('').window as unknown as Parameters<typeof DOMPurify>[0]
+const domWindow = new JSDOM('').window as unknown as Parameters<
+  typeof DOMPurify
+>[0]
 const purify = DOMPurify(domWindow)
 assert.equal(purify.isSupported, true, 'jsdom window must support DOMPurify')
 

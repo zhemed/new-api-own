@@ -38,7 +38,6 @@ export const STATIC_I18N_KEYS = [
   'System Administration',
   'General',
   'Authentication',
-  'Request Limits',
   'Content',
   'Integrations',
   'Models',
@@ -109,7 +108,6 @@ export const STATIC_I18N_KEYS = [
   'Deleted',
   'User created successfully',
   'User updated successfully',
-  'User updated successfully',
   'Failed to load users',
   'Failed to search users',
   'Failed to create user',
@@ -119,9 +117,7 @@ export const STATIC_I18N_KEYS = [
 
   // Redemption codes
   'Unused',
-  'Disabled',
   'Used',
-  'Expired',
   'Redemption code(s) created successfully',
   'Redemption code updated successfully',
   'Redemption code deleted successfully',
@@ -144,19 +140,9 @@ export const STATIC_I18N_KEYS = [
 
   // Home page (constants-driven labels)
   'Cost Tracking',
-  'Model Access',
-  'Guardrails',
-  'Observability',
-  'Budgets',
   'Load Balancing',
   'Rate Limiting',
-  'Token Mgmt',
-  'Prompt Caching',
-  'Pass-Through',
-  'requests served',
-  'AI models supported',
   'uptime',
-  'active users',
   'Lightning Fast',
   'Optimized network architecture ensures millisecond response times',
   'Secure & Reliable',
@@ -164,15 +150,12 @@ export const STATIC_I18N_KEYS = [
   'Global Coverage',
   'Multi-region deployment for stable global access',
   'Developer Friendly',
-  'Complete API documentation with multi-language SDK support',
   'High Performance',
   'Support for high concurrency with automatic load balancing',
   'Transparent Billing',
   'Pay-as-you-go with real-time usage monitoring',
   'Team Collaboration',
   'Multi-user management with flexible permission allocation',
-  'Technical Support',
-  'Professional team providing 24/7 technical support',
 
   // User management (interpolated keys)
   'Remaining Quota ({{currency}})',
@@ -276,7 +259,6 @@ export const STATIC_I18N_KEYS = [
   'Haiku Model',
   'Sonnet Model',
   'Opus Model',
-  'Enter model name',
 
   // User binding dialog
   'Account Binding Management',
@@ -307,7 +289,6 @@ export const STATIC_I18N_KEYS = [
   'Subscription First',
   'Subscription Only',
   'No Active',
-  'No Reset',
   'Remaining',
   'Received',
   'Payment initiated',
@@ -390,7 +371,6 @@ export const STATIC_I18N_KEYS = [
   'e.g. Basic Plan',
   'Plan Subtitle',
   'e.g. Suitable for light usage',
-  'Actual Amount',
   'Plan Price',
   'Amount the user pays to purchase this plan; the actual currency depends on the payment gateway.',
   'Plan Quota',
@@ -443,7 +423,6 @@ export const STATIC_I18N_KEYS = [
   'Please select a subscription plan',
   'Added successfully',
   'Has been invalidated',
-  'Deleted',
   'Validity',
   'Actions',
 
@@ -498,13 +477,9 @@ export const STATIC_I18N_KEYS = [
   'Reset to Default',
 
   // Available models
-  'Available Models',
-  'View all currently available models',
-  'No available models',
   'models',
   'More',
   'Collapse',
-  'No models available in this category',
   'Copied: {{model}}',
 
   // Grok settings
@@ -528,7 +503,6 @@ export const STATIC_I18N_KEYS = [
   'Detection failed',
   'Detection complete: {{add}} to add, {{remove}} to remove',
   'Batch detection failed',
-  'Batch detection complete: {{channels}} channels, {{add}} to add, {{remove}} to remove, {{fails}} failed',
 
   // Advanced Custom model discovery
   'Only one OpenAI Models route is allowed',
@@ -538,7 +512,6 @@ export const STATIC_I18N_KEYS = [
   'OpenAI Models route is required to enable upstream model checks',
 
   // Dashboard flow stages (labels/descriptions passed to t at runtime)
-  'User',
   'Node',
   'Token',
   'Group',

@@ -20,7 +20,15 @@ const config: KnipConfig = {
     // 成套 AI 组件库（22 文件）：当前无引用，但删除会连带清掉一批依赖，
     // 属产品决策范围，先登记为 ignore 而非静默删除（2026-10-06）。
     'src/components/ai-elements/**',
-    'src/routeTree.gen.ts',
+    // 注：`src/i18n/static-keys.ts`（`STATIC_I18N_KEYS` 登记表）曾登记在此。
+    // 2026-10-06 已把它接进 i18n 校验链路：`scripts/check-i18n-keys.mjs` 直接 import 它，
+    // 而该脚本经 package.json 的 `i18n:check` 成为 knip 入口 ⇒ 文件已可达，ignore 冗余。
+    // 不要再加回来；若哪天 knip 又报它未使用，说明校验脚本与 package.json 的接线断了，
+    // 应先修接线而不是 ignore。
+    // 注：`src/routeTree.gen.ts`（TanStack Router 生成文件，已入库）曾登记在此。
+    // 2026-10-06 实测：它由 `src/main.tsx` 可达，knip 会提示"Remove from ignore"；
+    // 移除该 ignore 后 `knip` 全量输出与保留时**逐节一致**（仅是提示 3→2），
+    // 故按提示移除，避免留下无效配置。不要再加回来。
   ],
   ignoreDependencies: ['tailwindcss', 'tw-animate-css'],
 }
