@@ -638,3 +638,38 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 生产升级待用户日后需要时执行（命令与回滚点已留档）；登录后页面验证可改由用户浏览器自行确认
+
+
+## Session 22: 被指出：团队没发现线上还是 0.5——立版本对齐核查，刷新本机 latest 标签
+<!-- trellis-session: v=2 fp=5e660b246d1a47db -->
+
+**Date**: 2026-10-06
+**Task**: 被指出：团队没发现线上还是 0.5——立版本对齐核查，刷新本机 latest 标签
+**Branch**: `main`
+
+### Summary
+
+用户指出'调用了十几个成员却没发现现在的版本还是 0.5'。核实：registry latest/0.0.6/v0.0.6 同一摘要 a74d0a6c（确实 0.0.6）；用户运行实例仍是 0.0.5；本机缓存的 latest 标签陈旧指向 0.0.3（在这台机器 docker run :latest 会复用旧标签）。根因是我的委派范围全在仓库内部、没人核对线上版本，且我自己凭旧记录断言'生产停在 v0.0.3'（未核实）。纠正：①MAINTENANCE 立'版本对齐核查'固定动作（运行实例/registry/仓库三处比对）；②按用户选择刷新本机 latest 到 0.0.6（摘要一致、回滚镜像 v0.0.3 保留）；③补上镜像内 OCI 版本标签证据（org.opencontainers.image.version=v0.0.6）；④用户运行实例未动，升级命令与回滚命令已留档。
+
+### Main Changes
+
+- 自我复盘：机制选错（一次性任务应 subagent 而非 durable teammate）、视角同质（本会话无模型可选）、约束不硬（两次越界）、Lead 越界改成员范围、目标错位（团队干仓库卫生而非用户可见问题）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `16f9d8f` | chore(task): archive 10-06-review-team-invocation-mistakes |
+
+### Testing
+
+- [OK] [OK] docker pull latest → RepoDigest 与 registry 0.0.6 一致；OCI 版本标签 v0.0.6
+- [OK] [OK] 回滚镜像 v0.0.3 仍在；本机演示实例 0.0.6；仓库工作树干净、CI 绿
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 用户实例升到 0.0.6 待其发话（命令已留档）；'版本对齐核查'纳入每次维护固定动作
