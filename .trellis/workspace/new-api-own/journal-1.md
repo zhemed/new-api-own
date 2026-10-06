@@ -710,3 +710,38 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 用户实例(0.0.5)需先按镜像三步升到 0.0.7（旧镜像无更新器），之后即可面板内更新；v0.0.6 无 Release 条目（症状已随 0.0.7 成为 latest 而解除）；旧 v0.0.5 Release 上 118MB 二进制待用户定
+
+
+## Session 24: 维护：双写法拉取验证、补 v0.0.6 Release、清 16 个过时资产
+<!-- trellis-session: v=2 fp=c6e662facd2c0bcf -->
+
+**Date**: 2026-10-06
+**Task**: 维护：双写法拉取验证、补 v0.0.6 Release、清 16 个过时资产
+**Branch**: `main`
+
+### Summary
+
+按用户指示维护：①证明并保证 v/非v 两种镜像标签写法都能拉取（实测两次 pull 同一镜像 ID、registry 摘要一致；工作流对两种 tag 拼写均发布）；顺手刷新本机陈旧 latest。②用 workflow_dispatch 补发 v0.0.6 Release（不改写 tag），三资产齐备且 v0.0.7 仍为 Latest，同时真实 CI 验证了修好的 /releases/latest 校验。③清理历史 Release 上过时资产共 16 个（v0.0.5 旧命名二进制、v0.0.4/v0.0.3/v0.0.2 的 macOS/Windows 与旧命名 Linux），释放 700+MB，Release 条目与 tag 全部保留。
+
+### Main Changes
+
+- 现在 Releases 里只有 v0.0.6 / v0.0.7 带新命名 Linux 资产；releases/latest = v0.0.7（面板读取端点）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2085df9` | chore(task): archive 10-06-commit-e2e-records |
+
+### Testing
+
+- [OK] [OK] docker pull 0.0.7 与 v0.0.7 → 同一镜像 ID 68c9842d16fb；registry 摘要 latest=0.0.7=v0.0.7
+- [OK] [OK] v0.0.6 Release 补发 run 成功、三资产齐备、v0.0.7 仍 Latest
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 用户生产实例按镜像三步升到 0.0.7 后即可面板内更新
