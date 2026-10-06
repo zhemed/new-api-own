@@ -495,3 +495,39 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 前端类型检查/lint 仍需有工具链的环境补跑；生产由用户自行拉 latest 部署
+
+
+## Session 18: 补齐前端工具链：bun+jsdom+knip，抓出消毒测试失效并清 33 个死文件
+<!-- trellis-session: v=2 fp=70d8e386bb57f7dc -->
+
+**Date**: 2026-10-06
+**Task**: 补齐前端工具链：bun+jsdom+knip，抓出消毒测试失效并清 33 个死文件
+**Branch**: `main`
+
+### Summary
+
+按用户指示直接补齐缺失工具链：装 bun 1.4.2 与 web 依赖（+jsdom/@types/jsdom）。工具链立刻抓出四类真问题：①我们上轮引入的 lint error（useMemo 缺 t 依赖）已修；②footer 的 XSS 测试因 happy-dom 下 DOMPurify.isSupported=false 而从未验证消毒（实测 script 存活），改 jsdom 后 3/3 通过，并给 footer 加失效安全（不支持时不注入原始 HTML）；③knip 未声明应用/测试入口导致大量误报，修配置后按可信清单删除 33 个死文件（knip 65→9，build 兜底验证）；④3 个 api-key 表格测试为既有失败（组件功能被注释、测试断言旧设计），不改测试掩盖，写进 MAINTENANCE。
+
+### Main Changes
+
+- 失误自报：基线对照用的 .verify-baseline 工作树被 git add -A 误提交为 gitlink 并推送，已回滚并忽略 .verify-*/
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `58e028d` | chore(task): archive 10-06-install-toolchain-and-verify-web |
+
+### Testing
+
+- [OK] [OK] bun run typecheck exit=0 / lint 0 error / build exit=0
+- [OK] [OK] bun test 151 pass / 3 fail（均为既有失败，已在 MAINTENANCE 留痕）
+- [OK] [OK] knip 未使用文件 65 → 9；CI 通过
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 剩余 9 项为互相引用的 barrel/未用 hook，留待下次；3 个既有测试失败待产品决定恢复功能还是改测试

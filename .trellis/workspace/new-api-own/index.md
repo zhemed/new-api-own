@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 17
+- **Total Sessions**: 18
 - **Last Active**: 2026-10-06
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~497 | Active |
+| `journal-1.md` | ~533 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 18 | 2026-10-06 | 补齐前端工具链：bun+jsdom+knip，抓出消毒测试失效并清 33 个死文件 | `58e028d` | `main` |
 | 17 | 2026-10-06 | 收口：删零引用文件、补已知不一致、发版 0.0.6 验证前端 | `c2458ca` | `main` |
 | 16 | 2026-10-06 | 团队全面审查与维护（3 成员 + Lead 复核） | `ecc5642` | `main` |
 | 15 | 2026-10-06 | 瘦身：部署只剩镜像，其余产物全清 | `35da53c` | `main` |
