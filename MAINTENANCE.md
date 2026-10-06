@@ -219,6 +219,18 @@ LOG_SQL_DSN='sqlite:/dev/shm/newapi-logs.db?_pragma=journal_mode(WAL)&_pragma=sy
 ### 5. 其他
 - 模型倍率全精度（`800c26d6`）、用量日志表格对齐、去上游化（README 双语、链接/检查器/i18n 指向自维护仓库）、Docker 环境标准锁定
 
+## 已知不一致（刻意未改，2026-10-06 团队审查留痕）
+
+审查发现但**决定不改**的项目，改它们会变更用户可见行为或波及面过大；留在此处以免后人重复踩：
+
+| 项 | 位置 | 为什么没改 |
+|---|---|---|
+| multipart 图片编辑缺 `model` 必填校验（JSON 分支有）| `relay/helper/valid_request.go:195-231` vs `:240-243` | 补校验会让原本被接受的请求变 400，属上游遗留不一致，改=可见行为变更 |
+| 客户端请求 DTO 用非指针标量 + `omitempty` | `relay/common/relay_info.go:849`（`Duration`）、`dto/video.go:10-12` | 与 AGENTS.md 的 DTO 指针规则不符，但改指针会波及全部 task adaptor；计费不变量已另有钳制（`relay/relay_task.go:121-127`、`relay/common/relay_utils.go:153`） |
+| 日志裁剪的 `DELETE ... LIMIT` 仅 MySQL 生效 | `model/log.go:TrimLogToMaxRows` | GORM 的 SQLite/PG 方言会丢 LIMIT；已在注释写明"不可依赖 limit 限制单次工作量" |
+| ClickHouse 日志库不支持行数上限 | `service/system_task.go:logCleanupMaxRows` | 不做 CH 分支（无法离线验证 CH 版本行为）；显式返回 0 并打一次性 WARN，改用保留天数 |
+| 前端 62 个孤儿模块候选 | `web/src/**`（`ui/`、`ai-elements/` 等）| 属组件库全集与键登记表，本机无 knip/node_modules 无法验证，删=盲删 |
+
 ## 质量门禁现状（2026-08-18 基线）
 
 > **2026-10-06 变更**：PR 质量门禁工作流（`ci.yml` / `pr-check.yml`）已移除，本节基线**没有任何 CI 兜底**。
