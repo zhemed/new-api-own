@@ -460,3 +460,38 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 待用户定夺：multipart 校验、DTO 指针语义、62 个孤儿模块候选、前端补类型检查
+
+
+## Session 17: 收口：删零引用文件、补已知不一致、发版 0.0.6 验证前端
+<!-- trellis-session: v=2 fp=596b4cfefad268c4 -->
+
+**Date**: 2026-10-06
+**Task**: 收口：删零引用文件、补已知不一致、发版 0.0.6 验证前端
+**Branch**: `main`
+
+### Summary
+
+按用户授权自行决定收口：删除零引用的 Dockerfile.dev；把刻意不改的四类不一致（multipart 校验、DTO 指针语义、CH 行数上限、前端孤儿模块）写进 MAINTENANCE「已知不一致」段留痕；本机无 bun/tsc/esbuild/deno，故用 tag 触发的镜像构建代做前端构建级验证；抬 0.0.6 并发版使 latest 含今日维护成果。
+
+### Main Changes
+
+- 决定：两处可见行为/契约变更不改；62 孤儿模块不删；CH 忽略上限并告警
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c2458ca` | chore(task): archive 10-06-decide-cleanup-and-maintain |
+
+### Testing
+
+- [OK] [OK] v0.0.6 镜像构建 success（arm64/amd64/manifest 三 job 全绿）= 前端改动构建级验证通过
+- [OK] [OK] make test 38 包 ok、门禁三件套通过、七语言键集 5268×7 零漂移
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 前端类型检查/lint 仍需有工具链的环境补跑；生产由用户自行拉 latest 部署

@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 16
+- **Total Sessions**: 17
 - **Last Active**: 2026-10-06
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~462 | Active |
+| `journal-1.md` | ~497 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 17 | 2026-10-06 | 收口：删零引用文件、补已知不一致、发版 0.0.6 验证前端 | `c2458ca` | `main` |
 | 16 | 2026-10-06 | 团队全面审查与维护（3 成员 + Lead 复核） | `ecc5642` | `main` |
 | 15 | 2026-10-06 | 瘦身：部署只剩镜像，其余产物全清 | `35da53c` | `main` |
 | 14 | 2026-10-06 | 项目维护轮次：文档对齐 + 陈旧内容清理 | `b39314f` | `main` |
