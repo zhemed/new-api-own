@@ -316,3 +316,39 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 等用户定夺 new-api.service；演示实例仍在 3020 运行
+
+
+## Session 13: systemd unit 删除：部署方式唯一化收口
+<!-- trellis-session: v=2 fp=4f0f49fabfe963fb -->
+
+**Date**: 2026-10-06
+**Task**: systemd unit 删除：部署方式唯一化收口
+**Branch**: `main`
+
+### Summary
+
+按用户选择删除 new-api.service，并把裸机/systemd 形态纳入唯一部署闸门（根级 unit 或 systemd/deploy/etc 目录下 unit）；规则源与 AGENTS/MAINTENANCE/FILE_INVENTORY 同步，do-not-restore 清单加该文件；闸门双向实测通过，CI 全绿。至此仓库内 compose/Helm/K8s/systemd 全部被拦。
+
+### Main Changes
+
+- 闸门覆盖范围：文件名+目录名+compose 特征字段+systemd unit 四类判定
+- 记录 install-docker.sh 中的 systemctl 调用属启 Docker，保留不改
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ad0713d` | chore(task): archive 10-06-final-verify-compose-free |
+
+### Testing
+
+- [OK] [OK] 闸门双向实测：dummy-check.service 被拦、移除后通过
+- [OK] [OK] CI trellis-gate 全绿（含新步骤）
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 无（部署方式唯一化收口）；演示实例按用户选择继续运行在 3020
