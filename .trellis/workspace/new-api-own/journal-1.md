@@ -531,3 +531,40 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 剩余 9 项为互相引用的 barrel/未用 hook，留待下次；3 个既有测试失败待产品决定恢复功能还是改测试
+
+
+## Session 19: 团队复查本轮改动：删码安全、消毒逻辑站得住，但我的机制描述错了
+<!-- trellis-session: v=2 fp=99ba32c42f7e6bfd -->
+
+**Date**: 2026-10-06
+**Task**: 团队复查本轮改动：删码安全、消毒逻辑站得住，但我的机制描述错了
+**Branch**: `main`
+
+### Summary
+
+两名复核员独立复查我这一轮（33 个删除 + 消毒加固 + knip 配置 + 工具链）。结论：①33 个删除安全（1006 文件 import 全部可解析、0 unresolved、routeTree/rsbuild 只扫 src/routes、无变量式动态导入）无需恢复；②knip 配置部分过宽：14 个 ui/** 无说明被 ignore 掩盖、且导致 recharts/tokenlens/@xyflow/react/embla-carousel-react/react-resizable-panels 被误报为未使用依赖（勿删）；③jsdom 改动未弱化断言，实为修好长期失败的测试（基线 1 pass/2 fail）；④消毒加固无缺陷（真机 Chromium 实测 isSupported=true 且剥离 script/onerror，兜底只隐藏自定义 HTML 区块）。
+
+### Main Changes
+
+- 抓出并修正我的机制描述错误：happy-dom 下 purify.isSupported 实为 true，真正原因是消毒不完整（我在模块导出上读到 false 就写进了注释/MAINTENANCE）——已改 footer.tsx、footer.test.tsx、MAINTENANCE.md
+- 复核员顺带修：pkg/billingexpr/expr.md 6 个失效上游路径按标识符映射为真实文件 + 更正脚注；FILE_INVENTORY 计数、quality-guidelines 里与现状矛盾的表述
+- 我处理：删重复 web/src/hooks/use-mobile.tsx（与 .ts 字节相同）、knip 配置补 keep 理由与依赖误报警告
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d04893a` | chore(task): archive 10-06-team-audit-latest-changes |
+
+### Testing
+
+- [OK] [OK] Go: vet/build/relaykit/make test(38 包) 全 0；前端 typecheck 0 / lint 0 error / build 0 / test 151 pass 3 fail（既有）/ knip 9→8
+- [OK] [OK] 计数实测与复核员一致：2085 / web/src 1012 / web 1039；门禁三件套通过；CI 通过
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 3 个 api-key 表格测试失败与 3 个既有问题仍留待产品决定；3020 演示实例真实页面未验证（未获授权）
