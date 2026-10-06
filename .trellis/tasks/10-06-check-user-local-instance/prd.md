@@ -55,3 +55,33 @@ docker run -d --name new-api --restart always --network host \
 ## Acknowledgement
 
 已按用户给的账号/密码做接口侧核对（凭据仅在命令内使用，未打印、未落盘）；数据库为只读打开（`mode=ro`）。
+
+## 变更执行（2026-10-06，用户选定内存模式）
+
+用户决定：**内存日志 + 20 万行上限 + 保留 7 天 + 5 分钟清理**。已重建其容器（保留原镜像 tag、挂载 `/root/data:/data`、`--network host`、`--restart always`）：
+
+```
+-e LOG_SQL_DSN=memory -e LOG_MEMORY_MAX_ROWS=200000
+-e LOG_CLEANUP_RETENTION_DAYS=7 -e LOG_CLEANUP_INTERVAL=5m
+```
+
+**启动日志自证**（容器自己打印，无需外部推断）：
+
+```
+using in-memory SQLite as log database (usage logs are lost on restart)
+log database runs in memory: pinning a single connection so the log schema survives…
+[WARN] usage logs are held in RAM (LOG_SQL_DSN=memory): they are lost on restart;
+       keeping at most 200000 rows, cleaned every 5m0s
+```
+
+**接口侧验证**：登录 HTTP 200；日志列表 `items=0`（内存库是全新的）；`/api/status` = v0.0.7；
+磁盘主库 `logs` 仍是 1 行（旧记录仍在、只是不再被读取，且不会再增长）。
+
+**⚠️ 过程中的失误（如实记录）**：首次 `docker run` 因"继承环境变量"时混入一个空值而失败，
+而旧容器已被 `docker rm -f` → 用户实例**中断约 2 分钟**。数据卷未动、账号与数据完好，
+已立即用正确命令起回并完成验证。教训：批量拼接 `--env` 前必须先过滤空行，并在删除旧容器前**先构造好新命令**。
+
+**用户可见的变化**：面板日志列表从"有 1 条"变为空（内存库全新）；新日志只进内存、5 分钟清理一轮、
+最多 20 万行、只留 7 天；**重启即丢**；应用文件日志 `/root/data/logs/*.log` 仍在磁盘（如需省写入可加 `-log-dir=`）。
+
+**回滚**：去掉 `-e LOG_SQL_DSN=memory` 重建容器即可恢复落盘，磁盘上的历史记录一直都在。

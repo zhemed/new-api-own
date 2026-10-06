@@ -745,3 +745,39 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 用户生产实例按镜像三步升到 0.0.7 后即可面板内更新
+
+
+## Session 25: 用户实例改为内存日志（20万/7天/5分钟）并验证
+<!-- trellis-session: v=2 fp=4035d042ade4b9cb -->
+
+**Date**: 2026-10-06
+**Task**: 用户实例改为内存日志（20万/7天/5分钟）并验证
+**Branch**: `main`
+
+### Summary
+
+用户自行部署实例（端口 3000，v0.0.7）。检查发现日志并未在内存：容器无任何 LOG_* 环境变量，logs 表落在主库 /root/data/one-api.db，应用文件日志在 /root/data/logs/。讨论清楚三件事后由用户拍定：①logs 表同时充当用量账本（重启清空/超限裁最早记录，但余额在主表不受影响）；②内存模式下清理与上限是安全阀、只能调参不能关；③不清理的结局是 OOM 而非变慢。用户选定 20 万行/7 天/5 分钟，已重建容器并验证：启动日志自证内存模式、日志列表 items=0（内存库全新）、磁盘 logs 不再增长、挂载与网络与重启策略保留。
+
+### Main Changes
+
+- 失误自报：首条 docker run 因继承环境变量时混入空值失败，而旧容器已删 → 实例中断约 2 分钟；数据完好，已立即起回并验证。教训：拼接 --env 前先过滤空值、删除旧容器前先构造好新命令
+- 文档化结论：内存模式不可关闭清理/上限（代码即安全阀）；落盘模式可用 LOG_CLEANUP_INTERVAL 控制并在面板手动清
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3c4243d` | docs(task): 本地实例日志落点检查结论（未开启内存日志，附开启方式）[task:check-user-local-instance] |
+
+### Testing
+
+- [OK] [OK] 启动日志：using in-memory SQLite as log database / keeping at most 200000 rows, cleaned every 5m0s
+- [OK] [OK] 接口侧：登录 200、日志列表 items=0、/api/status=v0.0.7；磁盘 logs 行数保持 1 不增长
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 观察内存占用（预期 78–195MB 上限）；若要回滚落盘：去掉 LOG_SQL_DSN 重建即可
