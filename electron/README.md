@@ -1,6 +1,6 @@
 # New API Electron Desktop App
 
-This directory contains the Electron wrapper for New API, providing a native desktop application with system tray support for Windows, macOS, and Linux.
+This directory contains the Electron wrapper for New API, providing a native desktop application with system tray support. **本项目只维护 Linux 产物**（AppImage + deb）；Windows/macOS 打包已移除。
 
 ## Prerequisites
 
@@ -9,8 +9,8 @@ The Electron app requires the compiled Go binary to function. You have two optio
 
 **Option A: Use existing binary (without Go installed)**
 ```bash
-# If you have a pre-built binary (e.g., new-api-macos)
-cp ../new-api-macos ../new-api
+# 用 Release 里的 Linux 静态二进制
+cp ../new-api-<版本> ../new-api
 ```
 
 **Option B: Build from source (requires Go)**
@@ -40,7 +40,7 @@ This will:
 - Use the Go backend on port 3000
 - Use the Rsbuild frontend development server on port 5173
 - Open an Electron window with DevTools enabled
-- Create a system tray icon (menu bar on macOS)
+- Create a system tray icon
 - Store database in `../data/new-api.db`
 
 ## Building for Production
@@ -61,8 +61,7 @@ npm run build:linux  # Creates .AppImage and .deb
 
 ### Build Output
 - Built applications are in `electron/dist/`
-- macOS: `.dmg` (installer) and `.zip` (portable)
-- Windows: `.exe` (installer) and portable exe
+- Linux: `.AppImage`（免安装）与 `.deb`（安装包）
 - Linux: `.AppImage` and `.deb`
 
 ## Configuration
@@ -76,6 +75,5 @@ const PORT = 3000; // Change to desired port
 ### Database Location
 - **Development**: `../data/new-api.db` (project directory)
 - **Production**:
-  - macOS: `~/Library/Application Support/New API/data/`
-  - Windows: `%APPDATA%/New API/data/`
+  - Linux: 见 electron-builder 的 `userData` 目录（默认 `~/.config/New-API-App/`）
   - Linux: `~/.config/New API/data/`

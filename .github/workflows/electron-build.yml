@@ -1,17 +1,13 @@
-name: Build Electron App
+name: Build Electron App (Linux)
 
 on:
-  # 仅手动触发：Electron 产物与镜像发布解耦，避免每次发版都跑一遍多平台打包。
-  workflow_dispatch:  # Allows manual triggering
+  # 仅手动触发：本项目只维护 Linux 桌面产物，与镜像发布解耦。
+  # 需要产物时在 Actions 页面手动 Run workflow（要传 Release 则必须在 tag ref 上运行）。
+  workflow_dispatch:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        # os: [macos-latest, windows-latest]
-        os: [windows-latest]
-
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash
@@ -47,17 +43,10 @@ jobs:
           DISABLE_ESLINT_PLUGIN='true' VITE_REACT_APP_VERSION=$(git describe --tags) bun run build
           cd ..
 
-      # - name: Build Go binary (macos/Linux)
-      #   if: runner.os != 'Windows'
-      #   run: |
-      #     go mod download
-      #     go build -ldflags "-s -w -X 'github.com/QuantumNous/new-api/common.Version=$(git describe --tags)' -extldflags '-static'" -o new-api
-
-      - name: Build Go binary (Windows)
-        if: runner.os == 'Windows'
+      - name: Build Go binary (Linux, static)
         run: |
           go mod download
-          go build -ldflags "-s -w -X 'github.com/QuantumNous/new-api/common.Version=$(git describe --tags)'" -o new-api.exe
+          go build -ldflags "-s -w -X 'github.com/QuantumNous/new-api/common.Version=$(git describe --tags)' -extldflags '-static'" -o new-api
 
       - name: Update Electron version
         run: |
@@ -71,9 +60,9 @@ jobs:
             MINOR=${BASH_REMATCH[2]}
             PATCH=${BASH_REMATCH[3]}
             REST=${BASH_REMATCH[4]}
-          
+
             VERSION="$MAJOR.$MINOR.$PATCH"
-          
+
             # If there's extra content, append it without adding -dev
             if [[ -n "$REST" ]]; then
               VERSION="$VERSION$REST"
@@ -86,36 +75,18 @@ jobs:
           cd electron
           npm install
 
-      # - name: Build Electron app (macOS)
-      #   if: runner.os == 'macOS'
-      #   run: |
-      #     cd electron
-      #     npm run build:mac
-      #   env:
-      #     CSC_IDENTITY_AUTO_DISCOVERY: false  # Skip code signing
-
-      - name: Build Electron app (Windows)
-        if: runner.os == 'Windows'
+      - name: Build Electron app for Linux (AppImage + deb)
         run: |
           cd electron
-          npm run build:win
+          npm run build:linux
 
-      # - name: Upload artifacts (macOS)
-      #   if: runner.os == 'macOS'
-      #   uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-      #   with:
-      #     name: macos-build
-      #     path: |
-      #       electron/dist/*.dmg
-      #       electron/dist/*.zip
-
-      - name: Upload artifacts (Windows)
-        if: runner.os == 'Windows'
+      - name: Upload artifacts (Linux)
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: windows-build
+          name: linux-build
           path: |
-            electron/dist/*.exe
+            electron/dist/*.AppImage
+            electron/dist/*.deb
 
   release:
     needs: build
@@ -132,6 +103,6 @@ jobs:
         uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
         with:
           files: |
-            windows-build/*
+            linux-build/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

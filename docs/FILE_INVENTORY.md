@@ -23,7 +23,7 @@
 
 **`bin/` 那俩 `.sql` 能删吗？** 建议不动或移 `bin/archive/` 并注释。`git log --follow -- bin/` 显示历史迁移，留作可追溯，体积 <1K。
 
-**`electron/` 12 文件必须吗？** 可选。若不发桌面版，可标记 `optional` 并保持 `electron/dist` 忽略；删则影响 `electron/build.sh` 与 `release.yml` 桌面产物。
+**`electron/` 12 文件必须吗？** 可选。若不发桌面版，可标记 `optional` 并保持 `electron/dist` 忽略；删则影响 `electron/build.sh`（本项目只维护 Linux 桌面产物：AppImage + deb，`release.yml` 已不含桌面产物）。
 
 **`docs/translation-glossary.fr/ru` 等有用吗？** 有用——i18n 术语基线，`web/src/i18n/locales/{7}.json` 依赖；未引用时可归档非删除。
 

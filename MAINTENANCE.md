@@ -346,9 +346,10 @@ x-opencode-session and cannot be routed efficiently
 
    下面三个工作流 `on:` 只保留 `workflow_dispatch`，**要手动 Run workflow**：
 
-   - `Release` → 三平台二进制 + checksums（**必须在 tag ref 上运行**：`gh workflow run release.yml --ref v0.0.3`，
-     否则上传步骤因 `if: startsWith(github.ref, 'refs/tags/')` 被跳过）
-   - `Build Electron App` → Electron 安装包
+   - `Release (Linux)` → **只出 Linux**（amd64/arm64 静态二进制 + checksums）；macOS/Windows job 已删除
+     （本项目只维护 Linux）。**必须在 tag ref 上运行**：`gh workflow run release.yml --ref v0.0.4`，
+     否则上传步骤因 `if: startsWith(github.ref, 'refs/tags/')` 被跳过
+   - `Build Electron App (Linux)` → 仅 Linux 安装包（AppImage + deb）
    - `Sync Release to GitCode` → 同步到 GitCode（还需仓库变量 `GITCODE_REPOSITORY`；未设置时整体 skip）
 
 4. 校验：
