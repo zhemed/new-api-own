@@ -424,3 +424,39 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 无；部署方式与交付面已收敛到一条路径
+
+
+## Session 16: 团队全面审查与维护（3 成员 + Lead 复核）
+<!-- trellis-session: v=2 fp=6ff12d487b34c75d -->
+
+**Date**: 2026-10-06
+**Task**: 团队全面审查与维护（3 成员 + Lead 复核）
+**Branch**: `main`
+
+### Summary
+
+组队完成全面审查：后端 6 项发现（含 1 个真 bug：sqlite::memory: 漏判导致内存日志表消失；负向对照测试顺序敏感；CH trim 无分支→Lead 决策忽略+告警；LIMIT 可移植性注释；multipart 校验缺失与 DTO 指针语义待确认）+ 心跳 defer 修复；前端 i18n 七语言 0 缺键/0 漂移（5268×7 独立复核）、17 处 a11y、Electron 死分支删除；运维文档/配置与瘦身后现状对齐、敏感信息扫描无真实密钥、makefile compose 目标重写为直跑。Lead 冻结后统一验证：gofmt/vet/build/relaykit/make test(38 包)/门禁三件套/i18n sync/YAML 全绿，CI 通过。
+
+### Main Changes
+
+- 红线自报 2 条（后端成员：CH dialector 自动 Ping 打到本地 9000、验证输出曾写到 /tmp）——已核查现场并收窄为仅离线验证
+- 未验证项如实记录：前端改动无 bun 无法 typecheck/lint/build
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ecc5642` | chore(task): archive 10-06-full-review-maintenance-team |
+
+### Testing
+
+- [OK] [OK] make test exit=0（38 包 ok，无 FAIL）
+- [OK] [OK] 七语言键集 5268×7，与 en 差异 0；CI trellis-gate 通过
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 待用户定夺：multipart 校验、DTO 指针语义、62 个孤儿模块候选、前端补类型检查
