@@ -8,11 +8,15 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/middleware"
+	"github.com/QuantumNous/new-api/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 func SetRouter(router *gin.Engine, assets WebAssets) {
+	// 更新检查的启动日志与后台预热放在这里（而不是 SetApiRouter）：SetApiRouter 会被路由
+	// 单测直接调用，启动期外呼不应在测试里发生。
+	service.StartUpdateCheck()
 	SetApiRouter(router)
 	SetDashboardRouter(router)
 	SetRelayRouter(router)
