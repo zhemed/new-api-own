@@ -253,8 +253,48 @@ jobs:
             echo "::warning::release $TAG also carries unexpected asset(s): $(printf '%s' "$EXTRA" | tr '\n' ' ')—the updater expects only the fixed names above. Legacy assets on old releases are intentionally left untouched."
           fi
 
-          # Verification half: a release that is not actually "latest" cannot fix
-          # the panel, so surface the resulting state in the run summary.
-          gh release view "$TAG" --json tagName,isLatest,isPrerelease,assets \
+          # Verify the "latest" flag against the SAME endpoint the panel calls
+          # (`GET /repos/{owner}/{repo}/releases/latest`), NOT
+          # `gh release view --json isLatest`.
+          #
+          # Why: `isLatest` is not a field every gh build exposes. On gh 2.100.0 the
+          # accepted set is apiUrl, assets, author, body, createdAt, databaseId, id,
+          # isDraft, isImmutable, isPrerelease, name, publishedAt, tagName,
+          # tarballUrl, targetCommitish, uploadUrl, url, zipballUrl — no isLatest.
+          # Asking for it fails the step *after* a successful publish, turning a
+          # good release into a red run (this is exactly what happened to v0.0.7).
+          # Querying the panel's own endpoint also asserts the real contract instead
+          # of a CLI convenience field.
+          if ! LATEST_TAG="$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq .tag_name)"; then
+            echo "::error::could not read repos/${GITHUB_REPOSITORY}/releases/latest to verify the 'latest' flag. The release itself was published, but this check could not run."
+            exit 1
+          fi
+          if [ -z "$LATEST_TAG" ]; then
+            echo "::error::repos/${GITHUB_REPOSITORY}/releases/latest returned an empty tag_name; the 'latest' flag could not be verified."
+            exit 1
+          fi
+
+          if [ -n "$PRERELEASE_FLAG" ]; then
+            # A pre-release must never be served from /releases/latest.
+            if [ "$LATEST_TAG" = "$TAG" ]; then
+              echo "::error::pre-release $TAG is being served as the repository 'latest'; the panel would offer it as an upgrade."
+              exit 1
+            fi
+            echo "ok: $TAG is a pre-release; releases/latest is '$LATEST_TAG'"
+          elif [ "$LATEST_TAG" = "$TAG" ]; then
+            echo "ok: $TAG is the repository 'latest' (releases/latest -> $LATEST_TAG)"
+          elif [ "$LATEST_FLAG" = "--latest" ]; then
+            # We asked it to be latest and it is not: the panel would keep
+            # advertising whatever releases/latest returns instead.
+            echo "::error::$TAG is the highest version tag and was published with --latest, but releases/latest returns '$LATEST_TAG'."
+            exit 1
+          else
+            # Re-running an old tag on purpose: not claiming "latest" is correct.
+            echo "ok: $TAG intentionally does not claim 'latest' (highest version tag is '$HIGHEST'); releases/latest -> $LATEST_TAG"
+          fi
+
+          # Summary for the run page. `isDraft`/`isPrerelease` are real fields; the
+          # latest determination is reported above from the API endpoint.
+          gh release view "$TAG" --json tagName,isPrerelease,isDraft,assets \
             | tee -a "$GITHUB_STEP_SUMMARY"
-          echo "::notice::release $TAG published (latest=$LATEST_FLAG prerelease=$PRERELEASE_FLAG)"
+          echo "::notice::release $TAG published (latest=$LATEST_FLAG prerelease=$PRERELEASE_FLAG), releases/latest=$LATEST_TAG"
