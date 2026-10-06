@@ -147,7 +147,8 @@
           "from": "node_modules/electron/dist/LICENSES.chromium.html",
           "to": "licenses/electron/LICENSES.chromium.html"
         }
-      ]
+      ],
+      "maintainer": "zhemed <zhemed@users.noreply.github.com>"
     },
     "nsis": {
       "oneClick": false,
