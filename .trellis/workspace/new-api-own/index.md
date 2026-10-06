@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 22
+- **Total Sessions**: 23
 - **Last Active**: 2026-10-06
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~675 | Active |
+| `journal-1.md` | ~712 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 23 | 2026-10-06 | 面板内自更新交付：v0.0.7 发布并端到端验证通过 | `f5b7b9f` | `main` |
 | 22 | 2026-10-06 | 被指出：团队没发现线上还是 0.5——立版本对齐核查，刷新本机 latest 标签 | `16f9d8f` | `main` |
 | 21 | 2026-10-06 | 本机演示实例真机验证通过（0.0.6）；生产升级经用户选择跳过 | `1addd9f` | `main` |
 | 20 | 2026-10-06 | 团队处理开放项：前端恢复功能+补齐 5 个缺键，后端堵住 sora 计费上界绕过 | `90a4f19` | `main` |

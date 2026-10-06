@@ -673,3 +673,40 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 用户实例升到 0.0.6 待其发话（命令已留档）；'版本对齐核查'纳入每次维护固定动作
+
+
+## Session 23: 面板内自更新交付：v0.0.7 发布并端到端验证通过
+<!-- trellis-session: v=2 fp=7c1c205e0d1bcdc6 -->
+
+**Date**: 2026-10-06
+**Task**: 面板内自更新交付：v0.0.7 发布并端到端验证通过
+**Branch**: `main`
+
+### Summary
+
+按用户要求（面板自身做检查+提示+直接更新，照 komari 在线更新思路）交付：①服务端更新检查（默认开、可关、带缓存/退避、可配代理、unknown 不谎报、发布源日志剥凭据）；②面板内应用更新（仅管理员、下载本机架构 Linux 二进制、SHA256SUMS 校验失败绝不替换、同目录临时文件+os.Rename 原子覆盖、syscall.Exec 原地重执行、并发互斥、256MB 上限）；③前端四态显示 + 立即更新入口（二次确认写明重启与容器重建代价）+ 失败可读原因；④CI：release.yml 产出 Release 条目 + new-api-linux-amd64/arm64 + SHA256SUMS（固定资产名、与镜像同源同版本、只认版本 tag、幂等、仅最高版本取 latest），docker-build 触发条件收紧为版本 tag；⑤文档与版本核查脚本。
+
+### Main Changes
+
+- 发版 v0.0.7：镜像 latest=0.0.7=v0.0.7 同一摘要；Release 标记 Latest 且三资产齐备
+- 端到端铁证：3020 演示实例从 0.0.6 经面板「立即更新」升到 v0.0.7，实例二进制 sha256 与 Release 的 new-api-linux-amd64 完全一致，pid 已换（syscall.Exec 生效）
+- 顺带修复：面板谎报 v0.0.5（严格比较+Release 缺条目）、前端构建版本号死常量、HTTP 部署下 5 个复制按钮、数据卷重建后 setup 守卫被 localStorage 锁死、release.yml 中 gh 不支持的 isLatest 字段
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f5b7b9f` | fix(ci): release.yml 校验改用 /releases/latest（gh 无 isLatest 字段），7 场景 stub 验证 [task:copy-komari-update-logic] |
+
+### Testing
+
+- [OK] [OK] Go: vet/build/relaykit/make test(39 包) 全 0；前端 typecheck/lint(0 err)/202 pass/build/i18n:check/format:check 全绿；门禁三件套通过；check-version-drift 判定 OK；CI 通过
+- [OK] [OK] v0.0.7 Release + 镜像 + 面板自更新端到端均已实测
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 用户实例(0.0.5)需先按镜像三步升到 0.0.7（旧镜像无更新器），之后即可面板内更新；v0.0.6 无 Release 条目（症状已随 0.0.7 成为 latest 而解除）；旧 v0.0.5 Release 上 118MB 二进制待用户定
