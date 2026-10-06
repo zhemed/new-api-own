@@ -816,3 +816,38 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 用户实例需重建容器一次以带上新环境变量（-e LOG_MEMORY_MAX_BYTES=200MB，且不设 LOG_CLEANUP_INTERVAL）；之后更新可走面板
+
+
+## Session 27: 修复 v0.0.8 回归（zhCN 语言标签致日志页崩溃）并发 v0.0.9
+<!-- trellis-session: v=2 fp=f5451dd0c669f210 -->
+
+**Date**: 2026-10-06
+**Task**: 修复 v0.0.8 回归（zhCN 语言标签致日志页崩溃）并发 v0.0.9
+**Branch**: `main`
+
+### Summary
+
+在用户实例上做交付后冒烟时发现 /system-settings/operations/logs 整页崩在错误边界，其余运营子页正常。用浏览器 console 钩子抓到真实堆栈：RangeError: Invalid language tag: zhCN at Number.toLocaleString —— 本应用 i18n.language 为自有标签 zhCN（无连字符），而 v0.0.8 新增的“内存日志占用（N 行）”直接把 i18n.language 传给了 toLocaleString。修复：改用项目既有 toIntlLocale() 归一化（zhCN→zh-CN，非法值退化为默认区域），全仓扫描确认仅此一处；新增以 lng:'zhCN' 渲染的回归测试（修复前必抛）。验证：受影响文件 6/6、全量 208 pass/0 fail、typecheck/lint/build/i18n:check/format:check/knip 全绿。发 v0.0.9 并把用户实例重建到 0.0.9，真实浏览器复核该页 crashed=false 且显示“内存日志占用 419 Bytes / 上限 200 MB（1 行）”。
+
+### Main Changes
+
+- 教训：语言标签必须走归一化工具；默认 lng:'en' 的测试覆盖不到真实标签路径；交付前必须对改动页面做真实浏览器冒烟
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `96f4881` | fix(web): 日志页在 zhCN 语言标签下崩溃（toLocaleString 抛 RangeError），改用 toIntlLocale 并补回归测试 [task:fix-intl-locale-crash] |
+
+### Testing
+
+- [OK] [OK] node 复现 RangeError；归一化后正常。全量前端 208 pass/0 fail；v0.0.9 两个工作流绿、Release 三资产齐备
+- [OK] [OK] 真机：用户实例版本 v0.0.9、该页不崩、内存行显示正常（中文）
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 观察该页与内存占用；后续升级可走面板内更新（本页修复也随镜像生效）
