@@ -781,3 +781,38 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 观察内存占用（预期 78–195MB 上限）；若要回滚落盘：去掉 LOG_SQL_DSN 重建即可
+
+
+## Session 26: v0.0.8：日志改为字节预算（写入触发），去掉 5 分钟定时清理
+<!-- trellis-session: v=2 fp=9d25996e4c669f36 -->
+
+**Date**: 2026-10-06
+**Task**: v0.0.8：日志改为字节预算（写入触发），去掉 5 分钟定时清理
+**Branch**: `main`
+
+### Summary
+
+用户诉求：上限按体积（200MB）表达、不要 5 分钟定时清理。方案由 Lead 定稿后三条线并行：①Go 新增 LOG_MEMORY_MAX_BYTES（接受 200MB/209715200/1.5GB，common.GetEnvOrDefaultSize）、写入后 O(1) 累加载荷字节、超预算 CAS 单飞异步裁剪；同一遍顺序=按天保留 → 行数上限 → 按体积裁最老（表不清空，单行超预算保留最新一行）；首用与每遍结束各做一次 SUM 校准；行数上限单一事实来源 model.LogRowCap()；配字节预算时 LOG_CLEANUP_INTERVAL 默认 0（不创建定时任务），显式设置仍生效；未配置预算时写路径首行短路=零开销、行为完全向后兼容。②面板 /api/performance/logs 新增 memory_log_bytes/max/rows，日志设置区块展示占用/上限/行数（未设上限、接近 90% 提示、字段缺失不渲染）。③文档同步 .env.example/MAINTENANCE/README（并撤回一处与最终代码冲突的表述）。
+
+### Main Changes
+
+- 发版 v0.0.8：镜像 latest=0.0.8=v0.0.8 同摘要；Release 标 Latest 且三资产齐备；releases/latest=v0.0.8
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f2b3577` | docs: 字节预算与写入触发机制、新变量与默认值（.env.example/MAINTENANCE/README）[task:log-byte-budget-write-trigger] |
+
+### Testing
+
+- [OK] [OK] 针对性实测：裁剪到预算内、单行超预算保留最新行、16 并发单飞、磁盘模式可用、设预算后定时调度关闭、显式间隔优先
+- [OK] [OK] 全量：Go 39 包 ok 0 FAIL；前端 typecheck/lint(0 err)/207 pass/build/i18n:check/format:check 全绿；knip(files) 干净；门禁两件套通过
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 用户实例需重建容器一次以带上新环境变量（-e LOG_MEMORY_MAX_BYTES=200MB，且不设 LOG_CLEANUP_INTERVAL）；之后更新可走面板

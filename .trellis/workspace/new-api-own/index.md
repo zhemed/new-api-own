@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 25
+- **Total Sessions**: 26
 - **Last Active**: 2026-10-06
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~783 | Active |
+| `journal-1.md` | ~818 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 26 | 2026-10-06 | v0.0.8：日志改为字节预算（写入触发），去掉 5 分钟定时清理 | `f2b3577` | `main` |
 | 25 | 2026-10-06 | 用户实例改为内存日志（20万/7天/5分钟）并验证 | `3c4243d` | `main` |
 | 24 | 2026-10-06 | 维护：双写法拉取验证、补 v0.0.6 Release、清 16 个过时资产 | `2085df9` | `main` |
 | 23 | 2026-10-06 | 面板内自更新交付：v0.0.7 发布并端到端验证通过 | `f5b7b9f` | `main` |
