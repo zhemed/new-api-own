@@ -194,6 +194,12 @@ func GetAndValidOpenAIImageRequest(c *gin.Context, relayMode int) (*dto.ImageReq
 			c.Request.PostForm = formData
 			imageRequest.Prompt = formData.Get("prompt")
 			imageRequest.Model = formData.Get("model")
+			// 与下方 JSON 分支保持一致：multipart 图片编辑同样必须显式带 model。
+			// 空 model 会被原样写进上游 form（relay/channel/openai/adaptor.go:457），
+			// 或让渠道回落到自己的默认模型（relay/channel/replicate/adaptor.go:83）。
+			if imageRequest.Model == "" {
+				return nil, errors.New("model is required")
+			}
 			if nValue := strings.TrimSpace(formData.Get("n")); nValue != "" {
 				n, err := strconv.Atoi(nValue)
 				if err != nil || n < 0 || n > dto.MaxImageN {

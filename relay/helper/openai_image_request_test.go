@@ -72,6 +72,60 @@ func TestGetAndValidOpenAIImageRequestMultipartStream(t *testing.T) {
 	})
 }
 
+// TestGetAndValidOpenAIImageRequestMultipartModelRequired guards the request
+// contract shared with the JSON branch of GetAndValidOpenAIImageRequest: a
+// multipart image edit must carry an explicit model. Without the check an empty
+// model reaches the channel adaptors, which either forward an empty "model"
+// form field upstream or silently fall back to a provider-specific default.
+func TestGetAndValidOpenAIImageRequestMultipartModelRequired(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	newContext := func(t *testing.T, model string) *gin.Context {
+		var body bytes.Buffer
+		writer := multipart.NewWriter(&body)
+		if model != "" {
+			require.NoError(t, writer.WriteField("model", model))
+		}
+		require.NoError(t, writer.WriteField("prompt", "edit this image"))
+		require.NoError(t, writer.Close())
+
+		c, _ := gin.CreateTestContext(httptest.NewRecorder())
+		c.Request = httptest.NewRequest(http.MethodPost, "/v1/images/edits", &body)
+		c.Request.Header.Set("Content-Type", writer.FormDataContentType())
+		return c
+	}
+
+	tests := []struct {
+		name      string
+		model     string
+		wantErr   bool
+		wantModel string
+	}{
+		{
+			name:    "missing model is rejected",
+			wantErr: true,
+		},
+		{
+			name:      "explicit model is parsed",
+			model:     "gpt-image-1",
+			wantModel: "gpt-image-1",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req, err := GetAndValidOpenAIImageRequest(newContext(t, tt.model), relayconstant.RelayModeImagesEdits)
+			if tt.wantErr {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "model is required")
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tt.wantModel, req.Model)
+		})
+	}
+}
+
 // TestGetAndValidOpenAIImageRequestNBounds guards the billing invariant that
 // the image generation count can never reach quota calculation with a value
 // large enough to overflow int64 into a negative charge.

@@ -150,6 +150,15 @@ func validateTaskDurationBounds(req TaskSubmitReq) *dto.TaskError {
 	if seconds == 0 && req.Seconds != "" {
 		seconds, _ = strconv.Atoi(req.Seconds)
 	}
+	// Duration 与 Seconds 可能同时出现，而各适配器取值优先级不同（sora 计费用
+	// Seconds，其余多用 Duration）。上界必须同时约束两者，否则一个合法的 duration
+	// 可以夹带超界的 seconds 绕过 MaxTaskDurationSeconds。仅当 Seconds 自身越界时
+	// 才让它决定校验结果，Duration 的既有拒绝语义不变。
+	if req.Seconds != "" {
+		if fromSeconds, err := strconv.Atoi(req.Seconds); err == nil && (fromSeconds < 0 || fromSeconds > MaxTaskDurationSeconds) {
+			seconds = fromSeconds
+		}
+	}
 	if seconds < 0 || seconds > MaxTaskDurationSeconds {
 		return createTaskError(fmt.Errorf("seconds must be between 1 and %d", MaxTaskDurationSeconds), "invalid_seconds", http.StatusBadRequest, true)
 	}

@@ -112,6 +112,41 @@ func TestTaskDurationBounds(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name:    "negative seconds is rejected",
+			body:    `{"model":"sora-2","prompt":"a cat","seconds":"-5"}`,
+			wantErr: true,
+		},
+		{
+			// duration 与 seconds 的取值优先级因适配器而异（sora 用 Seconds），
+			// 所以上界必须同时约束两者，不能让合法 duration 夹带超界 seconds。
+			name:    "oversized seconds is rejected even when duration is valid",
+			body:    `{"model":"sora-2","prompt":"a cat","duration":4,"seconds":"100000"}`,
+			wantErr: true,
+		},
+		{
+			name:    "negative seconds is rejected even when duration is valid",
+			body:    `{"model":"sora-2","prompt":"a cat","duration":4,"seconds":"-5"}`,
+			wantErr: true,
+		},
+		{
+			// 加入 seconds 后仍不得放松对 duration 的既有拒绝。
+			name:    "negative duration is rejected even when seconds is valid",
+			body:    `{"model":"sora-2","prompt":"a cat","duration":-4,"seconds":"8"}`,
+			wantErr: true,
+		},
+		{
+			name: "seconds at the bound is accepted",
+			body: `{"model":"sora-2","prompt":"a cat","duration":4,"seconds":"3600"}`,
+		},
+		{
+			name: "duration and seconds both within bounds are accepted",
+			body: `{"model":"sora-2","prompt":"a cat","duration":4,"seconds":"8"}`,
+		},
+		{
+			name: "zero seconds next to a valid duration is accepted",
+			body: `{"model":"sora-2","prompt":"a cat","duration":4,"seconds":"0"}`,
+		},
+		{
 			name: "normal duration is accepted",
 			body: `{"model":"sora-2","prompt":"a cat","seconds":"8"}`,
 		},

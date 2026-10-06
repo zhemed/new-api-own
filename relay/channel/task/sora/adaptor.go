@@ -113,6 +113,11 @@ func (a *TaskAdaptor) EstimateBilling(c *gin.Context, info *relaycommon.RelayInf
 	if seconds <= 0 {
 		seconds = 4
 	}
+	// 与 ali/gemini 适配器同款本地钳制：入口校验（relay/common/relay_utils.go）已拒绝
+	// 超界时长，这里再钳一次，保证 seconds 永远不会以无界值进入配额计算。
+	if seconds > relaycommon.MaxTaskDurationSeconds {
+		seconds = relaycommon.MaxTaskDurationSeconds
+	}
 
 	size := req.Size
 	if size == "" {

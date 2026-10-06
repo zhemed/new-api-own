@@ -228,9 +228,11 @@ LOG_SQL_DSN='sqlite:/dev/shm/newapi-logs.db?_pragma=journal_mode(WAL)&_pragma=sy
 | multipart 图片编辑缺 `model` 必填校验（JSON 分支有）| `relay/helper/valid_request.go:195-231` vs `:240-243` | 补校验会让原本被接受的请求变 400，属上游遗留不一致，改=可见行为变更 |
 | 客户端请求 DTO 用非指针标量 + `omitempty` | `relay/common/relay_info.go:849`（`Duration`）、`dto/video.go:10-12` | 与 AGENTS.md 的 DTO 指针规则不符，但改指针会波及全部 task adaptor；计费不变量已另有钳制（`relay/relay_task.go:121-127`、`relay/common/relay_utils.go:153`） |
 | 日志裁剪的 `DELETE ... LIMIT` 仅 MySQL 生效 | `model/log.go:TrimLogToMaxRows` | GORM 的 SQLite/PG 方言会丢 LIMIT；已在注释写明"不可依赖 limit 限制单次工作量" |
+| `count_token_failed` 走 500（客户端可控）| `controller/relay.go:154` | **刻意不改**：该分支混装"客户端上传损坏（应 4xx）"与"token 计数内部失败（应 5xx，`service/token_counter.go:193-209`）"，无法在映射层可靠区分；错判成 400 会掩盖真实服务端故障。留待按错误类型细分后再改 |
+| `get_channel_failed`（重试取渠道）走 500 | `controller/relay.go:320,323` | **刻意不改**：容量/配置类故障，5xx 触发重试是期望行为（与 `middleware/distributor.go` 的 503/404 语义确有差异，已留痕待统一）|
 | ClickHouse 日志库不支持行数上限 | `service/system_task.go:logCleanupMaxRows` | 不做 CH 分支（无法离线验证 CH 版本行为）；显式返回 0 并打一次性 WARN，改用保留天数 |
 | 前端孤儿模块 | `web/src/**` | 2026-10-06 已装 bun 并跑 knip：本轮删掉 33 个确证无人引用的文件（`208483c`），复核阶段又追加删除 1 个（`web/src/hooks/use-mobile.tsx`）；`ui/`（shadcn 底座）、`ai-elements/`（成套组件库）、`routeTree.gen.ts`（生成物）登记为 knip `ignore`，不删。i18n 工具链的键登记表 `i18n/static-keys.ts` **没有**登记 ignore（knip 仍把它列在 `Unused files` 里），属刻意保留 |
-| 3 个 api-key group 表格测试失败（既有）| `web/src/features/keys/components/__tests__/api-key-group-cell.test.tsx` | 组件里 `AutoGroupBadge` 与动效环**被注释掉**，测试仍断言旧设计；恢复功能属产品决策，改测试又会掩盖差异——保持失败并在此留痕 |
+| 3 个 api-key group 表格测试失败（既有）| `web/src/features/keys/components/__tests__/api-key-group-cell.test.tsx` | **已处理（2026-10-06 团队）**：判定为“临时禁用、应恢复”而非“设计退役”——同款动效在 `api-key-group-combobox.tsx:111-179` 活跃使用且测试通过、动效 CSS（含 `prefers-reduced-motion`）在 `src/styles/index.css:655-700` 完整保留、`AutoGroupBadge` 唯一引用就是那行注释；已取消注释恢复功能（**未放宽任何断言**），`bun test` 由 151 pass/3 fail 变为 **154 pass/0 fail** |
 | footer XSS 测试曾经永远失败 | `web/src/components/layout/components/__tests__/footer.test.tsx` | 原用 happy-dom：`purify.isSupported` 虽为 true，但消毒不完整（实测 `<script>` 原样保留），两个用例长期失败=从未真正验证消毒（复核员在基线 `0941a4f` 上原样复跑：1 pass / 2 fail）。已改用 jsdom（断言未改）并加 `isSupported` 前置断言；同时给 `footer.tsx` 加失效安全（不支持时不注入原始 HTML）|
 
 ### 前端工具链（2026-10-06 起本机可用）
