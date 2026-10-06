@@ -24,8 +24,8 @@
 | 组件 | 位置/命令 |
 |---|---|
 | Go | `/usr/local/go/bin/go`（实测 1.26.6），需 `export HOME=/root PATH=$PATH:/usr/local/go/bin GOPATH=/root/go GOMODCACHE=/root/go/pkg/mod GOCACHE=/root/.cache/go-build` |
-| Bun | **当前这台机器（`ubuntu` / （本机地址已脱敏））未安装**（`~/.bun` 不存在）→ 前端 `bun run typecheck` / `bun test` 要换到有 bun 的机器或交给 CI；历史上本机路径为 `~/.bun/bin/bun`（1.3.14），执行前需 `export HOME=/root` |
-| GitHub 公开仓库 | 克隆无需凭据（`git clone https://github.com/zhemed/new-api-own.git`）；推送用 gh 的凭据助手且**只对本次命令生效**：`git -c credential.helper='!gh auth git-credential' push origin main`（`gh` 已登录 `zhemed`）。不要设置全局 `credential.helper`、也不要改 `git config`（AGENTS.md 明确禁止）；旧记录的 `（本机凭据文件）` 在本机**不存在** |
+| Bun | **当前这台机器（本机信息已脱敏）未安装**（`~/.bun` 不存在）→ 前端 `bun run typecheck` / `bun test` 要换到有 bun 的机器上执行（PR 质量门禁工作流已移除，**没有 CI 可兜底**）；历史上本机路径为 `~/.bun/bin/bun`（1.3.14），执行前需 `export HOME=/root` |
+| GitHub 公开仓库 | 克隆无需凭据（`git clone https://github.com/zhemed/new-api-own.git`）；推送用 gh 的凭据助手且**只对本次命令生效**：`git -c credential.helper='!gh auth git-credential' push origin main`（`gh` 已登录 `zhemed`）。不要设置全局 `credential.helper`、也不要改 `git config`（AGENTS.md 明确禁止）；旧记录提到的本机凭据文件在本机**不存在** |
 
 ## 维护者接入（其他人 clone 之后如何开始）
 
@@ -67,7 +67,7 @@ python3 .trellis/scripts/add_session.py --title "<本次标题>" --commit <sha>
 
 CI 需要的一次性仓库设置（仓库所有者操作）：
 
-- 允许 Actions 运行；本仓库工作流自带 `permissions:`（Release 需要 `contents: write`，镜像发布需要 `packages: write`）
+- 允许 Actions 运行；现存两个工作流各自声明最小 `permissions:`：`docker-build.yml` 用 `packages: write` 推 GHCR、`id-token: write` 给 cosign 无密钥签名；`trellis-gate.yml` 只读 `contents: read`。二进制 Release 工作流已移除，**不再需要 `contents: write`**
 - GHCR 包 `new-api-own` 需与本仓库关联，或配置 `GHCR_TOKEN` secret（带 `write:packages`），否则 tag 构建推送镜像会 403；v0.0.2 已用内置 `GITHUB_TOKEN` 推送成功，说明当前关联有效
 - 无需 GitCode 同步相关配置（该工作流已移除）
 
@@ -214,12 +214,17 @@ LOG_SQL_DSN='sqlite:/dev/shm/newapi-logs.db?_pragma=journal_mode(WAL)&_pragma=sy
 
 ### 4. CC Switch 用量导入
 - `web/src/lib/cc-switch-import.ts` + `web/src/lib/__tests__/cc-switch-import.test.ts`、`cc-switch-dialog.tsx`
-- `edcd6a5e`（8-13）：已移除硬编码 `cs.shemedhb.eu.org`，改用当前站点 origin（http→https 提升）
+- `edcd6a5e`（8-13）：已移除硬编码的实例域名（已脱敏），改用当前站点 origin（http→https 提升）
 
 ### 5. 其他
 - 模型倍率全精度（`800c26d6`）、用量日志表格对齐、去上游化（README 双语、链接/检查器/i18n 指向自维护仓库）、Docker 环境标准锁定
 
 ## 质量门禁现状（2026-08-18 基线）
+
+> **2026-10-06 变更**：PR 质量门禁工作流（`ci.yml` / `pr-check.yml`）已移除，本节基线**没有任何 CI 兜底**。
+> 现在是**本地自查为唯一手段**：后端 `go vet` / `go build` / `make test`（含 `relaykit` 独立构建），
+> 前端 `bun run typecheck` / `bun run lint` / `bun test`。`docker-build.yml` 只在推 tag 时构建镜像，
+> 它**不跑测试**，构建成功 ≠ 校验通过。
 
 - 后端：全量 Go 测试通过；relaykit 独立构建通过
 - 前端：typecheck 0 错误；lint 清理进行中（上游遗留 ~386 错误，自动修复已清 250+，其余分批处理中）；format/copyright 干净
@@ -348,14 +353,14 @@ x-opencode-session and cannot be routed efficiently
    GitCode 同步（`sync-release-to-gitcode.yml`）与手动分支镜像（`docker-image-branch.yml`）
    均已移除（2026-10-06 用户定调：部署就是 `docker run` + 公开镜像，其余产物一律不要）。
 
-4. 校验：
+4. 校验（**只产出镜像，不再有 GitHub Release 产物**）：
 
    ```bash
-   docker run --rm ghcr.io/zhemed/new-api-own:0.0.3 --version   # 应输出 v0.0.3
-   gh release view v0.0.3
+   docker run --rm ghcr.io/zhemed/new-api-own:0.0.3 --version          # 应输出 v0.0.3
+   docker buildx imagetools inspect ghcr.io/zhemed/new-api-own:0.0.3    # 应看到 amd64/arm64 清单
    ```
 
-5. 镜像内的版本号来自构建时的 tag：`Dockerfile` 把 `VERSION` 注入 Go ldflags（`common.Version`）与前端 `VITE_REACT_APP_VERSION`，而 CI 会用 tag 覆写 `VERSION` 文件内容，所以**必须走 tag 发版**；只改文件不推 tag 不会产生 Release，镜像里也会停在旧值。
+5. 镜像内的版本号来自构建时的 tag：`Dockerfile` 把 `VERSION` 注入 Go ldflags（`common.Version`）与前端 `VITE_REACT_APP_VERSION`，而 CI 会用 tag 覆写 `VERSION` 文件内容，所以**必须走 tag 发版**；只改文件不推 tag 不会触发镜像构建，镜像里会停在旧值（本项目自 2026-10-06 起只产出镜像，不再有 GitHub Release）。
 6. 版本注入的 `-ldflags -X` 必须写**完整模块路径** `github.com/QuantumNous/new-api/common.Version`；写成简写（`new-api/common.Version`）会被 Go 静默忽略，镜像内版本会停在内置默认值 `v0.0.0`（`Dockerfile` 用的是完整路径，勿改）。
 
 > 约定：`VERSION` 文件不带 `v`，tag 带 `v`，两者版本号一致；镜像同时提供 `v0.0.3` 与 `0.0.3` 两种拉取标签，指向同一份多架构清单。
@@ -429,6 +434,7 @@ stat -c '%A %n' data data/*.db 2>/dev/null
 ## 工作流
 
 1. 改代码 → 涉及文件 lint 0 error + typecheck 通过 → 相关 Go 测试/前端测试
+   （**PR 质量门禁已移除：本地自查是唯一手段**，推 tag 只构建镜像、不跑测试）
 2. 行为变更必须补回归测试（后端 `testify`；前端放 `__tests__/` 目录）
 3. 提交信息用项目风格（`fix:` / `feat:` / `chore:` 前缀，描述变更与原因）
-4. 提交后推送：`export HOME=/root && git push origin main`（公开仓库，推送需凭据（`（本机凭据文件）`））
+4. 提交后推送：`export HOME=/root && git push origin main`（公开仓库，推送需凭据，细节见上文「本机开发环境」）

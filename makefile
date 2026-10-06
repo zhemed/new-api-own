@@ -1,14 +1,9 @@
 WEB_DIR = ./web
 API_DIR = .
 DEV_WEB_PORT ?= 5173
-DEV_COMPOSE_FILE = docker-compose.dev.yml
-DEV_POSTGRES_SERVICE = postgres
-DEV_API_SERVICE = new-api
-DEV_POSTGRES_DB = new-api
-DEV_POSTGRES_USER = root
 DEV_SQLITE_PATH ?= one-api.db
 
-.PHONY: all build-web build-all-web start-api dev dev-api dev-api-rebuild dev-web reset-setup test
+.PHONY: all build-web build-all-web start-api dev dev-api dev-web reset-setup test
 
 all: build-all-web start-api
 
@@ -23,13 +18,11 @@ start-api:
 	@echo "Starting api dev server..."
 	@cd $(API_DIR) && go run main.go &
 
+# 本机开发直跑（本项目唯一部署方式是 docker run + 公开镜像，仓库内不再有 compose/dev 栈）
 dev-api:
-	@echo "Starting api services (docker)..."
-	@docker compose -f $(DEV_COMPOSE_FILE) up -d
-
-dev-api-rebuild:
-	@echo "Rebuilding and starting api service (docker)..."
-	@docker compose -f $(DEV_COMPOSE_FILE) up -d --build $(DEV_API_SERVICE)
+	@echo "Starting api dev server locally (go run); default DB is SQLite: $(DEV_SQLITE_PATH)"
+	@echo "  override with SQLITE_PATH=$(DEV_SQLITE_PATH) or SQL_DSN=<mysql/postgres dsn>"
+	@cd $(API_DIR) && go run main.go &
 
 dev-web:
 	@echo "Starting web frontend dev server..."
@@ -49,25 +42,15 @@ test:
 	@cd relaykit && GOWORK=off go test ./...
 
 reset-setup:
-	@echo "Resetting local setup wizard state..."
-	@if docker compose -f $(DEV_COMPOSE_FILE) ps --services --status running | grep -qx "$(DEV_POSTGRES_SERVICE)"; then \
-		echo "Detected running docker dev PostgreSQL. Removing setup record and root users..."; \
-		docker compose -f $(DEV_COMPOSE_FILE) exec -T $(DEV_POSTGRES_SERVICE) \
-			psql -U $(DEV_POSTGRES_USER) -d $(DEV_POSTGRES_DB) \
-			-c 'DELETE FROM setups;' \
-			-c 'DELETE FROM users WHERE role = 100;' \
-			-c "DELETE FROM options WHERE key IN ('SelfUseModeEnabled', 'DemoSiteEnabled');"; \
-		echo "Restarting docker dev api so setup status is recalculated..."; \
-		docker compose -f $(DEV_COMPOSE_FILE) restart $(DEV_API_SERVICE); \
-	elif db_path="$${SQLITE_PATH:-$(DEV_SQLITE_PATH)}"; db_path="$${db_path%%\?*}"; [ -f "$$db_path" ]; then \
-		db_path="$${SQLITE_PATH:-$(DEV_SQLITE_PATH)}"; \
-		db_path="$${db_path%%\?*}"; \
+	@echo "Resetting local setup wizard state (SQLite)..."
+	@db_path="$${SQLITE_PATH:-$(DEV_SQLITE_PATH)}"; db_path="$${db_path%%\?*}"; \
+	if [ -f "$$db_path" ]; then \
 		echo "Detected local SQLite database: $$db_path"; \
 		sqlite3 "$$db_path" \
 			"DELETE FROM setups; DELETE FROM users WHERE role = 100; DELETE FROM options WHERE key IN ('SelfUseModeEnabled', 'DemoSiteEnabled');"; \
 		echo "SQLite setup state reset. Restart the local api process before testing the setup wizard."; \
 	else \
-		echo "No running docker dev PostgreSQL or local SQLite database found."; \
-		echo "Start the dev stack with 'make dev-api', or set SQLITE_PATH/DEV_SQLITE_PATH to your local SQLite database."; \
+		echo "No local SQLite database found at $$db_path."; \
+		echo "Start the api with 'make dev-api', or set SQLITE_PATH/DEV_SQLITE_PATH to your SQLite database."; \
 		exit 1; \
 	fi

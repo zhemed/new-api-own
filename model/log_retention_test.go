@@ -45,6 +45,27 @@ func TestResolveLogSQLiteTarget(t *testing.T) {
 			wantLog: true,
 		},
 		{
+			name:    "sqlite prefix with a memory path stays in memory",
+			dsn:     "sqlite::memory:",
+			wantDSN: ":memory:",
+			wantLog: true,
+			wantMem: true,
+		},
+		{
+			name:    "sqlite prefix with a shared file memory path stays in memory",
+			dsn:     "sqlite:file::memory:?cache=shared",
+			wantDSN: "file::memory:?cache=shared",
+			wantLog: true,
+			wantMem: true,
+		},
+		{
+			name:    "bare file memory dsn is in memory",
+			dsn:     "file::memory:?cache=shared",
+			wantDSN: "file::memory:?cache=shared",
+			wantLog: true,
+			wantMem: true,
+		},
+		{
 			name: "sqlite prefix without a path is ignored",
 			dsn:  "sqlite:",
 		},
@@ -62,7 +83,9 @@ func TestResolveLogSQLiteTarget(t *testing.T) {
 
 // TestInitLogDBWithInMemoryDSN pins the two properties an in-memory log
 // database depends on: the pool keeps exactly one connection (so the shared
-// cache survives) and rows written through it stay readable.
+// cache survives) and rows written through it stay readable. Both DSN spellings
+// must resolve to that pinned pool, including a memory path hidden behind the
+// "sqlite:" prefix.
 func TestInitLogDBWithInMemoryDSN(t *testing.T) {
 	previousLogDB := LOG_DB
 	t.Cleanup(func() {
@@ -70,45 +93,61 @@ func TestInitLogDBWithInMemoryDSN(t *testing.T) {
 		common.SetLogDatabaseType(common.DatabaseTypeSQLite)
 	})
 
-	t.Setenv("LOG_SQL_DSN", "memory")
-	require.True(t, UsingInMemoryLogDatabase())
+	for _, tc := range []struct {
+		name string
+		dsn  string
+	}{
+		{name: "memory token", dsn: "memory"},
+		{name: "sqlite prefixed memory path", dsn: "sqlite::memory:"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("LOG_SQL_DSN", tc.dsn)
+			require.True(t, UsingInMemoryLogDatabase())
 
-	require.NoError(t, InitLogDB())
-	require.NoError(t, LOG_DB.AutoMigrate(&Log{}))
+			require.NoError(t, InitLogDB())
+			require.NoError(t, LOG_DB.AutoMigrate(&Log{}))
 
-	entry := Log{UserId: 7, Type: LogTypeConsume, CreatedAt: common.GetTimestamp(), Content: "in-memory retention fixture"}
-	require.NoError(t, LOG_DB.Create(&entry).Error)
+			entry := Log{UserId: 7, Type: LogTypeConsume, CreatedAt: common.GetTimestamp(), Content: "in-memory retention fixture"}
+			require.NoError(t, LOG_DB.Create(&entry).Error)
 
-	sqlDB, err := LOG_DB.DB()
-	require.NoError(t, err)
-	assert.Equal(t, 1, sqlDB.Stats().MaxOpenConnections, "memory mode must pin a single connection")
+			sqlDB, err := LOG_DB.DB()
+			require.NoError(t, err)
+			t.Cleanup(func() { _ = sqlDB.Close() })
+			assert.Equal(t, 1, sqlDB.Stats().MaxOpenConnections, "memory mode must pin a single connection")
 
-	var count int64
-	require.NoError(t, LOG_DB.Model(&Log{}).Count(&count).Error)
-	assert.Equal(t, int64(1), count, "row must stay readable after the pool reuses its connection")
+			var count int64
+			require.NoError(t, LOG_DB.Model(&Log{}).Count(&count).Error)
+			assert.Equal(t, int64(1), count, "row must stay readable after the pool reuses its connection")
+		})
+	}
 }
 
 // TestSharedCacheMemoryDatabaseDisappearsWithoutPinnedConnection is the negative
-// control for the test above: with no idle connection kept, the in-memory
+// control for the test above: once no connection stays open, the in-memory
 // database is dropped and the schema vanishes, which is exactly what pinning a
-// connection in InitLogDB prevents.
+// connection in InitLogDB prevents. It uses its own named database so no other
+// pool in the process can keep it alive, and it checks after the last connection
+// is gone rather than through a pool it already closed.
 func TestSharedCacheMemoryDatabaseDisappearsWithoutPinnedConnection(t *testing.T) {
-	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+	dsn := "file:zz_shared_memory_negative_control?mode=memory&cache=shared"
+
+	keeper, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{})
 	require.NoError(t, err)
-
-	sqlDB, err := db.DB()
+	keeperSQL, err := keeper.DB()
 	require.NoError(t, err)
-	sqlDB.SetMaxIdleConns(0)
-	sqlDB.SetMaxOpenConns(1)
+	require.NoError(t, keeper.AutoMigrate(&Log{}))
+	require.NoError(t, keeper.Create(&Log{UserId: 1, CreatedAt: common.GetTimestamp()}).Error)
 
-	require.NoError(t, db.AutoMigrate(&Log{}))
-	require.NoError(t, db.Create(&Log{UserId: 1, CreatedAt: common.GetTimestamp()}).Error)
+	// Drop the last connection, taking the in-memory schema with it.
+	require.NoError(t, keeperSQL.Close())
 
-	// Drop the only connection: with MaxIdleConns(0) the pool closes it as soon
-	// as the query finishes, taking the in-memory schema with it.
-	require.NoError(t, sqlDB.Close())
+	after, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{})
+	require.NoError(t, err)
+	afterSQL, err := after.DB()
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = afterSQL.Close() })
 
-	err = db.Model(&Log{}).Count(new(int64)).Error
+	err = after.Model(&Log{}).Count(new(int64)).Error
 	assert.Error(t, err, "shared-cache memory database must not survive with no open connection")
 }
 

@@ -120,6 +120,13 @@ type logSQLiteTarget struct {
 	InMemory bool
 }
 
+// isInMemorySQLiteDSN reports whether a SQLite DSN names an in-memory database.
+// Such a database lives only while its connection stays open, so the log pool
+// has to pin a single connection instead of letting the defaults recycle it.
+func isInMemorySQLiteDSN(dsn string) bool {
+	return strings.HasPrefix(dsn, ":memory:") || strings.HasPrefix(dsn, "file::memory:")
+}
+
 // resolveLogSQLiteTarget recognises the log-database-only DSN forms that keep
 // usage logs off the data disk:
 //
@@ -132,12 +139,19 @@ type logSQLiteTarget struct {
 func resolveLogSQLiteTarget(dsn string) logSQLiteTarget {
 	trimmed := strings.TrimSpace(dsn)
 	switch {
-	case trimmed == "memory", trimmed == ":memory:", strings.HasPrefix(trimmed, ":memory:?"):
+	case trimmed == "memory", isInMemorySQLiteDSN(trimmed):
 		return logSQLiteTarget{DSN: "file::memory:?cache=shared", IsSQLite: true, InMemory: true}
 	case strings.HasPrefix(trimmed, "sqlite:"):
 		path := strings.TrimSpace(strings.TrimPrefix(trimmed, "sqlite:"))
 		if path == "" {
 			return logSQLiteTarget{}
+		}
+		// A memory path behind the sqlite: prefix is still memory. Reporting it as
+		// a file would skip the single-connection pinning, and without a shared
+		// cache every pooled connection would open its own private database, so
+		// the log schema would disappear as soon as the pool opened another one.
+		if isInMemorySQLiteDSN(path) {
+			return logSQLiteTarget{DSN: path, IsSQLite: true, InMemory: true}
 		}
 		return logSQLiteTarget{DSN: path, IsSQLite: true}
 	}

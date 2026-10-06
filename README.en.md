@@ -47,6 +47,37 @@ docker run -d --name new-api --restart always \
 Optional environment variables (append `-e ...`): see [`.env.example`](./.env.example) and
 [MAINTENANCE.md](./MAINTENANCE.md).
 
-## Maintained by
+## Maintenance
 
-[zhemed](https://github.com/zhemed)
+Maintained by [zhemed](https://github.com/zhemed) with the [Trellis](https://github.com/mindfold-ai/trellis)
+task workflow and GitHub Actions release automation. Full runbook: [MAINTENANCE.md](./MAINTENANCE.md).
+
+Onboarding (workflow artifacts and skills ship with the repo; each machine only initializes its identity once):
+
+```bash
+git clone https://github.com/zhemed/new-api-own.git
+cd new-api-own
+trellis init --dsh -u <your-developer-name> -s -y   # creates a 00-join-<name> task; never overwrites repo files
+```
+
+Release: bump `VERSION` (0.0.3, 0.0.4, …), commit, then tag:
+
+```bash
+git tag -a v0.0.3 -m "v0.0.3"
+git push origin main v0.0.3
+```
+
+Pushing a tag **only triggers the image build**: it publishes `v<version>`, `<version>`, and `:latest` to
+`ghcr.io/zhemed/new-api-own` (multi-arch manifest + cosign signature).
+
+**The image is the only delivery artifact**: a tag run triggers `Publish Docker image (Multi-arch)`, producing
+`v<version>` / `<version>` / `:latest`. Binary releases, the Electron desktop shell, and GitCode sync have all been removed.
+
+### Before you push
+
+PR quality gates were removed on 2026-10-06, so **local self-checks are the only gate**: run backend
+`go vet` / `go build` / `make test` (plus `cd relaykit && GOWORK=off go build ./...`) and frontend
+`bun run typecheck` / `bun run lint` / `bun test`. The tag build only builds and pushes images — it does not run tests.
+
+Commits must carry a Trellis task anchor (`[task:<slug>]`); the local commit hook and the `trellis-gate`
+workflow reject anything else.

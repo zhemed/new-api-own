@@ -1948,6 +1948,7 @@ export function ParamOverrideEditorDialog(
                     variant='ghost'
                     size='sm'
                     onClick={addOperation}
+                    aria-label={t('Add Rule')}
                   >
                     <Plus className='h-4 w-4' />
                   </Button>

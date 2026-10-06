@@ -142,6 +142,16 @@ func logCleanupInterval() time.Duration {
 // falls back to a bounded default and on-disk logs stay uncapped.
 func logCleanupMaxRows() int64 {
 	if configured := common.GetEnvOrDefault(logCleanupMaxRowsEnv, 0); configured > 0 {
+		// ClickHouse 的 DELETE 是重写 data part 的 mutation，且 TrimLogToMaxRows 没有 CH
+		// 方言分支（见 model/log.go 的 TrimLogToMaxRows 注释）——显式忽略而不是让它失败。
+		if common.UsingLogDatabase(common.DatabaseTypeClickHouse) {
+			warnClickHouseRowCapOnce.Do(func() {
+				logger.LogWarn(context.Background(), fmt.Sprintf(
+					"%s is ignored for the ClickHouse log database: row-cap trimming has no ClickHouse branch; use retention (LOG_CLEANUP_RETENTION_DAYS) instead",
+					logCleanupMaxRowsEnv))
+			})
+			return 0
+		}
 		return int64(configured)
 	}
 	if model.UsingInMemoryLogDatabase() {
@@ -149,6 +159,8 @@ func logCleanupMaxRows() int64 {
 	}
 	return 0
 }
+
+var warnClickHouseRowCapOnce sync.Once
 
 var logRetentionWarnOnce sync.Once
 
@@ -407,6 +419,8 @@ func runWithLeaseHeartbeat(task *model.SystemTask, runnerID string, fn func(ctx 
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	done := make(chan struct{})
+	// defer：panic 时也要关掉通道，否则心跳 goroutine 会一直挂着
+	defer close(done)
 
 	go func() {
 		for {
@@ -423,7 +437,6 @@ func runWithLeaseHeartbeat(task *model.SystemTask, runnerID string, fn func(ctx 
 	}()
 
 	fn(ctx)
-	close(done)
 }
 
 func runLogCleanupTask(ctx context.Context, task *model.SystemTask, runnerID string) {

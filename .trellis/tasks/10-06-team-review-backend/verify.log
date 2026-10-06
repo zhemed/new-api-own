@@ -1,0 +1,21 @@
+=== verify 2026-10-06T12:26:51+00:00 (post-fix) ===
+go_vet_exit=0
+go_build_exit=0
+relaykit_build_exit=0
+make_test_exit=0
+
+--- artifact tails ---
+[vet] exit-ok, last line: 
+[build] exit-ok, last line: 
+[relaykit] exit-ok, last line: 
+[make] exit-ok, last line: ?   	github.com/QuantumNous/new-api/relaykit/types	[no test files]
+
+--- make test summary ---
+ok  	github.com/QuantumNous/new-api/setting/operation_setting	(cached)
+ok  	github.com/QuantumNous/new-api/setting/system_setting	(cached)
+ok  	github.com/QuantumNous/new-api/relaykit/dto	(cached)
+ok  	github.com/QuantumNous/new-api/relaykit/relayconvert	(cached)
+ok  	github.com/QuantumNous/new-api/relaykit/relayconvert/convmeta	(cached)
+ok  	github.com/QuantumNous/new-api/relaykit/relayconvert/internal/oai_chat	(cached)
+ok  	github.com/QuantumNous/new-api/relaykit/relayconvert/internal/oai_responses	(cached)
+ok  	github.com/QuantumNous/new-api/relaykit/relayconvert/kitutil	(cached)

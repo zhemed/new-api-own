@@ -736,10 +736,15 @@ func DeleteOldLogBatch(ctx context.Context, targetTimestamp int64, limit int) (i
 	return result.RowsAffected, nil
 }
 
-// TrimLogToMaxRows deletes the oldest log rows so that at most maxRows remain,
-// one batch per call. It exists to bound the RAM used by an in-memory log
-// database; retention by time alone cannot cap memory when traffic is bursty.
-// The returned count lets the caller loop until it reaches zero.
+// TrimLogToMaxRows deletes the oldest log rows so that at most maxRows remain.
+// It exists to bound the RAM used by an in-memory log database; retention by
+// time alone cannot cap memory when traffic is bursty. The returned count lets
+// the caller loop until it reaches zero.
+//
+// limit asks for at most limit rows per call, but only MySQL renders
+// DELETE ... LIMIT; GORM's SQLite and PostgreSQL dialects drop the clause, so a
+// single call there may remove every excess row. Callers must not rely on limit
+// to keep one statement's work small.
 func TrimLogToMaxRows(ctx context.Context, maxRows int64, limit int) (int64, error) {
 	if maxRows <= 0 {
 		return 0, nil
