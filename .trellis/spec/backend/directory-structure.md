@@ -18,7 +18,7 @@ Two Go modules live in one repository, both built with `GOWORK=off`:
 
 The root module embeds the built frontend (`web/dist`), so a root build needs
 `web/dist/index.html` to exist — CI creates an empty placeholder for that reason
-(`.github/workflows/ci.yml:38-41`).
+（本地/发布前自查；PR 质量门禁工作流已于 2026-10-06 移除）。
 
 ---
 

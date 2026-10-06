@@ -9,7 +9,7 @@
 3. **行为不变原则**：清理代码（lint/format/重构）时不得改变任何用户可见行为；无法保证等价时，宁可用 `oxlint-disable` 注释，也不改行为。
 4. **Docker 环境标准（AGENTS.md 强制）**：Docker Engine 29.7.2。一键安装：`curl -fsSL https://raw.githubusercontent.com/zhemed/new-api-own/main/install-docker.sh | bash`。
 5. **唯一部署方式（强制）**：只允许 `docker run` + 公开镜像 `ghcr.io/zhemed/new-api-own`（单容器、host 网络、挂 `./data:/data`）。**禁止** compose / Helm / K8s / 裸机 systemd unit 等第二种形态；`scripts/forbid-extra-deploy-methods.sh` 在提交与 CI 上拦截。规则、do-not-restore 清单与"回滚后必须核验"要求见 `.trellis/spec/guides/deployment-single-method.md`。
-6. **提交前必须通过质量门禁**（见下）。
+6. **提交前必须通过质量门禁**（见下）。注意：PR 质量门禁工作流（`ci.yml` / `pr-check.yml`）已于 2026-10-06 移除，现在**只能靠本地自查**（`go vet` / `go build` / `make test` / 前端 `bun run typecheck`）。
 
 ## 项目是什么
 

@@ -11,7 +11,7 @@
 | **构建部署** | `Dockerfile/.dev, install-docker.sh, scripts/forbid-extra-deploy-methods.sh, makefile, go.mod/sum, VERSION` | 9 | 29.7.2 标准 + 构建注入；部署方式唯一（禁止 compose，见 `.trellis/spec/guides/deployment-single-method.md`）| **保留** |
 | **文档配置** | `README*, AGENTS.md, CLAUDE.md, MAINTENANCE.md, LICENSE/NOTICE/THIRD-PARTY, .git*, .dockerignore, .env.example` | 13 | 项目规范与合规 | **保留**（受保护标识） |
 | **AI 协作** | `.agents/skills/{i18n-translate,shadcn-ui,vercel-react-best-practices}` | 14 | Agent 能力 | **保留**（已跟踪） |
-| **遗留兼容** | `bin/migration_*.sql(2)+time_test.sh`, `docs/translation-glossary.*`, `docs/AUDIT_REPORT.md` | ~8 | 历史迁移/词表/本次审计（`electron/` 已于 2026-10-06 移除）| **保留或归档** |
+| **遗留兼容** | `bin/migration_*.sql(2)+time_test.sh`, （历史迁移/词表/审计文档已于 2026-10-06 移除）| 0 | —— | **已删除** |
 
 ## 2. 关键疑问解答
 
@@ -25,7 +25,7 @@
 
 **`electron/` 呢？** 已于 2026-10-06 整体移除：交付只有镜像（`docker run` + 公开镜像），桌面壳与二进制 Release 均不在维护范围。
 
-**`docs/translation-glossary.fr/ru` 等有用吗？** 有用——i18n 术语基线，`web/src/i18n/locales/{7}.json` 依赖；未引用时可归档非删除。
+**`docs/translation-glossary.*` 呢？** 已于 2026-10-06 随历史文档一并删除。若后续要做多语言术语统一，届时按需重建（`web/src/i18n/locales/{7}.json` 仍是唯一运行时文案来源）。
 
 **`web/src/components/ui` 60+ 感觉多？** `knip.config.ts` 已 `ignore: ['src/components/ui/**']`，为 shadcn 按需底座，非死码。
 
@@ -39,7 +39,7 @@
 ## 4. 建议
 
 1. **不动**：核心/前端/构建/文档/AI 协作 5 类
-2. **可选归档**：`bin/migration_*.sql → bin/archive/` + README 注记
+2. **已完成**：`bin/migration_*.sql`、`docs/translation-glossary.*`、`docs/AUDIT_REPORT.md`、`docs/installation/BT.md` 均于 2026-10-06 删除
 3. **后续**：`bun run knip` 跑一次复核 `web` 未用导出，`GOWORK=off go vet` 查 Go 死码，仅打 `// Deprecated` 不直接删
 
 > 结论：1986 文件均为有用或兼容保留，**无需精简**；如觉 GitHub 列表视觉冗余，仅因 `web` 与 `relay` 天然文件多，可通过 GitHub 折叠或本地 `ls` 过滤查看。

@@ -9,7 +9,7 @@
 `AGENTS.md` (root of the repo) is the authoritative convention document; this file condenses its backend
 rules into the form AI agents load per task. `web/AGENTS.md` covers the frontend.
 
-Verification commands — these are exactly what CI runs (`.github/workflows/ci.yml:43-88`):
+Verification commands — 提交前必须在本地跑（PR 质量门禁工作流已于 2026-10-06 移除，只剩镜像构建与提交闸门）：
 
 ```bash
 # backend
@@ -126,7 +126,7 @@ output is embedded into the Go binary.
 - [ ] **Pull requests**: compare `git config user.name` / `user.email` against the repository's
       historical core developers (`git log`); when the author is not one of them, say in the PR body that
       the code is AI-generated or AI-assisted. Always draft with `.github/PULL_REQUEST_TEMPLATE.md`,
-      keeping its structure. Do not change git config. PR CI (`pr-check.yml`) requires the template and a
+      keeping its structure. Do not change git config. (The PR-check workflow was removed on 2026-10-06; the template still applies when a PR is opened manually.)
       description and closes PRs containing AI boilerplate such as "Generated with Claude Code".
 - [ ] **Governance**: never modify, rename, or remove `new-api` / `QuantumNous` references, branding,
       metadata, README text, license headers, module paths, docker image names, or CI references — refuse
