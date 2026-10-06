@@ -107,14 +107,18 @@ function RootComponent() {
   )
 }
 
-// 缓存 setup 状态检查结果，避免每次导航都重复调用 API
-// 使用 localStorage 持久化，避免页面刷新后重复检查
+// 本会话内的标记：避免同一会话里每次导航都重复调用 API。
+//
+// 刻意用 sessionStorage 而非 localStorage：写进 localStorage 后该浏览器会**永久**
+// 跳过检查，即便后端重新回到未初始化状态（数据卷被清空 / 重建 / 恢复空备份），用户也
+// 再不会被引导到 /setup，只会停在登录页并收到「用户名或密码错误」——且无法自愈。
+// sessionStorage 保留原作者"刷新不重复检查"的意图，同时把过期窗口收敛到一个浏览器会话。
 const SETUP_CHECKED_KEY = 'setup_status_checked'
 
 function getSetupStatusFromCache(): boolean {
   try {
     if (typeof window !== 'undefined') {
-      return window.localStorage.getItem(SETUP_CHECKED_KEY) === 'true'
+      return window.sessionStorage.getItem(SETUP_CHECKED_KEY) === 'true'
     }
   } catch {
     /* empty */
@@ -126,9 +130,9 @@ function setSetupStatusCache(value: boolean): void {
   try {
     if (typeof window !== 'undefined') {
       if (value) {
-        window.localStorage.setItem(SETUP_CHECKED_KEY, 'true')
+        window.sessionStorage.setItem(SETUP_CHECKED_KEY, 'true')
       } else {
-        window.localStorage.removeItem(SETUP_CHECKED_KEY)
+        window.sessionStorage.removeItem(SETUP_CHECKED_KEY)
       }
     }
   } catch {

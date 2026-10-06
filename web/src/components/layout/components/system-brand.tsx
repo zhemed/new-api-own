@@ -19,85 +19,50 @@ For commercial licensing, please contact support@quantumnous.com
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
-import {
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from '@/components/ui/sidebar'
 import { useStatus } from '@/hooks/use-status'
 import { useSystemConfig } from '@/hooks/use-system-config'
 import { cn } from '@/lib/utils'
 
-type SystemBrandProps = {
-  defaultName?: string
-  defaultVersion?: string
-  /**
-   * Visual layout:
-   * - 'sidebar': stacked card style (used inside the sidebar header).
-   * - 'inline': compact horizontal pill (used inside the top app bar).
-   */
-  variant?: 'sidebar' | 'inline'
-}
-
 /**
- * System brand component
- * Displays current system logo + name.
- * - inline: compact pill in the top app bar; clicking navigates to home (/)
- * - sidebar: stacked card in the sidebar header (display only)
+ * System brand shown in the top app bar: logo + system name + running version.
+ *
+ * The version is surfaced here on purpose — it used to live only in the
+ * admin-only "System maintenance" settings section, so an operator had no way
+ * to tell which build a panel was running while using the console.
  */
-export function SystemBrand(props: SystemBrandProps) {
+export function SystemBrand() {
   const { t } = useTranslation()
   const { status } = useStatus()
   const { logo } = useSystemConfig()
 
-  const variant = props.variant ?? 'sidebar'
-  const name = status?.system_name || props.defaultName || 'New API'
-  const version =
-    status?.version || props.defaultVersion || t('Unknown version')
-
-  if (variant === 'inline') {
-    return (
-      <Link
-        to='/'
-        aria-label={t('Go to home')}
-        className={cn(
-          'text-foreground inline-flex h-7 items-center gap-1.5 rounded-md px-1.5 text-sm font-medium transition-colors outline-none select-none',
-          'hover:bg-accent focus-visible:ring-ring/40 focus-visible:ring-2'
-        )}
-      >
-        <div className='flex size-5 items-center justify-center overflow-hidden rounded-md'>
-          <img
-            src={logo}
-            alt={t('Logo')}
-            className='size-full rounded-md object-cover'
-          />
-        </div>
-        <span className='max-w-[12rem] truncate'>{name}</span>
-      </Link>
-    )
-  }
+  const name = status?.system_name || 'New API'
+  const version = status?.version?.trim()
 
   return (
-    <SidebarMenu>
-      <SidebarMenuItem>
-        <SidebarMenuButton
-          size='lg'
-          className='hover:text-sidebar-foreground active:text-sidebar-foreground cursor-default hover:bg-transparent active:bg-transparent'
-          render={<div />}
+    <Link
+      to='/'
+      aria-label={t('Go to home')}
+      className={cn(
+        'text-foreground inline-flex h-7 items-center gap-1.5 rounded-md px-1.5 text-sm font-medium transition-colors outline-none select-none',
+        'hover:bg-accent focus-visible:ring-ring/40 focus-visible:ring-2'
+      )}
+    >
+      <div className='flex size-5 items-center justify-center overflow-hidden rounded-md'>
+        <img
+          src={logo}
+          alt={t('Logo')}
+          className='size-full rounded-md object-cover'
+        />
+      </div>
+      <span className='max-w-[12rem] truncate'>{name}</span>
+      {version ? (
+        <span
+          data-testid='system-brand-version'
+          className='text-muted-foreground shrink-0 text-xs font-normal tabular-nums'
         >
-          <div className='flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg'>
-            <img
-              src={logo}
-              alt={t('Logo')}
-              className='size-full rounded-lg object-cover'
-            />
-          </div>
-          <div className='grid flex-1 text-start text-sm leading-tight group-data-[collapsible=icon]:hidden'>
-            <span className='truncate font-semibold'>{name}</span>
-            <span className='truncate text-xs'>{version}</span>
-          </div>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-    </SidebarMenu>
+          {version}
+        </span>
+      ) : null}
+    </Link>
   )
 }

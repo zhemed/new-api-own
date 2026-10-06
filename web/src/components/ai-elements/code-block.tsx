@@ -52,6 +52,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { copyToClipboard as copyTextToClipboard } from '@/lib/copy-to-clipboard'
 import { cn } from '@/lib/utils'
 
 type CodeBlockProps = HTMLAttributes<HTMLDivElement> & {
@@ -621,19 +622,17 @@ export const CodeBlockCopyButton = ({
   const { code } = useContext(CodeBlockContext)
 
   const copyToClipboard = async () => {
-    if (typeof window === 'undefined' || !navigator?.clipboard?.writeText) {
+    // Shared helper: keeps copying working over plain HTTP, where the
+    // Clipboard API is unavailable.
+    const copied = await copyTextToClipboard(code)
+    if (!copied) {
       onError?.(new Error('Clipboard API not available'))
       return
     }
 
-    try {
-      await navigator.clipboard.writeText(code)
-      setIsCopied(true)
-      onCopy?.()
-      setTimeout(() => setIsCopied(false), timeout)
-    } catch (error) {
-      onError?.(error as Error)
-    }
+    setIsCopied(true)
+    onCopy?.()
+    setTimeout(() => setIsCopied(false), timeout)
   }
 
   const Icon = isCopied ? CheckIcon : CopyIcon

@@ -27,6 +27,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { copyToClipboard } from '@/lib/copy-to-clipboard'
 
 import { useUpdateOption } from '../hooks/use-update-option'
 
@@ -212,10 +213,12 @@ export const ToolPriceSettings = memo(function ToolPriceSettings({
   }, [])
 
   const handleCopyJson = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(jsonText)
+    // Shared helper: falls back to execCommand when the Clipboard API is
+    // unavailable (plain-HTTP self-hosted panels).
+    const copied = await copyToClipboard(jsonText)
+    if (copied) {
       toast.success(t('Copied to clipboard'))
-    } catch {
+    } else {
       toast.error(t('Failed to copy'))
     }
   }, [jsonText, t])

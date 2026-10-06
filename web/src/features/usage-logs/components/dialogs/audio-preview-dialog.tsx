@@ -26,6 +26,7 @@ import { StatusBadge } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
 import { IconBadge } from '@/components/ui/icon-badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { copyToClipboard } from '@/lib/copy-to-clipboard'
 
 export interface AudioClip {
   clip_id?: string
@@ -120,9 +121,16 @@ function AudioClipCard({ clip }: { clip: AudioClip }) {
               variant='outline'
               size='sm'
               className='h-7 gap-1 text-xs'
-              onClick={() => {
-                navigator.clipboard.writeText(audioUrl)
-                toast.success(t('Copied'))
+              onClick={async () => {
+                // `navigator.clipboard` is undefined outside a secure context
+                // (self-hosted panels are usually reached over plain HTTP), so
+                // go through the shared helper that falls back to execCommand.
+                const copied = await copyToClipboard(audioUrl)
+                if (copied) {
+                  toast.success(t('Copied'))
+                } else {
+                  toast.error(t('Failed to copy to clipboard'))
+                }
               }}
             >
               <Copy className='h-3 w-3' />

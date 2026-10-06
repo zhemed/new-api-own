@@ -48,6 +48,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
 import { Separator } from '@/components/ui/separator'
+import { copyToClipboard } from '@/lib/copy-to-clipboard'
 
 import { getDeployment, listDeploymentContainers } from '../../api'
 
@@ -113,10 +114,12 @@ export function ViewDetailsDialog({
     if (deploymentId === null || deploymentId === undefined) {
       return
     }
-    try {
-      await navigator.clipboard.writeText(String(deploymentId))
+    // The shared helper keeps the copy working over plain HTTP, where
+    // `navigator.clipboard` is unavailable.
+    const copied = await copyToClipboard(String(deploymentId))
+    if (copied) {
       toast.success(t('Copied'))
-    } catch {
+    } else {
       toast.error(t('Copy failed'))
     }
   }

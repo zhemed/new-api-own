@@ -16,90 +16,118 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { ExternalLinkIcon, RefreshCcwIcon } from 'lucide-react'
+import { RefreshCcwIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
-import { Dialog } from '@/components/dialog'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { Button } from '@/components/ui/button'
-import { Markdown } from '@/components/ui/markdown'
-import { formatTimestamp, formatTimestampToDate } from '@/lib/format'
+import { useIsAdmin } from '@/hooks/use-admin'
+import { getBuildRevision } from '@/lib/build-metadata'
+import { formatTimestamp } from '@/lib/format'
 
 import { SettingsSection } from '../components/settings-section'
-
-type ReleaseInfo = {
-  tag_name: string
-  name?: string
-  body?: string
-  html_url?: string
-  published_at?: string
-}
+import { applyUpdate } from './update-api'
+import { useUpdateStatus } from './use-update-status'
 
 type UpdateCheckerSectionProps = {
   currentVersion?: string | null
   startTime?: number | null
 }
 
+/**
+ * Version / update panel.
+ *
+ * Reports which build is running, which version the server last saw published,
+ * and what that means — in four distinct states: an update is available, the
+ * build is current, the server cannot tell, or an administrator turned the
+ * check off. The last two are deliberately different sentences: "we were told
+ * not to look" is not "we looked and could not tell".
+ *
+ * Admins get a confirmed one-click apply when an update is confirmed and the
+ * server allows it. The panel never downloads or replaces anything itself — it
+ * asks our own backend, which owns the download, the checksum and the restart.
+ */
 export function UpdateCheckerSection({
   currentVersion,
   startTime,
 }: UpdateCheckerSectionProps) {
   const { t } = useTranslation()
-  const [checking, setChecking] = useState(false)
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [release, setRelease] = useState<ReleaseInfo | null>(null)
+  const isAdmin = useIsAdmin()
+  const { latestVersion, availability, applyEnabled, checking, refresh } =
+    useUpdateStatus(currentVersion)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [applying, setApplying] = useState(false)
 
   const uptime = startTime ? formatTimestamp(startTime) : t('Unknown')
   const version = currentVersion || t('Unknown')
+  const updateConfirmed = availability === 'update-available'
+  const canApplyUpdate = isAdmin && updateConfirmed && applyEnabled
+
+  let statusText: string
+  if (availability === 'check-disabled') {
+    statusText = t(
+      'Update checks are turned off. Set UPDATE_CHECK_ENABLED=true on the server to turn them back on.'
+    )
+  } else if (updateConfirmed && latestVersion) {
+    statusText = t('New version available: {{version}}', {
+      version: latestVersion,
+    })
+  } else if (availability === 'up-to-date') {
+    statusText = t('Up to date')
+  } else {
+    statusText = t('Unable to determine the latest version.')
+  }
 
   const handleCheckUpdates = async () => {
-    setChecking(true)
+    await refresh()
+  }
+
+  const handleConfirmUpdate = async () => {
+    setApplying(true)
     try {
-      const response = await fetch(
-        'https://api.github.com/repos/zhemed/new-api-own/releases/latest',
-        {
-          headers: {
-            Accept: 'application/vnd.github+json',
-            'User-Agent': 'new-api-dashboard',
-          },
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error(t('Failed to contact GitHub releases API'))
-      }
-
-      const data = (await response.json()) as ReleaseInfo
-      if (!data?.tag_name) {
-        throw new Error(t('Unexpected release payload'))
-      }
-
-      if (currentVersion && data.tag_name === currentVersion) {
+      const result = await applyUpdate()
+      if (result.ok) {
+        setConfirmOpen(false)
         toast.success(
-          t('You are running the latest version ({{version}}).', {
-            version: data.tag_name,
-          })
+          t(
+            'Update started. The service will restart shortly, then reload this page.'
+          )
         )
         return
       }
 
-      setRelease(data)
-      setDialogOpen(true)
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : t('Failed to check for updates')
-      toast.error(message)
+      let detail: string
+      if (result.reason === 'disabled') {
+        detail = t(
+          'In-panel updates are turned off by the administrator. Use the image upgrade steps in the README instead.'
+        )
+      } else if (result.reason === 'busy') {
+        detail = t('Another update is already in progress.')
+      } else if (result.reason === 'not_newer') {
+        detail = t('This build already matches that version.')
+      } else if (result.reason === 'download_failed') {
+        detail = t('The new version could not be downloaded.')
+      } else if (result.reason === 'checksum_failed') {
+        detail = t('The downloaded update failed its checksum check.')
+      } else if (result.reason === 'unsupported_platform') {
+        detail = t('This platform does not support in-panel updates.')
+      } else if (result.reason === 'too_large') {
+        detail = t('The update package is larger than the server allows.')
+      } else if (result.reason === 'replace_failed') {
+        detail = t(
+          'The server could not replace its own files. Check the container permissions.'
+        )
+      } else if (result.message) {
+        detail = result.message
+      } else {
+        detail = t('Update failed. Check the server logs for details.')
+      }
+      // Keep the dialog open so the operator can retry after fixing the cause.
+      toast.error(detail)
     } finally {
-      setChecking(false)
-    }
-  }
-
-  const goToRelease = () => {
-    if (release?.html_url) {
-      window.open(release.html_url, '_blank', 'noopener,noreferrer')
+      setApplying(false)
     }
   }
 
@@ -113,6 +141,34 @@ export function UpdateCheckerSection({
                 {t('Current version')}
               </div>
               <div className='text-lg font-semibold'>{version}</div>
+              <div
+                data-testid='app-build-revision'
+                className='text-muted-foreground mt-1 font-mono text-xs break-all'
+              >
+                {t('Build ID')}: {getBuildRevision()}
+              </div>
+            </div>
+            <div className='rounded-lg border p-4'>
+              <div className='text-muted-foreground text-sm'>
+                {t('Latest version')}
+              </div>
+              <div
+                data-testid='latest-version-value'
+                className='text-lg font-semibold'
+              >
+                {latestVersion ?? t('Unknown')}
+              </div>
+            </div>
+            <div className='rounded-lg border p-4'>
+              <div className='text-muted-foreground text-sm'>
+                {t('Update status')}
+              </div>
+              <div
+                data-testid='update-status-text'
+                className='text-lg font-semibold'
+              >
+                {statusText}
+              </div>
             </div>
             <div className='rounded-lg border p-4'>
               <div className='text-muted-foreground text-sm'>
@@ -122,68 +178,77 @@ export function UpdateCheckerSection({
             </div>
           </div>
 
-          <Button onClick={handleCheckUpdates} disabled={checking}>
-            {checking ? (
-              t('Checking updates...')
-            ) : (
-              <>
-                <RefreshCcwIcon className='me-2 h-4 w-4' />
-                {t('Check for updates')}
-              </>
+          <div className='space-y-3'>
+            <div className='flex flex-wrap items-center gap-2'>
+              <Button onClick={handleCheckUpdates} disabled={checking}>
+                {checking ? (
+                  t('Checking updates...')
+                ) : (
+                  <>
+                    <RefreshCcwIcon className='me-2 h-4 w-4' />
+                    {t('Check for updates')}
+                  </>
+                )}
+              </Button>
+              {canApplyUpdate && (
+                <Button
+                  variant='destructive'
+                  data-testid='apply-update'
+                  onClick={() => setConfirmOpen(true)}
+                  disabled={applying}
+                >
+                  {applying ? t('Updating...') : t('Update now')}
+                </Button>
+              )}
+            </div>
+            {updateConfirmed && !applyEnabled && (
+              <p
+                data-testid='apply-disabled-note'
+                className='text-muted-foreground text-xs'
+              >
+                {t(
+                  'In-panel updates are turned off by the administrator. Use the image upgrade steps in the README instead.'
+                )}
+              </p>
             )}
-          </Button>
+            <p
+              data-testid='upgrade-hint'
+              className='text-muted-foreground text-xs'
+            >
+              <span className='text-foreground font-medium'>
+                {t('How to upgrade')}
+              </span>{' '}
+              {t(
+                'Pull the new image, remove the old container, then recreate it from the new image. See the upgrade steps in the README.'
+              )}
+            </p>
+          </div>
         </div>
       </SettingsSection>
 
-      <Dialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        title={
-          release?.tag_name
-            ? t('New version available: {{version}}', {
-                version: release.tag_name,
-              })
-            : t('Release details')
-        }
-        description={
-          release?.published_at
-            ? `${t('Published')} ${formatTimestampToDate(
-                new Date(release.published_at).getTime(),
-                'milliseconds'
-              )}`
-            : undefined
-        }
-        contentClassName='max-h-[80vh] overflow-y-auto'
-        contentHeight='auto'
-        bodyClassName='space-y-4'
-        footer={
-          <>
-            <Button
-              type='button'
-              variant='secondary'
-              onClick={() => setDialogOpen(false)}
-            >
-              {t('Close')}
-            </Button>
-            {release?.html_url && (
-              <Button type='button' onClick={goToRelease}>
-                <ExternalLinkIcon className='me-2 h-4 w-4' />
-                {t('Open release')}
-              </Button>
-            )}
-          </>
-        }
-      >
-        <div className='space-y-4'>
-          {release?.body ? (
-            <Markdown>{release.body}</Markdown>
-          ) : (
-            <p className='text-muted-foreground text-sm'>
-              {t('No release notes provided.')}
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={t('Update to {{version}}?', { version: latestVersion ?? '' })}
+        desc={
+          <div className='space-y-2'>
+            <p>
+              {t(
+                'The service restarts during the update, so the panel is briefly unavailable.'
+              )}
             </p>
-          )}
-        </div>
-      </Dialog>
+            <p>
+              {t(
+                'If the container is recreated, the panel falls back to the image version.'
+              )}
+            </p>
+          </div>
+        }
+        confirmText={t('Update now')}
+        destructive
+        isLoading={applying}
+        handleConfirm={handleConfirmUpdate}
+      />
     </>
   )
 }

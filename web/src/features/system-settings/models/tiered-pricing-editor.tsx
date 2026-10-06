@@ -99,6 +99,7 @@ import {
   normalizeVisualTier,
   tryParseVisualConfig,
 } from '@/features/pricing/lib/tier-expr'
+import { copyToClipboard } from '@/lib/copy-to-clipboard'
 import { cn } from '@/lib/utils'
 
 const PRICE_SUFFIX = '$/1M tokens'
@@ -1564,10 +1565,12 @@ function LlmPromptHelper({ modelName }: LlmPromptHelperProps) {
   }, [modelName])
 
   const handleCopy = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(prompt)
+    // Shared helper: falls back to execCommand when the Clipboard API is
+    // unavailable (plain-HTTP self-hosted panels).
+    const copied = await copyToClipboard(prompt)
+    if (copied) {
       toast.success(t('Copied to clipboard'))
-    } catch {
+    } else {
       toast.error(t('Failed to copy'))
     }
   }, [prompt, t])

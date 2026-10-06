@@ -60,7 +60,22 @@ declare global {
   }
 }
 
+/**
+ * Build-time version, replaced by Rsbuild's `source.define` (see
+ * `rsbuild.config.ts`). Declared as a free identifier on purpose: a dotted
+ * `import.meta.env.VITE_*` define loses to Rsbuild's own `import.meta.env`
+ * object whenever the variable is absent from the process environment.
+ */
+declare const __APP_VERSION__: string | undefined
+
 function readEnvRevision(): string | undefined {
+  try {
+    if (typeof __APP_VERSION__ === 'string' && __APP_VERSION__.length > 0) {
+      return __APP_VERSION__
+    }
+  } catch {
+    // Not replaced in this build (e.g. unit tests) — fall through to import.meta.
+  }
   try {
     const env = (
       import.meta as unknown as { env?: Record<string, string | undefined> }
