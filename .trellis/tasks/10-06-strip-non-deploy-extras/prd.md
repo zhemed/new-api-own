@@ -34,3 +34,22 @@ docker run -d --name new-api --restart always \
 - [ ] 镜像流水线未受影响（YAML 校验 + 触发面复核）
 - [ ] 文档只剩"镜像 + docker run"一条交付路径
 - [ ] 门禁与 CI 通过
+
+## 第二批（用户多选确认后执行）
+
+| 对象 | 结果 |
+|---|---|
+| `bin/migration_v0.2-v0.3.sql`、`bin/migration_v0.3-v0.4.sql`、`bin/time_test.sh` | 删除，`bin/` 目录清空移除 |
+| `docs/AUDIT_REPORT.md`、`docs/translation-glossary{,.fr,.ru}.md`、`docs/installation/BT.md` | 删除（安装目录随之移除）|
+| `.github/workflows/ci.yml`、`pr-check.yml` | 删除（PR 质量门禁）|
+
+引用同步：`directory-structure.md`、`quality-guidelines.md`、`MAINTENANCE.md`、`FILE_INVENTORY.md`。
+`translation-glossary` 经检索**无任何工具/脚本依赖**（仅 FILE_INVENTORY 自述提及），删除不影响运行时。
+
+**副作用（已写入 MAINTENANCE 铁律 6）**：PR 质量门禁没了，`go vet` / `go build` / `make test` /
+前端 typecheck 现在**只能靠本地自查**；镜像构建仍会在发 tag 时编译前端（构建级兜底仍在）。
+
+## 最终形态
+
+- 工作流只剩两个：`docker-build.yml`（唯一交付路径）+ `trellis-gate.yml`（提交闸门远程兜底）
+- 交付：`docker run` + 公开镜像；其余产物（二进制 Release / Electron / GitCode / 分支镜像 / 历史迁移 / 历史文档）全部移除
