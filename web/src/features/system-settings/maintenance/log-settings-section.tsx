@@ -58,6 +58,7 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
+import { toIntlLocale } from '@/i18n/languages'
 import { api } from '@/lib/api'
 import dayjs from '@/lib/dayjs'
 import { formatTimestampToDate } from '@/lib/format'
@@ -362,7 +363,9 @@ export function LogSettingsSection({
         {
           usage: formatBytes(memoryLogBytes),
           limit: formatBytes(memoryLogLimit),
-          rows: memoryLogRows.toLocaleString(i18n.language),
+          // i18n.language is the app's own tag (e.g. "zhCN"), which Intl rejects
+          // with a RangeError; normalize it like every other Intl call site.
+          rows: memoryLogRows.toLocaleString(toIntlLocale(i18n.language)),
         }
       )
       memoryLogNearLimit =

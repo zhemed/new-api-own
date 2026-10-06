@@ -105,7 +105,7 @@ function stubLogFiles(logFilesData: Record<string, unknown>): void {
   }) as unknown as typeof api.get
 }
 
-async function renderSection() {
+async function renderSection(i18nInstance: typeof i18n = i18n) {
   const container = document.createElement('div')
   document.body.append(container)
   const root = createRoot(container)
@@ -118,7 +118,7 @@ async function renderSection() {
   await act(async () => {
     root.render(
       <QueryClientProvider client={queryClient}>
-        <I18nextProvider i18n={i18n}>
+        <I18nextProvider i18n={i18nInstance}>
           <LogSettingsSection defaultEnabled={false} />
         </I18nextProvider>
       </QueryClientProvider>
@@ -241,6 +241,34 @@ describe('memory log usage line', () => {
     assert.equal(
       usageLine(container),
       'Memory log usage 5 MB / limit 200 MB (1,000 rows)'
+    )
+  })
+
+  test('renders the row count when the interface language tag needs normalization', async () => {
+    // The app reports its own language tags ("zhCN" without a hyphen), which
+    // Intl rejects with a RangeError; the row count must go through the
+    // project's normalizer instead of the raw tag.
+    const zhCn = createInstance()
+    await zhCn.use(initReactI18next).init({
+      lng: 'zhCN',
+      resources: { zhCN: { translation: en } },
+    })
+    stubLogFiles({
+      enabled: true,
+      log_dir: '/tmp/logs',
+      file_count: 1,
+      total_size: 2048,
+      memory_log_bytes: 12 * MB,
+      memory_log_max_bytes: 200 * MB,
+      memory_log_rows: 176000,
+    })
+
+    const container = await renderSection(zhCn)
+
+    assert.equal(zhCn.language, 'zhCN')
+    assert.equal(
+      usageLine(container),
+      'Memory log usage 12 MB / limit 200 MB (176,000 rows)'
     )
   })
 })
