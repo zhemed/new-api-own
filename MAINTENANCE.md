@@ -235,6 +235,20 @@ LOG_SQL_DSN='sqlite:/dev/shm/newapi-logs.db?_pragma=journal_mode(WAL)&_pragma=sy
 | 3 个 api-key group 表格测试失败（既有）| `web/src/features/keys/components/__tests__/api-key-group-cell.test.tsx` | **已处理（2026-10-06 团队）**：判定为“临时禁用、应恢复”而非“设计退役”——同款动效在 `api-key-group-combobox.tsx:111-179` 活跃使用且测试通过、动效 CSS（含 `prefers-reduced-motion`）在 `src/styles/index.css:655-700` 完整保留、`AutoGroupBadge` 唯一引用就是那行注释；已取消注释恢复功能（**未放宽任何断言**），`bun test` 由 151 pass/3 fail 变为 **154 pass/0 fail** |
 | footer XSS 测试曾经永远失败 | `web/src/components/layout/components/__tests__/footer.test.tsx` | 原用 happy-dom：`purify.isSupported` 虽为 true，但消毒不完整（实测 `<script>` 原样保留），两个用例长期失败=从未真正验证消毒（复核员在基线 `0941a4f` 上原样复跑：1 pass / 2 fail）。已改用 jsdom（断言未改）并加 `isSupported` 前置断言；同时给 `footer.tsx` 加失效安全（不支持时不注入原始 HTML）|
 
+### 版本对齐核查（每次维护必做，2026-10-06 立）
+
+维护/发版后必须核对三处版本，**三者不一致就是事故**：
+
+1. **运行实例实际版本**：`curl -s <实例>/api/status | jq -r .data.version`（或面板页脚）；
+2. **registry 最新镜像**：`docker buildx imagetools inspect ghcr.io/zhemed/new-api-own:latest`（记摘要），
+   并与 `<版本>`/`v<版本>` 标签的摘要比对；
+3. **仓库**：`cat VERSION` 与 `git tag | sort -V | tail -1`。
+
+**已踩过的坑（2026-10-06）**：团队三轮全在仓库内部干活，没人核对线上版本，
+结果运行实例停在 `0.0.5` 而 `latest` 早已是 `0.0.6`；本机缓存的 `latest` 标签还陈旧指向 `0.0.3`
+——在同一台机器上跑 `docker run …:latest` 会**复用本地旧标签**（不会自动拉新），必须先 `docker pull`
+或改用固定 tag/摘要。
+
 ### 前端工具链（2026-10-06 起本机可用）
 
 ```bash
