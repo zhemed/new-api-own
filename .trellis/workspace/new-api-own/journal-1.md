@@ -244,3 +244,39 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 改动仍在工作区未提交：等用户决定是否提交/推送/发布
+
+
+## Session 11: 弱盘日志：提交发版 0.0.4 + 本机演示实例
+<!-- trellis-session: v=2 fp=82f30c1324038422 -->
+
+**Date**: 2026-10-06
+**Task**: 弱盘日志：提交发版 0.0.4 + 本机演示实例
+**Branch**: `main`
+
+### Summary
+
+功能提交 c9aa0e3、CI 收敛 34da3aa、版本递增 cb2ca0f；v0.0.4 tag 只触发 1 个 workflow 且构建成功，GHCR 0.0.4/v0.0.4/latest 同一 digest。生产未动（仍 v0.0.3）。另按用户要求在 3020 端口起了本机演示实例：LOG_SQL_DSN=memory + 30s 清理 + 50 行上限，实测 61 行自动裁到 50，RSS≈62MB；凭据与地址仅口头告知、不落盘。
+
+### Main Changes
+
+- 记录演示实例的配置、证据与停止方式（凭据不入文件）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7f9a50b` | chore(task): archive 10-06-weak-disk-log-ship |
+
+### Testing
+
+- [OK] [OK] v0.0.4 构建 success；推 tag 扇出=1
+- [OK] [OK] 演示实例 total 61 → 50（上限生效）、/api/status 200、版本自报 0.0.4
+- [OK] [OK] 工作树干净、0 未推送
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 等用户看效果；若要上生产需另行授权

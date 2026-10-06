@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 10
+- **Total Sessions**: 11
 - **Last Active**: 2026-10-06
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~246 | Active |
+| `journal-1.md` | ~282 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 11 | 2026-10-06 | 弱盘日志：提交发版 0.0.4 + 本机演示实例 | `7f9a50b` | `main` |
 | 10 | 2026-10-06 | 弱盘日志：LOG_SQL_DSN 支持内存库/独立 SQLite + 清理可调度 | - | `main` |
 | 9 | 2026-10-06 | 评估：弱盘机器把日志放内存 | - | `main` |
 | 8 | 2026-09-18 | Status check: v0.0.3 not released yet | - | `main` |
