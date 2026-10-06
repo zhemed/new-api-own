@@ -1,0 +1,260 @@
+name: Publish release (image + Linux updater binaries)
+
+# Companion to `Publish Docker image (Multi-arch)`:
+#   docker-build.yml  -> pushes the multi-arch image (the ONLY deployment artifact)
+#   release.yml (this) -> creates the GitHub Release entry for the same tag, and
+#                         attaches the Linux binaries the in-panel updater fetches
+#
+# Why the Release entry exists at all: the panel's "check for updates" asks
+#   https://api.github.com/repos/zhemed/new-api-own/releases/latest
+# so a version that ships an image but no Release is invisible to it. That is
+# exactly how v0.0.6 shipped an image while the panel still answered "v0.0.5".
+#
+# Why the binaries are attached: the in-panel updater downloads them by a FIXED
+# name (no version in the name, so it can build the URL without knowing the
+# version first):
+#       new-api-linux-amd64, new-api-linux-arm64, SHA256SUMS
+# The removed workflow produced version-suffixed names (new-api-v0.0.5,
+# new-api-arm64-v0.0.5, checksums-linux.txt); those ledgers still sit on the old
+# v0.0.5 release and are deliberately left untouched.
+#
+# These attachments do NOT add a second deployment method: the supported way to
+# run new-api is still `docker run` against the published image. The binaries are
+# input for the updater, and they are built from the same source revision with the
+# same flags and the same version string as the image.
+#
+# KNOWN PARALLEL RISK — deliberate, not an oversight:
+# This workflow and docker-build.yml both fire on the same `on: push: tags`
+# event and therefore run concurrently. If the image push fails while this
+# Release succeeds, the panel will advertise a version that cannot actually be
+# pulled. Closing that gap completely requires chaining on the image workflow
+# (`on: workflow_run: workflows: ["Publish Docker image (Multi-arch)"] ...`) so
+# the Release is only created after a successful push. This revision keeps
+# `on: push` on purpose, to avoid coupling the two workflows together; revisit
+# if a release ever ships without its image.
+
+on:
+  push:
+    # Same version-tag filter as docker-build.yml, so the two workflows can never
+    # disagree about which tags are releases. Keep them in sync.
+    tags:
+      - 'v[0-9]*'
+      - '[0-9]*'
+  # Manual backfill channel. Needed because a version can ship an image without a
+  # Release (the v0.0.6 incident), and re-pushing an already published tag just to
+  # trigger a build is not acceptable. Note: GitHub only offers the "Run workflow"
+  # button once this file exists on the default branch.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Version tag to publish a Release for (e.g. v0.0.6). Must already exist and match v[0-9]* or [0-9]*.'
+        required: true
+        type: string
+
+# Least privilege: creating/editing a release needs `contents: write` and
+# nothing else. No packages scope — this workflow never touches the registry.
+permissions:
+  contents: write
+
+env:
+  # Pinned to the exact images the Dockerfile builds with, so the Release binaries
+  # and the image are produced by the same toolchains. Using these container images
+  # instead of setup-* actions also keeps this workflow free of third-party
+  # actions: `actions/checkout` below is the only action in the file.
+  BUN_IMAGE: oven/bun:1@sha256:0733e50325078969732ebe3b15ce4c4be5082f18c4ac1a0f0ca4839c2e4e42a7
+  GO_IMAGE: golang:1.25.1-alpine
+
+jobs:
+  release:
+    name: Build binaries and publish release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          # Every tag is needed to decide which one may claim "latest" below, and
+          # to verify that a manually supplied tag really exists.
+          fetch-depth: 0
+
+      # Shared by BOTH entry points: resolves the tag and enforces the version-tag
+      # contract that `on: push` applies only to pushed tags.
+      - name: Resolve and validate tag
+        id: tag
+        env:
+          # Never interpolate these into the script directly — a dispatch input is
+          # caller-supplied text and would be a script-injection vector.
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            TAG="$(printf '%s' "${INPUT_TAG:-}" | tr -d '[:space:]')"
+            SOURCE="the workflow_dispatch 'tag' input"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+            SOURCE="the pushed tag"
+          fi
+
+          if [ -z "$TAG" ]; then
+            echo "::error::no tag resolved from $SOURCE. For a manual run, set the required 'tag' input, for example v0.0.6."
+            exit 1
+          fi
+
+          # workflow_dispatch bypasses the `on: push` tag filter, so restate it.
+          case "$TAG" in
+            v[0-9]*|[0-9]*) ;;
+            *)
+              echo "::error::refusing to publish '$TAG' (from $SOURCE): not a version tag. Expected v<digits>... or <digits>..., for example v0.0.6 or 0.0.6. Tags such as 'release-notes', 'nightly-2026' or 'pre-rollback-backup-20260921' are rejected on purpose: publishing one would move the repository 'latest' flag, which is what the panel reads."
+              exit 1
+              ;;
+          esac
+
+          if ! git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "::error::tag '$TAG' does not exist in this repository. Push the tag first, or check the spelling — this workflow never creates tags."
+            exit 1
+          fi
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "resolved tag '$TAG' from $SOURCE"
+
+      # Mirror docker-build.yml's "Resolve tag & write VERSION" step. The image and
+      # these binaries must report the SAME version, and the image bakes the *tag*
+      # (e.g. v0.0.6) rather than the repository's VERSION file (which has no `v`).
+      # Both the frontend (VITE_REACT_APP_VERSION) and the Go binary
+      # (common.Version) are then read from this one file, exactly like the Dockerfile.
+      - name: Align VERSION with the tag
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          set -euo pipefail
+          echo "$TAG" > VERSION
+          echo "VERSION file is now: $(cat VERSION)"
+
+      # main.go embeds web/dist (//go:embed), so the build fails without it.
+      - name: Build frontend
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -v "$PWD:/build" -w /build/web \
+            "$BUN_IMAGE" \
+            sh -c 'bun install --frozen-lockfile && DISABLE_ESLINT_PLUGIN=true VITE_REACT_APP_VERSION="$(cat /build/VERSION)" bun run build'
+
+      # Same flags as the Dockerfile's builder stage: CGO_ENABLED=0 (fully static),
+      # GOWORK=off (relaykit is a separate module reached via `replace`) and
+      # GOEXPERIMENT=greenteagc. CGO_ENABLED=0 also makes the arm64 build a plain
+      # cross-compile — no aarch64 cross-gcc, unlike the removed workflow, which
+      # built with CGO_ENABLED=1 and therefore did NOT match the image.
+      - name: Build Linux binaries (amd64 + arm64)
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          docker run --rm \
+            -v "$PWD:/build" -w /build \
+            -e CGO_ENABLED=0 -e GOWORK=off -e GOEXPERIMENT=greenteagc \
+            "$GO_IMAGE" \
+            sh -c '
+              set -eu
+              go mod download
+              VER="$(cat /build/VERSION)"
+              LD="-s -w -X github.com/QuantumNous/new-api/common.Version=$VER"
+              GOOS=linux GOARCH=amd64 go build -ldflags "$LD" -o /build/dist/new-api-linux-amd64 .
+              GOOS=linux GOARCH=arm64 go build -ldflags "$LD" -o /build/dist/new-api-linux-arm64 .
+            '
+
+      # Fixed asset names: the panel builds its download URL by NAME, so a version
+      # never appears in the file name.
+      - name: Generate SHA256SUMS
+        run: |
+          set -euo pipefail
+          cd dist
+          sha256sum new-api-linux-amd64 new-api-linux-arm64 > SHA256SUMS
+          cat SHA256SUMS
+          ls -l
+
+      # Single publish implementation, shared by both entry points.
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          VERSION="${TAG#v}"
+          ASSETS="dist/new-api-linux-amd64 dist/new-api-linux-arm64 dist/SHA256SUMS"
+
+          # `/releases/latest` is driven by the repository's "latest" flag, which
+          # defaults to true for every newly published release. Without a guard, a
+          # re-run of this workflow on an OLD tag would silently move "latest"
+          # backwards — the same clobber class already fixed for the mutable
+          # `latest-<arch>` image tags. So only the highest version tag may claim it.
+          HIGHEST="$(git tag -l 'v[0-9]*' '[0-9]*' --sort=-v:refname | head -n1)"
+          # Compare without the `v` prefix, so `v0.0.6` and `0.0.6` count as the
+          # same version — the project publishes both spellings of every release.
+          HIGHEST_VERSION="${HIGHEST#v}"
+
+          # A suffixed tag (v0.0.7-alpha.1) is a pre-release. GitHub refuses to
+          # serve pre-releases from `releases/latest`, which is what we want: the
+          # panel must never be told to "upgrade" to a pre-release.
+          PRERELEASE_FLAG=""
+          case "$TAG" in
+            *-*) PRERELEASE_FLAG="--prerelease" ;;
+          esac
+
+          LATEST_FLAG="--latest=false"
+          if [ -z "$PRERELEASE_FLAG" ] && [ "$VERSION" = "$HIGHEST_VERSION" ]; then
+            LATEST_FLAG="--latest"
+          fi
+
+          BODY="$(printf '%s\n' \
+            'Docker image (multi-arch, cosign-signed) — the only supported deployment:' \
+            '' \
+            '```' \
+            "docker pull ghcr.io/zhemed/new-api-own:${VERSION}" \
+            "docker pull ghcr.io/zhemed/new-api-own:${TAG}" \
+            '```' \
+            '' \
+            'Upgrade: `docker pull` -> `docker rm -f new-api` -> `docker run` (see README, section 升级 / 回滚).' \
+            'Restarting a container is *not* an upgrade: the running container is pinned to its image ID.' \
+            '' \
+            'Attached Linux binaries (for the in-panel updater, not a deployment method):' \
+            '`new-api-linux-amd64`, `new-api-linux-arm64`, `SHA256SUMS`.')"
+
+          # Idempotent: re-running on the same tag refreshes the notes and replaces
+          # the assets instead of failing with "release already exists".
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "release $TAG already exists; refreshing notes and re-uploading assets"
+            gh release edit "$TAG" --title "$TAG" --notes "$BODY" \
+              $LATEST_FLAG $PRERELEASE_FLAG
+            gh release upload "$TAG" $ASSETS --clobber
+          else
+            gh release create "$TAG" --verify-tag --title "$TAG" --notes "$BODY" \
+              $LATEST_FLAG $PRERELEASE_FLAG $ASSETS
+          fi
+
+          # Assert the updater's asset contract. Extra (legacy) assets are only
+          # warned about, because the old v0.0.5 release still carries the
+          # version-suffixed names and those are intentionally left alone.
+          PRESENT="$(gh release view "$TAG" --json assets --jq '.assets[].name' | sort)"
+          echo "$PRESENT"
+          for want in SHA256SUMS new-api-linux-amd64 new-api-linux-arm64; do
+            if ! printf '%s\n' "$PRESENT" | grep -qx -- "$want"; then
+              echo "::error::release $TAG is missing required updater asset '$want'"
+              exit 1
+            fi
+          done
+          # Anything that is not one of the three fixed names is flagged. Using an
+          # allow-list (rather than a pattern for version-suffixed names) also
+          # catches spellings like `new-api-arm64-v0.0.5`, which a simple
+          # `-<digits>.<digits>` pattern would miss.
+          EXTRA="$(printf '%s\n' "$PRESENT" | grep -vxE 'SHA256SUMS|new-api-linux-amd64|new-api-linux-arm64' || true)"
+          if [ -n "$EXTRA" ]; then
+            echo "::warning::release $TAG also carries unexpected asset(s): $(printf '%s' "$EXTRA" | tr '\n' ' ')—the updater expects only the fixed names above. Legacy assets on old releases are intentionally left untouched."
+          fi
+
+          # Verification half: a release that is not actually "latest" cannot fix
+          # the panel, so surface the resulting state in the run summary.
+          gh release view "$TAG" --json tagName,isLatest,isPrerelease,assets \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "::notice::release $TAG published (latest=$LATEST_FLAG prerelease=$PRERELEASE_FLAG)"

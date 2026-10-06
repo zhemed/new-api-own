@@ -43,6 +43,65 @@ docker run -d --name new-api --restart always \
 - 自建镜像时（需要仓库访问权限）先 `docker build -t new-api-own .`，再把上面的镜像名换成
   `new-api-own` —— **命令形态不变**，这不是第二种部署方式
 
+### 升级 / 回滚（照做不会停在旧版）
+
+> **关键认知：重启容器不会换镜像。** `docker restart`（或 `--restart always` 自动重启）只是把
+> **同一个镜像**再跑一遍，版本当然不变。升级必须**删掉容器、用新镜像重建**。
+
+升级三步（`<版本>` 换成目标 tag，如 `0.0.6`；**在原来的部署目录执行**，`./data` 是相对路径）：
+
+```bash
+docker pull ghcr.io/zhemed/new-api-own:<版本>   # 1. 先拉新镜像
+docker rm -f new-api                            # 2. 删旧容器（数据在 ./data，不受影响）
+docker run -d --name new-api --restart always \
+  --network host -v ./data:/data \
+  ghcr.io/zhemed/new-api-own:<版本>             # 3. 用新镜像重建
+```
+
+回滚同理，只把 tag 换成上一个版本（registry 保留每个历史 tag）：
+
+```bash
+docker pull ghcr.io/zhemed/new-api-own:0.0.5
+docker rm -f new-api
+docker run -d --name new-api --restart always --network host -v ./data:/data \
+  ghcr.io/zhemed/new-api-own:0.0.5
+```
+
+**为什么显式 `docker pull`、为什么不建议用 `:latest`**：`:latest` 是**本地标签**——
+`docker run …:latest` 不会去远端比对更新，本地有就直接用；本地标签陈旧时就会"升级了却还是旧版"
+（2026-10-06 本机 `latest` 曾停在 `0.0.3`，当日已刷新；**任何机器的本地标签都可能陈旧**）。所以升级用
+**固定 tag**（`0.0.6` 与 `v0.0.6` 指向同一份多架构清单）；非要用 `:latest`，必须先
+`docker pull ghcr.io/zhemed/new-api-own:latest` 再重建。
+
+> 判断本机镜像是否已刷新：`docker images ghcr.io/zhemed/new-api-own --digests`。
+> **过滤必须带完整仓库名**——`docker images | grep 0.0.5` 会命中别的项目的同号 tag，
+> 而且 `grep` 里 `.` 是通配符，会给出错误结论。
+
+升级后确认版本（实例自身报告的才是真相）：
+
+```bash
+curl -s http://127.0.0.1:3000/api/status | grep -o '"version":"[^"]*"'
+# 预期："version":"v0.0.6"；对不上就按 MAINTENANCE.md「版本与升级（每次维护必做）」逐处比对
+# 有本仓库源码时，一条命令核对四项（仓库 VERSION / 最新 tag / registry 摘要 / 实例版本）：
+#   make check-version INSTANCE=http://127.0.0.1:3000
+```
+
+> 升级 / 回滚**同样只有 `docker run` 这一种形态**：不要为此引入 compose / Helm / K8s / systemd
+> （闸门 `scripts/forbid-extra-deploy-methods.sh` 会拦）。
+
+### 面板内更新（临时跟上版本，不是第二种部署方式）
+
+面板 **系统设置 → 系统维护 → 检查更新** 会显示当前版本与最新版本；有新版本时可直接点「立即更新」：
+后端下载**本机架构**的 Linux 二进制 → 用发布的 `SHA256SUMS` 校验 → 校验通过才原子替换并原地重执行
+（**校验失败绝不替换**）。检查与下载都发生在服务端，浏览器不直连 GitHub。
+
+> ⚠️ **它是临时手段**：容器内被替换的二进制**不在镜像里**，下一次 `docker rm` + `docker run`
+> 会退回镜像内版本。要长期稳定在新版本，仍然走上面的镜像三步。
+> 开关：「检查更新」默认**关闭**（`UPDATE_CHECK_ENABLED=true` 开启），「立即更新」默认**允许**
+> （`UPDATE_APPLY_ENABLED=false` 可整体关掉）；GitHub 直连不通时用 `HTTPS_PROXY`，或用
+> `UPDATE_CHECK_API_BASE_URL` 指向镜像/代理。细节、排障与回退见
+> [MAINTENANCE.md](./MAINTENANCE.md)「面板内更新（self-update）」。
+
 可选环境变量（按需追加 `-e`）：限流开关、缓存、日志承载方式等见 [`.env.example`](./.env.example)
 与 [MAINTENANCE.md](./MAINTENANCE.md)。
 

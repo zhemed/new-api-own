@@ -2,9 +2,20 @@ name: Publish Docker image (Multi-arch)
 
 on:
   push:
+    # Only version tags may publish. This used to be `'*'`, which matched every
+    # tag — and this workflow unconditionally republishes the shared
+    # `latest-<arch>` tags and rebuilds `:latest` from them. A non-release tag
+    # then silently moved `:latest` onto that snapshot (e.g. the backup tag
+    # `pre-rollback-backup-20260921`, or any `nightly-*`/notes tag).
+    #
+    # Both spellings stay supported because the alias logic below publishes
+    # `v0.0.6` and `0.0.6` from a single run: `v<digit>…` and `<digit>…`.
+    # Non-version tags (anything not starting with `v<digit>` or a digit) no
+    # longer trigger. `!nightly*` became dead once `'*'` was removed, because
+    # `nightly*` matches neither pattern, so it is gone.
     tags:
-      - '*'
-      - '!nightly*'
+      - 'v[0-9]*'
+      - '[0-9]*'
   workflow_dispatch:
     inputs:
       tag:

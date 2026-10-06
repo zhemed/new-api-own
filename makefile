@@ -3,7 +3,7 @@ API_DIR = .
 DEV_WEB_PORT ?= 5173
 DEV_SQLITE_PATH ?= one-api.db
 
-.PHONY: all build-web build-all-web start-api dev dev-api dev-web reset-setup test
+.PHONY: all build-web build-all-web start-api dev dev-api dev-web reset-setup test check-version
 
 all: build-all-web start-api
 
@@ -40,6 +40,12 @@ test:
 		GOWORK=off go test $$root_packages
 	@echo "Testing relaykit Go module..."
 	@cd relaykit && GOWORK=off go test ./...
+
+# 版本对齐核查：仓库 VERSION / 最新 git tag / ghcr 标签摘要 /（可选）实例版本。
+# 退出码 0=一致 1=不一致 2=无法判定（make 自身失败时报 2；CI 想区分 1/2 请直接调脚本）。
+# 例：make check-version INSTANCE=http://127.0.0.1:3000
+check-version:
+	@./scripts/check-version-drift.sh $(if $(INSTANCE),--instance $(INSTANCE),) $(if $(REGISTRY),--registry $(REGISTRY),) $(if $(VERSION),--version $(VERSION),)
 
 reset-setup:
 	@echo "Resetting local setup wizard state (SQLite)..."

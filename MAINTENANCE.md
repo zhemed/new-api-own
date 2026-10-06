@@ -128,6 +128,17 @@ cd relaykit && GOWORK=off go build ./...
 
 > 注意：后端 `main.go` 用 `//go:embed web/dist` 内嵌前端，**先构建前端再构建后端**。
 
+### 前端工具链（2026-10-06 起本机可用）
+
+```bash
+cd web && bun install --frozen-lockfile   # 需要 bun；本机 1.4.2
+bun run typecheck   # tsgo -b；当前 0 错误（退出码 0）
+bun run lint        # oxlint；当前 0 error / 21 warning（退出码 0）
+bun test            # node:test（DOM 用 happy-dom，footer 用例改用 jsdom）；2026-10-06 复核 167 pass / 0 fail（34 个文件）
+bun run build       # rsbuild，漏删引用会在此报错——删代码后必须跑
+bun run knip        # 死码分析；入口已在 knip.config.ts 声明。2026-10-06 复核：unused files = 0（`--include files` 退出 0），全量仍以 1 退出：311 unused exports / 99 unused exported types / 6+2 unused deps / 1 duplicate export / 2 configuration hints（基线告警，非本轮引入）
+```
+
 ## 本地部署验证
 
 ```bash
@@ -232,33 +243,15 @@ LOG_SQL_DSN='sqlite:/dev/shm/newapi-logs.db?_pragma=journal_mode(WAL)&_pragma=sy
 | `get_channel_failed`（重试取渠道）走 500 | `controller/relay.go:320,323` | **刻意不改**：容量/配置类故障，5xx 触发重试是期望行为（与 `middleware/distributor.go` 的 503/404 语义确有差异，已留痕待统一）|
 | ClickHouse 日志库不支持行数上限 | `service/system_task.go:logCleanupMaxRows` | 不做 CH 分支（无法离线验证 CH 版本行为）；显式返回 0 并打一次性 WARN，改用保留天数 |
 | 前端孤儿模块 | `web/src/**` | 2026-10-06 已装 bun 并跑 knip：本轮删掉 33 个确证无人引用的文件（`208483c`），复核阶段又追加删除 1 个（`web/src/hooks/use-mobile.tsx`）；`ui/`（shadcn 底座）、`ai-elements/`（成套组件库）、`routeTree.gen.ts`（生成物）登记为 knip `ignore`，不删。i18n 工具链的键登记表 `i18n/static-keys.ts` **没有**登记 ignore（knip 仍把它列在 `Unused files` 里），属刻意保留 |
-| 3 个 api-key group 表格测试失败（既有）| `web/src/features/keys/components/__tests__/api-key-group-cell.test.tsx` | **已处理（2026-10-06 团队）**：判定为“临时禁用、应恢复”而非“设计退役”——同款动效在 `api-key-group-combobox.tsx:111-179` 活跃使用且测试通过、动效 CSS（含 `prefers-reduced-motion`）在 `src/styles/index.css:655-700` 完整保留、`AutoGroupBadge` 唯一引用就是那行注释；已取消注释恢复功能（**未放宽任何断言**），`bun test` 由 151 pass/3 fail 变为 **154 pass/0 fail** |
-| footer XSS 测试曾经永远失败 | `web/src/components/layout/components/__tests__/footer.test.tsx` | 原用 happy-dom：`purify.isSupported` 虽为 true，但消毒不完整（实测 `<script>` 原样保留），两个用例长期失败=从未真正验证消毒（复核员在基线 `0941a4f` 上原样复跑：1 pass / 2 fail）。已改用 jsdom（断言未改）并加 `isSupported` 前置断言；同时给 `footer.tsx` 加失效安全（不支持时不注入原始 HTML）|
+## 团队审查已处理项（2026-10-06 留痕）
 
-### 版本对齐核查（每次维护必做，2026-10-06 立）
+> 与上面的「已知不一致」相对：这些是审查中发现并**已修复**的问题，单独记，留痕以免后人重复排查。
+> 修改都必须能过本地自查（PR 质量门禁已移除，详见下节）。
 
-维护/发版后必须核对三处版本，**三者不一致就是事故**：
-
-1. **运行实例实际版本**：`curl -s <实例>/api/status | jq -r .data.version`（或面板页脚）；
-2. **registry 最新镜像**：`docker buildx imagetools inspect ghcr.io/zhemed/new-api-own:latest`（记摘要），
-   并与 `<版本>`/`v<版本>` 标签的摘要比对；
-3. **仓库**：`cat VERSION` 与 `git tag | sort -V | tail -1`。
-
-**已踩过的坑（2026-10-06）**：团队三轮全在仓库内部干活，没人核对线上版本，
-结果运行实例停在 `0.0.5` 而 `latest` 早已是 `0.0.6`；本机缓存的 `latest` 标签还陈旧指向 `0.0.3`
-——在同一台机器上跑 `docker run …:latest` 会**复用本地旧标签**（不会自动拉新），必须先 `docker pull`
-或改用固定 tag/摘要。
-
-### 前端工具链（2026-10-06 起本机可用）
-
-```bash
-cd web && bun install --frozen-lockfile   # 需要 bun；本机已装 1.4.2
-bun run typecheck   # tsgo -b
-bun run lint        # oxlint（0 error / 21 warning 为当前基线）
-bun test            # node:test（DOM 用 happy-dom，footer 用例改用 jsdom）；当前 151 pass / 3 fail（3 个为上述既有失败）
-bun run build       # rsbuild，漏删引用会在此报错——删代码后必须跑
-bun run knip        # 死码分析；测试入口与应用入口已在 knip.config.ts 声明。2026-10-06 实测仍以 1 退出：9 unused files / 313 unused exports / 6+2 unused deps（基线告警，非本轮引入）
-```
+| 项 | 位置 | 处理结论 |
+|---|---|---|
+| 3 个 api-key group 表格测试失败（既有）| `web/src/features/keys/components/__tests__/api-key-group-cell.test.tsx` | **已修复（2026-10-06 团队）**：判定为"临时禁用、应恢复"而非"设计退役"——同款动效在 `api-key-group-combobox.tsx:111-179` 活跃使用且测试通过、动效 CSS（含 `prefers-reduced-motion`）在 `src/styles/index.css:655-700` 完整保留、`AutoGroupBadge` 唯一引用就是那行注释；已取消注释恢复功能（**未放宽任何断言**），`bun test` 由 151 pass / 3 fail 变为 **154 pass / 0 fail**（2026-10-06 复核为 167 pass / 0 fail）|
+| footer XSS 测试曾经永远失败 | `web/src/components/layout/components/__tests__/footer.test.tsx` | **已修复**：原用 happy-dom，`purify.isSupported` 虽为 true 但消毒不完整（实测 `<script>` 原样保留），两个用例长期失败=从未真正验证消毒（复核员在基线 `0941a4f` 上原样复跑：1 pass / 2 fail）。已改用 jsdom（断言未改）并加 `isSupported` 前置断言；同时给 `footer.tsx` 加失效安全（不支持时不注入原始 HTML）|
 
 ## 质量门禁现状（2026-08-18 基线）
 
@@ -378,17 +371,17 @@ x-opencode-session and cannot be routed efficiently
 ## 发版流程（版本号第三位递增：0.0.2 → 0.0.3 → 0.0.4 …）
 
 1. 更新 `VERSION`（与即将打的 tag 一致，**不带** `v`），提交到 `main`
-2. 打注释 tag 并推送：
+2. 打注释 tag 并推送（`<版本>` 为刚提交的版本号，如 `0.0.6`）：
 
    ```bash
-   git tag -a v0.0.3 -m "v0.0.3"
-   git push origin main v0.0.3
+   git tag -a v<版本> -m "v<版本>"
+   git push origin main v<版本>
    ```
 
 3. 推 tag **只自动触发一个工作流**（触发面已刻意收敛，避免每次发版扇出）：
 
-   - `Publish Docker image (Multi-arch)` → 构建并推送 `ghcr.io/zhemed/new-api-own:v0.0.3`、
-     `ghcr.io/zhemed/new-api-own:0.0.3`（去掉 `v` 的等值别名）与 `:latest`，多架构清单 + cosign 签名
+   - `Publish Docker image (Multi-arch)` → 构建并推送 `ghcr.io/zhemed/new-api-own:v<版本>`、
+     `ghcr.io/zhemed/new-api-own:<版本>`（去掉 `v` 的等值别名）与 `:latest`，多架构清单 + cosign 签名
 
    **交付只有镜像这一条路径**：二进制 Release（`release.yml`）、Electron 桌面壳（`electron-build.yml`）、
    GitCode 同步（`sync-release-to-gitcode.yml`）与手动分支镜像（`docker-image-branch.yml`）
@@ -397,14 +390,180 @@ x-opencode-session and cannot be routed efficiently
 4. 校验（**只产出镜像，不再有 GitHub Release 产物**）：
 
    ```bash
-   docker run --rm ghcr.io/zhemed/new-api-own:0.0.3 --version          # 应输出 v0.0.3
-   docker buildx imagetools inspect ghcr.io/zhemed/new-api-own:0.0.3    # 应看到 amd64/arm64 清单
+   docker run --rm ghcr.io/zhemed/new-api-own:<版本> --version          # 应输出 v<版本>
+   docker buildx imagetools inspect ghcr.io/zhemed/new-api-own:<版本>    # 应看到 amd64/arm64 清单
    ```
+
+   发布后在自己的部署机上按「版本与升级」再对一次（运行实例 / registry / 仓库三处一致）。
 
 5. 镜像内的版本号来自构建时的 tag：`Dockerfile` 把 `VERSION` 注入 Go ldflags（`common.Version`）与前端 `VITE_REACT_APP_VERSION`，而 CI 会用 tag 覆写 `VERSION` 文件内容，所以**必须走 tag 发版**；只改文件不推 tag 不会触发镜像构建，镜像里会停在旧值（本项目自 2026-10-06 起只产出镜像，不再有 GitHub Release）。
 6. 版本注入的 `-ldflags -X` 必须写**完整模块路径** `github.com/QuantumNous/new-api/common.Version`；写成简写（`new-api/common.Version`）会被 Go 静默忽略，镜像内版本会停在内置默认值 `v0.0.0`（`Dockerfile` 用的是完整路径，勿改）。
 
-> 约定：`VERSION` 文件不带 `v`，tag 带 `v`，两者版本号一致；镜像同时提供 `v0.0.3` 与 `0.0.3` 两种拉取标签，指向同一份多架构清单。
+> 约定：`VERSION` 文件不带 `v`，tag 带 `v`，两者版本号一致；镜像同时提供 `v<版本>` 与 `<版本>` 两种拉取标签，指向同一份多架构清单。
+
+## 版本与升级（每次维护必做）
+
+> **一条命令版**：`make check-version INSTANCE=http://127.0.0.1:3000`（脚本 `scripts/check-version-drift.sh`）。
+> 它比对四处——① 仓库 `VERSION`、② 最新 git tag、③ registry `latest` / `<版本>` / `v<版本>` 三个标签的
+> 镜像摘要（三者必须同摘要）、④ 运行实例 `/api/status` 的 version；退出码 **0=一致 / 1=不一致 /
+> 2=无法判定**，**查不到绝不报"一致"**。手抄命令与判据见下「升级后三处比对」；
+> **三处不一致就是事故**，维护/发版/升级后都要跑一遍。
+>
+> **事故记录（2026-10-06）**：团队三轮全在仓库内部干活，没人核对线上版本，结果运行实例停在 `0.0.5`
+> 而 `latest` 早已是 `0.0.6`；同日本机缓存的 `latest` 标签还曾陈旧指向 `0.0.3`（现已刷新）。
+> 教训：**任何机器上的本地标签都可能陈旧**，`docker run …:latest` 会复用本地旧标签（不会自动拉新）。
+
+### 升级 / 回滚（唯一部署方式下）
+
+**关键认知：重启容器不会换镜像。** `docker restart new-api`、`--restart always` 触发的自动重启、
+甚至重启宿主机，都只是把**同一个镜像**再跑一遍——版本当然不变。升级必须**删掉容器、用新镜像重建**。
+
+升级三步（`<版本>` 换成目标 tag，如 `0.0.6`；**在原来的部署目录执行**，`./data` 是相对路径，换目录＝换了数据目录）：
+
+```bash
+docker pull ghcr.io/zhemed/new-api-own:<版本>     # 1. 先拉新镜像
+docker rm -f new-api                              # 2. 删旧容器（数据在 ./data，不受影响）
+docker run -d --name new-api --restart always \
+  --network host -v ./data:/data \
+  ghcr.io/zhemed/new-api-own:<版本>               # 3. 用新镜像重建
+```
+
+回滚同理，只换 tag（registry 保留每个历史 tag：`0.0.5`、`0.0.4`…）：
+
+```bash
+docker pull ghcr.io/zhemed/new-api-own:0.0.5
+docker rm -f new-api
+docker run -d --name new-api --restart always --network host -v ./data:/data \
+  ghcr.io/zhemed/new-api-own:0.0.5
+```
+
+**为什么必须显式 `docker pull`、为什么不建议用 `:latest`**：`:latest` 是**本地标签**，
+`docker run …:latest` 不会去 registry 比对更新——本地有就直接用。本机 2026-10-06 曾把 `latest` 停在
+`0.0.3`（当日已刷新，现与 `0.0.6` 同一摘要）；**这不是一次性事故：任何机器的本地标签都可能陈旧**，
+此时跑 `:latest` 得到的就是旧版。所以升级用**固定 tag**；非要用 `:latest` 时，先
+`docker pull ghcr.io/zhemed/new-api-own:latest`，再按下节核对摘要。
+
+> 升级 / 回滚**仍然只有 `docker run` 这一种形态**：不要为此引入 compose / Helm / K8s / systemd
+> （`.githooks/pre-commit` 与 `scripts/forbid-extra-deploy-methods.sh` 会拦，规则见
+> `.trellis/spec/guides/deployment-single-method.md`）。
+
+### 升级后三处比对（可执行）
+
+三处必须是同一个版本，任一处落后都说明"以为升级了，其实没有"（一条命令版见上文「版本与升级」引言）：
+
+| # | 查哪里 | 命令 | 期望 |
+|---|---|---|---|
+| 1 | **运行实例**（唯一真相）| `curl -s http://127.0.0.1:3000/api/status \| grep -o '"version":"[^"]*"'` | `"version":"v0.0.6"` |
+| 2 | **registry 清单摘要** | `docker buildx imagetools inspect ghcr.io/zhemed/new-api-own:0.0.6 --format '{{.Manifest.Digest}}'` | 与 `:latest`、与本地镜像摘要一致 |
+| 3 | **仓库源头** | `cat VERSION`；`git tag --sort=-v:refname \| head -1` | `0.0.6`；`v0.0.6`（VERSION 不带 v，tag 带 v）|
+
+> 等价写法：第 1 行也可用 `curl -s <实例>/api/status | jq -r .data.version`，或直接看**面板页脚**的版本号；
+> 第 3 行也可用 `git tag | sort -V | tail -1`。
+
+判据：把三处版本号**去掉前缀 `v` 后**逐一比较，全部相等才算对齐。某处落后时的动作：
+
+- **第 1 处落后** → 容器还在跑旧镜像：按上节「升级 / 回滚」的三步重建。**重启不算升级。**
+- **第 2 处落后** → 镜像没发出去或没发完：查 `Publish Docker image (Multi-arch)` 的运行结果。
+- **第 3 处落后** → 源头没递增：先改 `VERSION` 并提交，再打 tag（见「发版流程」）。
+
+### 坑：本地 `:latest` 标签会陈旧
+
+`docker run …:latest` **不是**"取远端最新"，而是"用本地 `latest` 标签指的那份镜像；本地没有才去拉"。
+旧标签不会自动刷新，于是出现"升级了却还是旧版"（本机 2026-10-06 的 `latest` 就停在 `0.0.3`，当日才刷新；
+**换台机器同样会发生**）。两条命令自查：
+
+```bash
+docker images ghcr.io/zhemed/new-api-own --digests                                                   # 本地：能用到什么
+docker buildx imagetools inspect ghcr.io/zhemed/new-api-own:latest --format '{{.Manifest.Digest}}'  # 远端：最新是什么
+```
+
+两条摘要不一致 = 本地标签陈旧 → `docker pull ghcr.io/zhemed/new-api-own:latest` 后重建容器，或改用固定 tag。
+
+> ⚠️ **别用 `docker images | grep 0.0.5` 判断"本机有没有某个版本"**：不带仓库名会命中**别的项目**的同号 tag，
+> 而且 `grep` 里 `.` 是通配符（`0.0.5` 也会匹配 `…09035…` 这类无关行）。过滤一律带完整仓库名
+> `ghcr.io/zhemed/new-api-own`；要 grep 就写 `grep 'ghcr\.io/zhemed/new-api-own'`。
+
+镜像自带版本标签，**不启动容器**也能确认某份镜像的版本：
+
+```bash
+docker image inspect ghcr.io/zhemed/new-api-own:0.0.6 \
+  --format '{{index .Config.Labels "org.opencontainers.image.version"}}'    # → v0.0.6
+```
+
+## 面板内更新（self-update）
+
+> **先说定位**：面板内更新只用于**临时跟上版本**，**不是第二套部署方式**——唯一部署方式仍然是
+> `docker run` + 公开镜像（见上节「版本与升级」）。**长期升级/回滚请走镜像三步**。
+
+### 它是什么
+
+1. 面板 **系统设置 → 系统维护 → 检查更新** 显示**当前版本 / 最新版本 / 是否有更新**
+   （三态：有更新 / 已最新 / 无法确定，**不会把"查不到"说成"已最新"**）。
+   发起检查的是**服务端**（外呼更新源），**浏览器不直连外部 API**，请求不带任何凭据。
+2. 有新版本时，管理员点 **「立即更新」**：后端按**本机架构**取对应发布资产
+   （`new-api-linux-amd64` / `new-api-linux-arm64`）→ 下载到临时文件 →
+   用随发布提供的 `SHA256SUMS` 校验 → **只有校验通过才原子替换**（新文件 rename 到位）→
+   **原地重执行**进程（`exec` 不可用时退出进程，由 `--restart always` 拉起），面板随之重连。
+3. **安全不变量：校验失败绝不替换。** 摘要不符就丢弃临时文件并报错，正在运行的二进制保持不动。
+   其它护栏：只接受**比当前更新**的版本（不回退）、仅支持 `amd64`/`arm64`、同一时刻只允许一个更新任务、
+   下载体积有上限、请求不带任何凭据。
+
+> **前置条件**：自更新由**运行中的二进制自身**提供。面板里出现「立即更新」按钮，说明该构建内置更新器；
+> 没有这个按钮的旧构建**没有**该能力——请先按上节「升级 / 回滚」的镜像三步升级到含更新器的版本。
+> 另外，更新源上对应版本必须带 `new-api-linux-amd64` / `new-api-linux-arm64` 与 `SHA256SUMS` 三个资产
+> （由发布流水线产出）；缺资产时更新会明确报错，**不会**替换。
+
+### 代价（必须知道）
+
+- 容器内被替换的二进制**不在镜像里**：下一次 `docker rm` + `docker run`（换机器、重拉镜像、重建容器）
+  会**退回镜像内版本**——"升级当次看着成功、重建后又变回旧版"就是这么来的；
+- 因此它只适合**临时跟上版本**：要长期停在某个版本，仍然固定镜像 tag（见上节）；
+- 它**不碰数据目录**（`./data`），升级前后数据不受影响。
+
+### 开关与网络
+
+| 变量 | 默认 | 作用 |
+|---|---|---|
+| `UPDATE_CHECK_ENABLED` | `false`（**默认关闭**：未显式开启时服务端不发起任何外呼）| 打开"检查更新"（面板查询/自动检查）|
+| `UPDATE_APPLY_ENABLED` | `true`（**默认允许**，仅管理员可触发）| 设为 `false` 可**整体关闭**「立即更新」|
+| `UPDATE_CHECK_REPOSITORY` | 本仓库 | 更新源仓库（`owner/repo`），可换自建镜像源 |
+| `UPDATE_CHECK_API_BASE_URL` | `https://api.github.com` | 更新源 API 基址，**可指向镜像/自建代理**（受限网络用）|
+| `UPDATE_CHECK_PROXY_URL` | 空 | 可选代理出口；不设置时沿用 Go 默认（`HTTPS_PROXY` / `HTTP_PROXY` / `NO_PROXY`）|
+
+两个开关注册进了全局配置管理器，**在面板里改完即时生效、无需重启**（随时可关掉外呼/自更新）。
+
+大陆网络建议：给容器加 `-e HTTPS_PROXY=http://<代理>:<端口>`（或 `UPDATE_CHECK_PROXY_URL`），
+必要时把 `UPDATE_CHECK_API_BASE_URL` 指向可达的镜像/代理。检查与更新都发生在**服务端**，
+浏览器不需要能访问 GitHub。
+
+### 排障
+
+```bash
+# 1) 运行实例自报的版本（唯一真相）；更新成功后这里应当变化
+curl -s http://127.0.0.1:3000/api/status | grep -o '"version":"[^"]*"'
+
+# 2) 容器内二进制的摘要（与发布附带的 SHA256SUMS 对照；镜像内二进制路径为 /new-api）
+docker exec new-api sha256sum /new-api
+
+# 3) 回退：删掉容器用镜像重建，立即回到镜像内版本（数据在 ./data 不受影响）
+docker rm -f new-api
+docker run -d --name new-api --restart always --network host -v ./data:/data \
+  ghcr.io/zhemed/new-api-own:<版本>
+```
+
+- 更新后 `/api/status` 的 `version` **没变** → 多半是下载或校验失败（代理不通、更新源不可达、摘要不符）：
+  此时**二进制没有被替换**，实例仍按原版本运行；
+- 摘要不符**不是 bug**，是预期内的安全行为（绝不替换）；确认资产与 `SHA256SUMS` 同源后再重试；
+- 更新源不可达时面板显示"无法确定"，**不会谎报"有更新"**；网络修好后重试即可；
+- 三处版本比对（实例 / registry / 仓库）见上节「版本与升级（每次维护必做）」，本节不重复。
+
+### 与「版本与升级」的关系
+
+| 场景 | 走哪条路 |
+|---|---|
+| 让**长期运行**的实例稳定在新版本 | **镜像三步**（上节「升级 / 回滚」）|
+| 临时跟上版本、不想重建容器 | 面板「立即更新」（本节）——注意上面的代价 |
+| 更新后版本不对 / 想退回 | 先按本节「排障」确认状态，再按镜像三步回滚 |
 
 ## 部署安全基线（必读）
 
