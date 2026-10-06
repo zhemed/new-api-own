@@ -280,3 +280,39 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 等用户看效果；若要上生产需另行授权
+
+
+## Session 12: compose 清理与唯一部署方式（机械闸门）
+<!-- trellis-session: v=2 fp=e690e9589c44d4f6 -->
+
+**Date**: 2026-10-06
+**Task**: compose 清理与唯一部署方式（机械闸门）
+**Branch**: `main`
+
+### Summary
+
+查清 docker-compose.yml 两删三回：843f988 删过，被 770e26c/a29cd82/今日 rollback-to-0-0-3 三次回滚带回；当日已删文件并加三层闸门（pre-commit + scripts/forbid-extra-deploy-methods.sh + CI 步骤），规则源 .trellis/spec/guides/deployment-single-method.md 含 do-not-restore 清单与回滚核验要求；README(中英)/AGENTS/MAINTENANCE/BT.md/FILE_INVENTORY 同步为唯一部署方式；顺带修好因强推失效的审计起点，CI 恢复全绿。
+
+### Main Changes
+
+- 机械闸门双向实测：有 compose 时拦、无则放行；CI 步骤 success
+- 记录未处理项：new-api.service（systemd unit）是否也视为第二种部署方式待用户定夺
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b726ae9` | chore(task): archive 10-06-verify-deploy-and-login-limit |
+
+### Testing
+
+- [OK] [OK] CI trellis-gate 全绿（含新步骤）
+- [OK] [OK] 全仓库无“教 compose 部署”的内容残留
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 等用户定夺 new-api.service；演示实例仍在 3020 运行
