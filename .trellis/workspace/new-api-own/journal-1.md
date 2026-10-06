@@ -388,3 +388,39 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 无待办；演示实例仍运行在 3020（用户选择保留）
+
+
+## Session 15: 瘦身：部署只剩镜像，其余产物全清
+<!-- trellis-session: v=2 fp=451f6c5c5f671f2e -->
+
+**Date**: 2026-10-06
+**Task**: 瘦身：部署只剩镜像，其余产物全清
+**Branch**: `main`
+
+### Summary
+
+按用户定调“只要不影响部署，其他全部移除”：删除 electron/（桌面壳）、release.yml 与 electron-build.yml（二进制/桌面发布）、sync-release-to-gitcode.yml、docker-image-branch.yml；第二批删除 bin/ 历史迁移脚本、docs 历史文档（AUDIT_REPORT/translation-glossary/installation）与 ci.yml+pr-check.yml（PR 质量门禁）。保留 docker-build.yml（唯一交付）与 trellis-gate.yml（提交闸门），源码/测试/Dockerfile/env 文档不动；生产不受影响。
+
+### Main Changes
+
+- 引用同步：README、MAINTENANCE（含铁律 6 副作用说明）、FILE_INVENTORY、directory-structure、quality-guidelines、THIRD-PARTY-LICENSES
+- 核查：translation-glossary 无工具依赖；镜像流水线未改动
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `35da53c` | chore(task): archive 10-06-release-004-github-release |
+
+### Testing
+
+- [OK] [OK] 门禁两件套通过；剩余工作流 YAML 校验通过
+- [OK] [OK] CI（trellis-gate）通过
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 无；部署方式与交付面已收敛到一条路径
