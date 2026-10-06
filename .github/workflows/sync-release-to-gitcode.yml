@@ -5,10 +5,7 @@ permissions:
   contents: read
 
 on:
-  push:
-    tags:
-      - '*'
-      - '!*-alpha*'
+  # 仅手动触发：GitCode 同步按需执行（历史上推 tag 触发的运行全部是 skipped）。
   workflow_dispatch:
     inputs:
       tag_name:

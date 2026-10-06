@@ -3,15 +3,13 @@ permissions:
   contents: write
 
 on:
+  # 仅手动触发：推 tag 只应触发镜像构建（docker-build.yml）。
+  # 需要三平台产物时在 Actions 页面手动 Run workflow。
   workflow_dispatch:
     inputs:
       name:
         description: 'reason'
         required: false
-  push:
-    tags:
-      - '*'
-      - '!*-alpha*'
 
 jobs:
   linux:
