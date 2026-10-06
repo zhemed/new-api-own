@@ -179,9 +179,10 @@ LOG_SQL_DSN='sqlite:/dev/shm/newapi-logs.db?_pragma=journal_mode(WAL)&_pragma=sy
 
 | 环境变量 | 默认 | 说明 |
 |---|---|---|
-| `LOG_CLEANUP_INTERVAL` | `0`（关）；内存模式 `5m` | 清理周期（Go duration，如 `10m`、`1h`）|
-| `LOG_CLEANUP_RETENTION_DAYS` | `7` | 按时间删；`0` = 不按时间删，只按行数上限 |
-| `LOG_MEMORY_MAX_ROWS` | 内存模式 `200000`；否则 `0` | 总行数上限，超出即从最旧开始裁剪 |
+| `LOG_MEMORY_MAX_BYTES` | 未设=关 | **载荷字节预算**（写入触发，见下节）；支持 `200MB` / `512KB` / `209715200` |
+| `LOG_CLEANUP_INTERVAL` | `0`（关）；内存模式 `5m`；**配了字节预算时 `0`** | 清理周期（Go duration，如 `10m`、`1h`）；显式设置始终生效 |
+| `LOG_CLEANUP_RETENTION_DAYS` | `7` | 按时间删；`0` = 不按时间删；定时与写入触发两条路径都会执行 |
+| `LOG_MEMORY_MAX_ROWS` | 内存模式 `200000`；否则 `0` | 行数上限；**定时与写入触发两条路径共用同一上限**（`model.LogRowCap()`）|
 
 行为与注意事项：
 
@@ -192,6 +193,45 @@ LOG_SQL_DSN='sqlite:/dev/shm/newapi-logs.db?_pragma=journal_mode(WAL)&_pragma=sy
 - 清理任务走既有 system task 调度器，多主节点下由 DB 租约去重，不会重复执行；
 - `LOG_SQL_DSN` 只作用于日志库；`SQL_DSN=memory` 不成立（主库不得进内存）；
 - 消费日志带 `quota`（计费口径）：**依赖日志对账就别用内存模式**，改用 `sqlite:` 指到另一块盘。
+
+### 体积上限（写入触发）
+
+行数是"条数"，体积才是真正决定内存的数字：同样 20 万行，短日志几十 MB、长 prompt/响应能到 GB。
+`LOG_MEMORY_MAX_BYTES` 直接给**载荷字节**设预算（支持 `200MB` / `512KB` / 裸字节数 `209715200`，1024 进制）：
+
+- **写入触发**：每写成功一条日志累加一次（O(1)、不做 IO、不阻塞请求）；超预算就**异步、单飞**裁最老的记录，
+  直到回到预算内（`model/log_budget.go:172-182` `noteLogPayloadBytes`、`:198-221` `triggerLogPayloadTrim`）；
+- **不再依赖定时器**：配了字节预算，`LOG_CLEANUP_INTERVAL` 默认变 `0`（关闭）；**显式设置仍生效**
+  （`service/system_task.go:129-145` `logCleanupInterval`）；
+- 写入触发那一遍的**固定顺序**：**按天保留**（`LOG_CLEANUP_RETENTION_DAYS`，默认 7）→ **行数上限**
+  （`LOG_MEMORY_MAX_ROWS`）→ **按体积裁最老** → 重算计数（`model/log_budget.go:234-252` `trimLogsToPayloadBudget`，
+  保留在 `:257`、行数在 `:277-290`、体积在 `:293-327`）；
+- **行数上限与字节预算是同遍生效的次级约束**：上限策略只有**一处事实来源** `model.LogRowCap()`
+  （`model/log_budget.go:60-81`：显式值优先 → 内存模式默认 `200000` → 磁盘不设上限），
+  **定时清理与写入触发共用**（`service/system_task.go:151-155` 直接委托）——**关掉定时器不影响它**；
+- **表不会被清空**：单行就超预算时保留最新一行（`model/log_budget.go:303`，`rows <= 1` 即停）；
+- **没配字节预算 = 与以前完全一致**（内存模式 5 分钟 + 20 万行）：未配时写入路径直接返回
+  （`model/log_budget.go:172-177`）。
+
+**留余量**：预算是**载荷估算**（文本字段 `len` 之和 + 每行固定开销 128B），**不含** SQLite 页、索引、WAL
+与 Go 对象头（`model/log_budget.go:38`、`:101-104`）。所以别把"进程内存上限"直接当预算，
+**按目标占用的 70–80% 设**（想控制在 ~250MB 就写 `200MB`）。
+
+**什么时候还要用保留天数**：合规留存、按天对账、只想看最近 N 天——体积没到预算但时间太久的日志照样该消失。
+
+**怎么确认定时清理真的没在跑**：
+
+- 未显式设置 `LOG_CLEANUP_INTERVAL` 时，清理任务 `Enabled()` 直接为 false（`logCleanupInterval() == 0`），
+  调度器不会创建该任务 → `GET /api/system-task/list` 里不会周期性出现 log cleanup 记录；
+- 想手动跑一次：`POST /api/system-task/log-cleanup`（手动任务只带保留天数，不带行数上限——
+  行数上限与体积本来就是写入触发那一遍在管）；
+- 把 `LOG_CLEANUP_INTERVAL` 设回去（如 `10m`），定时任务恢复；它与写入触发共用同一套上限，不会互相冲突。
+
+**面板核对**：日志文件接口返回 `memory_log_bytes`（当前估算）/ `memory_log_max_bytes`（预算）/
+`memory_log_rows`（行数），与裁剪用的是同一个计数器与同一估算口径（`controller/performance.go:196-202`）。
+
+**不适用**：ClickHouse 日志库——`LOG_MEMORY_MAX_BYTES` 与 `LOG_MEMORY_MAX_ROWS` 都会被忽略并各打一次 WARN，
+改用保留天数（`model/log_budget.go:85-99`、`:60-81`）。
 
 ## 弱盘机器：减少 fsync（不改内存也能立竿见影）
 

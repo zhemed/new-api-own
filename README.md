@@ -105,6 +105,9 @@ curl -s http://127.0.0.1:3000/api/status | grep -o '"version":"[^"]*"'
 可选环境变量（按需追加 `-e`）：限流开关、缓存、日志承载方式等见 [`.env.example`](./.env.example)
 与 [MAINTENANCE.md](./MAINTENANCE.md)。
 
+> 想按**体积**控内存：加 `-e LOG_MEMORY_MAX_BYTES=200MB`——写入触发（不必等定时器）、超预算自动裁最老的记录；
+> 详见 [MAINTENANCE.md](./MAINTENANCE.md)「弱盘机器：把日志放到内存（或独立盘）」。
+
 ## 维护
 
 本项目由 [zhemed](https://github.com/zhemed) 维护，使用 [Trellis](https://github.com/mindfold-ai/trellis) 任务流程与 GitHub Actions 自动化发版。完整手册见 [MAINTENANCE.md](./MAINTENANCE.md)。
