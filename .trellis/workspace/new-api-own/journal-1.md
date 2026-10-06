@@ -352,3 +352,39 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 无（部署方式唯一化收口）；演示实例按用户选择继续运行在 3020
+
+
+## Session 14: 项目维护轮次：文档对齐 + 陈旧内容清理
+<!-- trellis-session: v=2 fp=51b16a66adf5a2a8 -->
+
+**Date**: 2026-10-06
+**Task**: 项目维护轮次：文档对齐 + 陈旧内容清理
+**Branch**: `main`
+
+### Summary
+
+维护轮次：① 查清上轮遗留的 4 个含 compose 字样路径（皆为归档任务记录，非部署产物）；② 发布流程文档对齐 CI 实际触发面（README/MAINTENANCE：tag 只跑镜像构建，Release/Electron/GitCode 需手动且 Release 必须在 tag ref 上跑）；③ .env.example 补齐日志承载与清理变量（memory/sqlite 形态、LOG_CLEANUP_*、LOG_MEMORY_MAX_ROWS、WAL 提示）；④ .gitignore 覆盖本地实例目录；⑤ guides 索引登记新规则；⑥ 归档 9 月遗留任务并写明未勾选项的取代原因。门禁与 vet/build 全绿，CI 通过。
+
+### Main Changes
+
+- 删除：无（本轮以更新为主；compose/systemd 已于前一轮删除）
+- 更新：README.md、README.en.md 关联、MAINTENANCE.md 发版流程、.env.example、.gitignore、spec/guides/index.md、两个任务记录
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b39314f` | chore(task): archive 09-18-maintenance-0.0.3 |
+
+### Testing
+
+- [OK] [OK] scripts 三件套（部署方式/encoding-json/trellis-gate）全绿
+- [OK] [OK] go vet / go build exit=0；CI trellis-gate 通过
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 无待办；演示实例仍运行在 3020（用户选择保留）

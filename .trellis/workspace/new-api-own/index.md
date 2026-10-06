@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 13
+- **Total Sessions**: 14
 - **Last Active**: 2026-10-06
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~354 | Active |
+| `journal-1.md` | ~390 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 14 | 2026-10-06 | 项目维护轮次：文档对齐 + 陈旧内容清理 | `b39314f` | `main` |
 | 13 | 2026-10-06 | systemd unit 删除：部署方式唯一化收口 | `ad0713d` | `main` |
 | 12 | 2026-10-06 | compose 清理与唯一部署方式（机械闸门） | `b726ae9` | `main` |
 | 11 | 2026-10-06 | 弱盘日志：提交发版 0.0.4 + 本机演示实例 | `7f9a50b` | `main` |
