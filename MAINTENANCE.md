@@ -141,6 +141,59 @@ SQLITE_PATH=/tmp/own.db SESSION_SECRET=<随机串> PORT=3020 /tmp/new-api-own-bi
 自定义功能相关环境变量：
 - `LOGIN_SESSION_NEVER_EXPIRES=true` — Dashboard 会话永不过期（会话 `expires_at=0` 为哨兵值）
 
+## 弱盘机器：把日志放到内存（或独立盘）
+
+用途：硬盘慢/寿命敏感时，把**用量日志**（面板里那张 logs 表）从数据盘挪走。
+**业务数据（账号/token/渠道/任务）永远留在主库，绝不进内存。**
+
+`LOG_SQL_DSN` 除原有取值（空=跟随主库 / `local` / MySQL / PostgreSQL / ClickHouse）外，新增两种**日志专用**形态：
+
+| 取值 | 含义 | 重启后 |
+|---|---|---|
+| `memory`（或 `:memory:`）| 日志放进**内存库**（`file::memory:?cache=shared`）| 日志清空；主库不受影响 |
+| `sqlite:<路径>[?参数]` | 日志写**独立 SQLite 文件**（可指向 tmpfs/另一块盘）| 文件在哪就在哪 |
+
+例：
+
+```bash
+# 完全进内存（单实例、日志只用于排障）
+LOG_SQL_DSN=memory
+
+# 独立文件 + WAL（放在内存盘上，等同内存但保留文件语义）
+LOG_SQL_DSN='sqlite:/dev/shm/newapi-logs.db?_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)'
+```
+
+配套自动裁剪（内存模式下**默认开启**，见下），否则内存会随日志无限增长：
+
+| 环境变量 | 默认 | 说明 |
+|---|---|---|
+| `LOG_CLEANUP_INTERVAL` | `0`（关）；内存模式 `5m` | 清理周期（Go duration，如 `10m`、`1h`）|
+| `LOG_CLEANUP_RETENTION_DAYS` | `7` | 按时间删；`0` = 不按时间删，只按行数上限 |
+| `LOG_MEMORY_MAX_ROWS` | 内存模式 `200000`；否则 `0` | 总行数上限，超出即从最旧开始裁剪 |
+
+行为与注意事项：
+
+- 内存模式下启动会打两条 WARN（日志重启即失 + 是否设了行数上限），`LOG_MEMORY_MAX_ROWS=0`
+  时额外提醒有 OOM 风险；
+- 内存库**必须钉住一条连接**才不会被回收：`InitLogDB` 在内存模式下强制
+  `MaxOpenConns=1 / MaxIdleConns=1 / ConnMaxLifetime=0`（默认的 60 秒生命周期会让日志表在运行中消失）；
+- 清理任务走既有 system task 调度器，多主节点下由 DB 租约去重，不会重复执行；
+- `LOG_SQL_DSN` 只作用于日志库；`SQL_DSN=memory` 不成立（主库不得进内存）；
+- 消费日志带 `quota`（计费口径）：**依赖日志对账就别用内存模式**，改用 `sqlite:` 指到另一块盘。
+
+## 弱盘机器：减少 fsync（不改内存也能立竿见影）
+
+用量日志是**每行一次事务**，SQLite 默认 `journal_mode=delete` + `synchronous=FULL`，
+即每次写日志都 fsync。实测（本机探针）：
+
+| `SQLITE_PATH` 形态 | journal_mode | synchronous |
+|---|---|---|
+| 默认 `one-api.db?_busy_timeout=30000` | delete | 2 (FULL) |
+| 追加 `&_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)` | wal | 1 (NORMAL) |
+
+另注：默认 DSN 里的 `_busy_timeout=30000` **不生效**（读回 5000=驱动默认），
+要写 `_pragma=busy_timeout(30000)` 才生效。
+
 ## 自定义功能线（与上游不同之处）
 
 自 2026-08 起 zhemed 自维护，主要工作：

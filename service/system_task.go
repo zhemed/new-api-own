@@ -25,6 +25,19 @@ const (
 	// pass runs, independent of how often the runner wakes to claim tasks.
 	systemTaskSchedulerInterval = 15 * time.Second
 	systemTaskStaleLockInterval = 30 * time.Second
+
+	logCleanupIntervalEnv      = "LOG_CLEANUP_INTERVAL"
+	logCleanupRetentionDaysEnv = "LOG_CLEANUP_RETENTION_DAYS"
+	logCleanupMaxRowsEnv       = "LOG_MEMORY_MAX_ROWS"
+	secondsPerDay              = 86400
+
+	// defaultLogCleanupRetentionDays applies once scheduled cleanup is on.
+	defaultLogCleanupRetentionDays = 7
+	// defaultLogCleanupMemoryInterval keeps an in-memory log table close to the
+	// configured cap without waiting for a full retention window.
+	defaultLogCleanupMemoryInterval = 5 * time.Minute
+	// defaultLogCleanupMemoryMaxRows bounds RAM when logs live in memory.
+	defaultLogCleanupMemoryMaxRows = 200000
 )
 
 // SystemTaskHandler executes a claimed task of a specific type. Run owns the
@@ -73,8 +86,10 @@ func registeredSystemTaskHandlers() []SystemTaskHandler {
 	return handlers
 }
 
-// logCleanupHandler wraps the existing on-demand log cleanup task as a
-// registered (non-scheduled) handler. It is created via StartLogCleanupTask.
+// logCleanupHandler wraps the log cleanup task. It serves the on-demand entry
+// point (StartLogCleanupTask) and, when LOG_CLEANUP_INTERVAL is set or the log
+// database is in memory, also runs on the system task scheduler so an
+// in-memory log database cannot grow without bound.
 type logCleanupHandler struct{}
 
 func (logCleanupHandler) Type() string { return model.SystemTaskTypeLogCleanup }
@@ -83,13 +98,86 @@ func (logCleanupHandler) Run(ctx context.Context, task *model.SystemTask, runner
 	runLogCleanupTask(ctx, task, runnerID)
 }
 
+func (logCleanupHandler) Enabled() bool {
+	warnLogRetentionRisks()
+	return logCleanupInterval() > 0
+}
+
+func (logCleanupHandler) Interval() time.Duration { return logCleanupInterval() }
+
+// NewPayload derives a scheduled run's retention cutoff and row cap. A zero
+// retention means "do not delete by age": the cutoff stays at 1 so the run only
+// enforces the row cap.
+func (logCleanupHandler) NewPayload() any {
+	payload := LogCleanupPayload{
+		TargetTimestamp: 1,
+		BatchSize:       logCleanupBatchSize,
+		MaxRows:         logCleanupMaxRows(),
+	}
+	if retentionDays := common.GetEnvOrDefault(logCleanupRetentionDaysEnv, defaultLogCleanupRetentionDays); retentionDays > 0 {
+		payload.TargetTimestamp = common.GetTimestamp() - int64(retentionDays)*secondsPerDay
+	}
+	return payload
+}
+
 func init() {
 	RegisterSystemTaskHandler(logCleanupHandler{})
+}
+
+// logCleanupInterval returns how often the scheduled cleanup runs. It is opt-in
+// on disk (LOG_CLEANUP_INTERVAL, default off) and defaults to a short cadence
+// for an in-memory log database, where unbounded growth costs RAM.
+func logCleanupInterval() time.Duration {
+	if interval := common.GetEnvOrDefaultDuration(logCleanupIntervalEnv, 0); interval > 0 {
+		return interval
+	}
+	if model.UsingInMemoryLogDatabase() {
+		return defaultLogCleanupMemoryInterval
+	}
+	return 0
+}
+
+// logCleanupMaxRows returns the row cap enforced by each cleanup run: the
+// explicit LOG_MEMORY_MAX_ROWS value wins, otherwise an in-memory log database
+// falls back to a bounded default and on-disk logs stay uncapped.
+func logCleanupMaxRows() int64 {
+	if configured := common.GetEnvOrDefault(logCleanupMaxRowsEnv, 0); configured > 0 {
+		return int64(configured)
+	}
+	if model.UsingInMemoryLogDatabase() {
+		return defaultLogCleanupMemoryMaxRows
+	}
+	return 0
+}
+
+var logRetentionWarnOnce sync.Once
+
+// warnLogRetentionRisks surfaces the in-memory log trade-offs once per process:
+// volatile logs are a deliberate choice, but an uncapped in-memory table is an
+// OOM waiting to happen.
+func warnLogRetentionRisks() {
+	logRetentionWarnOnce.Do(func() {
+		if !model.UsingInMemoryLogDatabase() {
+			return
+		}
+		if cap := logCleanupMaxRows(); cap > 0 {
+			logger.LogWarn(context.Background(), fmt.Sprintf(
+				"usage logs are held in RAM (LOG_SQL_DSN=memory): they are lost on restart; keeping at most %d rows, cleaned every %s",
+				cap, logCleanupInterval()))
+			return
+		}
+		logger.LogWarn(context.Background(), fmt.Sprintf(
+			"usage logs are held in RAM (LOG_SQL_DSN=memory) with no row cap (%s=0): RAM usage is unbounded and logs are lost on restart",
+			logCleanupMaxRowsEnv))
+	})
 }
 
 type LogCleanupPayload struct {
 	TargetTimestamp int64 `json:"target_timestamp"`
 	BatchSize       int   `json:"batch_size"`
+	// MaxRows caps the total number of rows kept; 0 leaves the cap off. Only the
+	// scheduled run sets it.
+	MaxRows int64 `json:"max_rows,omitempty"`
 }
 
 type LogCleanupState struct {
@@ -101,6 +189,9 @@ type LogCleanupState struct {
 
 type LogCleanupResult struct {
 	DeletedCount int64 `json:"deleted_count"`
+	// TrimmedCount counts rows removed only to stay under the row cap, so a
+	// scheduled run's effect on an in-memory log database stays auditable.
+	TrimmedCount int64 `json:"trimmed_count,omitempty"`
 }
 
 var (
@@ -409,6 +500,12 @@ func runLogCleanupTask(ctx context.Context, task *model.SystemTask, runnerID str
 		}
 	}
 
+	trimmed, err := trimLogsToMaxRows(ctx, task, runnerID, &state, payload)
+	if err != nil {
+		failSystemTask(task, runnerID, err)
+		return
+	}
+
 	state.Remaining = 0
 	state.Progress = 100
 	if state.Total < state.Processed {
@@ -419,9 +516,38 @@ func runLogCleanupTask(ctx context.Context, task *model.SystemTask, runnerID str
 		return
 	}
 
-	result := LogCleanupResult{DeletedCount: state.Processed}
+	result := LogCleanupResult{DeletedCount: state.Processed, TrimmedCount: trimmed}
 	if err := model.FinishSystemTask(task.TaskID, runnerID, model.SystemTaskStatusSucceeded, result, ""); err != nil {
 		logSystemTaskLockError(ctx, task, err)
+	}
+}
+
+// trimLogsToMaxRows removes the oldest rows while more than payload.MaxRows
+// remain. It is deliberately separate from the age-based loop above: deleting
+// nothing because the table is under the cap is a normal outcome, not a stall.
+func trimLogsToMaxRows(ctx context.Context, task *model.SystemTask, runnerID string, state *LogCleanupState, payload LogCleanupPayload) (int64, error) {
+	if payload.MaxRows <= 0 {
+		return 0, nil
+	}
+
+	var trimmed int64
+	for {
+		rowsAffected, err := model.TrimLogToMaxRows(ctx, payload.MaxRows, payload.BatchSize)
+		if err != nil {
+			return trimmed, err
+		}
+		if rowsAffected == 0 {
+			return trimmed, nil
+		}
+		trimmed += rowsAffected
+		state.Processed += rowsAffected
+		if state.Total < state.Processed {
+			state.Total = state.Processed
+		}
+		if err := model.UpdateSystemTaskState(task.TaskID, runnerID, *state); err != nil {
+			logSystemTaskLockError(ctx, task, err)
+			return trimmed, err
+		}
 	}
 }
 

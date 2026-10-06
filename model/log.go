@@ -735,3 +735,40 @@ func DeleteOldLogBatch(ctx context.Context, targetTimestamp int64, limit int) (i
 	}
 	return result.RowsAffected, nil
 }
+
+// TrimLogToMaxRows deletes the oldest log rows so that at most maxRows remain,
+// one batch per call. It exists to bound the RAM used by an in-memory log
+// database; retention by time alone cannot cap memory when traffic is bursty.
+// The returned count lets the caller loop until it reaches zero.
+func TrimLogToMaxRows(ctx context.Context, maxRows int64, limit int) (int64, error) {
+	if maxRows <= 0 {
+		return 0, nil
+	}
+	if limit <= 0 {
+		limit = 100
+	}
+	if err := ctx.Err(); err != nil {
+		return 0, err
+	}
+
+	// The id of the newest row to keep: rows older than it are the excess.
+	var cutoff Log
+	err := LOG_DB.WithContext(ctx).Model(&Log{}).
+		Select("id").
+		Order("id desc").
+		Offset(int(maxRows) - 1).
+		Limit(1).
+		Take(&cutoff).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return 0, nil // fewer rows than the cap
+		}
+		return 0, err
+	}
+
+	result := LOG_DB.WithContext(ctx).Where("id < ?", cutoff.Id).Limit(limit).Delete(&Log{})
+	if result.Error != nil {
+		return 0, result.Error
+	}
+	return result.RowsAffected, nil
+}

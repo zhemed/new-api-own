@@ -111,6 +111,46 @@ func isClickHouseDSN(dsn string) bool {
 		strings.HasPrefix(dsn, "https://")
 }
 
+// logSQLiteTarget is the SQLite target requested by a log-only LOG_SQL_DSN form.
+type logSQLiteTarget struct {
+	DSN      string
+	IsSQLite bool
+	// InMemory databases exist only while at least one pooled connection is
+	// open, so the pool must pin a connection and never expire it.
+	InMemory bool
+}
+
+// resolveLogSQLiteTarget recognises the log-database-only DSN forms that keep
+// usage logs off the data disk:
+//
+//	memory / :memory:   in-memory shared-cache database (volatile)
+//	sqlite:<path>       a dedicated SQLite file, e.g. on tmpfs or another disk
+//
+// Anything else (including the existing "local" token) is left to the caller so
+// the pre-existing DSN handling stays untouched. These forms are deliberately
+// unavailable for SQL_DSN: business data must never live in memory.
+func resolveLogSQLiteTarget(dsn string) logSQLiteTarget {
+	trimmed := strings.TrimSpace(dsn)
+	switch {
+	case trimmed == "memory", trimmed == ":memory:", strings.HasPrefix(trimmed, ":memory:?"):
+		return logSQLiteTarget{DSN: "file::memory:?cache=shared", IsSQLite: true, InMemory: true}
+	case strings.HasPrefix(trimmed, "sqlite:"):
+		path := strings.TrimSpace(strings.TrimPrefix(trimmed, "sqlite:"))
+		if path == "" {
+			return logSQLiteTarget{}
+		}
+		return logSQLiteTarget{DSN: path, IsSQLite: true}
+	}
+	return logSQLiteTarget{}
+}
+
+// UsingInMemoryLogDatabase reports whether usage logs live in a volatile
+// in-memory SQLite database (LOG_SQL_DSN=memory), which callers use to decide
+// that logs need a row cap instead of time-based retention alone.
+func UsingInMemoryLogDatabase() bool {
+	return resolveLogSQLiteTarget(os.Getenv("LOG_SQL_DSN")).InMemory
+}
+
 func normalizeClickHouseDSN(dsn string) string {
 	parsed, err := url.Parse(dsn)
 	if err != nil || parsed.Scheme != "https" {
@@ -127,6 +167,17 @@ func normalizeClickHouseDSN(dsn string) string {
 func chooseDB(envName string, isLog bool) (*gorm.DB, common.DatabaseType, error) {
 	dsn := os.Getenv(envName)
 	if dsn != "" {
+		if isLog {
+			if target := resolveLogSQLiteTarget(dsn); target.IsSQLite {
+				if target.InMemory {
+					common.SysLog("using in-memory SQLite as log database (usage logs are lost on restart)")
+				} else {
+					common.SysLog("using a dedicated SQLite file as log database: " + target.DSN)
+				}
+				db, err := gorm.Open(sqlite.Open(target.DSN), newGormConfig(true))
+				return db, common.DatabaseTypeSQLite, err
+			}
+		}
 		if isClickHouseDSN(dsn) {
 			if !isLog {
 				return nil, "", fmt.Errorf("%s does not support ClickHouse; use SQLite, MySQL, or PostgreSQL for the primary database and LOG_SQL_DSN for ClickHouse logs", envName)
@@ -237,6 +288,17 @@ func InitLogDB() (err error) {
 		sqlDB.SetMaxIdleConns(common.GetEnvOrDefault("SQL_MAX_IDLE_CONNS", 100))
 		sqlDB.SetMaxOpenConns(common.GetEnvOrDefault("SQL_MAX_OPEN_CONNS", 1000))
 		sqlDB.SetConnMaxLifetime(time.Second * time.Duration(common.GetEnvOrDefault("SQL_MAX_LIFETIME", 60)))
+
+		// An in-memory SQLite database lives exactly as long as one pooled
+		// connection stays open. With the defaults above every connection is
+		// recycled within SQL_MAX_LIFETIME (60s by default), which would drop
+		// the log schema mid-run, so pin one connection and never expire it.
+		if target := resolveLogSQLiteTarget(os.Getenv("LOG_SQL_DSN")); target.InMemory {
+			sqlDB.SetMaxOpenConns(1)
+			sqlDB.SetMaxIdleConns(1)
+			sqlDB.SetConnMaxLifetime(0)
+			common.SysLog("log database runs in memory: pinning a single connection so the log schema survives; keep a row cap or automatic cleanup enabled to bound RAM usage")
+		}
 
 		if !common.IsMasterNode {
 			return nil
