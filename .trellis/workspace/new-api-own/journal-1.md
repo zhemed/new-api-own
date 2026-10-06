@@ -568,3 +568,38 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 3 个 api-key 表格测试失败与 3 个既有问题仍留待产品决定；3020 演示实例真实页面未验证（未获授权）
+
+
+## Session 20: 团队处理开放项：前端恢复功能+补齐 5 个缺键，后端堵住 sora 计费上界绕过
+<!-- trellis-session: v=2 fp=beed8a2ae0a9cb38 -->
+
+**Date**: 2026-10-06
+**Task**: 团队处理开放项：前端恢复功能+补齐 5 个缺键，后端堵住 sora 计费上界绕过
+**Branch**: `main`
+
+### Summary
+
+两条线并行处理剩余开放项。前端：3 个失败测试判定为'临时禁用应恢复'→取消注释恢复功能（未放宽断言），bun test 由 151/3 变 154/0；knip 8→0（删 7 真死码 + 1 项写明理由）；14 个 ui/** 保留（ui/chart.tsx 是 recharts 唯一消费者）；追加把 static-keys 接进校验链路，当场抓出 5 个七语言全缺的用户可见键（用户看到字面量 {{count}} model(s)）并按规范补齐，登记表清掉 27 行废弃/重复。后端：multipart 补 model 校验（附可达性论证）；DTO 非指针标量经影响面清点后判定不改（从不 marshal，omitempty 是死规则）；新发现并修掉 sora 时长上界绕过（入口+适配器双层，含自我纠错：第一版会放过负 duration）；handler 校验与敏感词拦截的 500 改 400；count_token_failed/is_channel_failed 两处刻意不改并留痕。
+
+### Main Changes
+
+- Lead 终验：Go 39 包 ok；前端 typecheck/lint/test(154/0)/build/knip/i18n:check/format:check 全 0；门禁三件套通过；CI 通过；分两次提交（759261b 前端 / 7e017cd 后端）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `90a4f19` | chore(task): archive 10-06-team-close-open-items |
+
+### Testing
+
+- [OK] [OK] bun test 154 pass / 0 fail（基线 151/3）
+- [OK] [OK] make test exit=0（39 包 ok）、knip/knin exit=0 无输出、i18n:check exit=0
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 剩余未验证：3020 演示实例仍是旧构建，真机页面验证需重启实例（未获授权，已询问用户）
