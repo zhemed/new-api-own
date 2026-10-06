@@ -50,7 +50,6 @@ The root module embeds the built frontend (`web/dist`), so a root build needs
 ├── logger/                  # logging facade + log rotation
 ├── pkg/                     # self-contained internal packages (billingexpr/, cachex/, ionet/, ...)
 ├── web/                     # React 19 frontend (Bun + Rsbuild); see web/AGENTS.md
-└── electron/                # desktop wrapper
 ```
 
 `dto/` (root) holds task/callback payloads; `relaykit/dto/` holds the

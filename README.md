@@ -68,12 +68,5 @@ git push origin main v0.0.3
 推 tag **只自动触发镜像构建**：向 `ghcr.io/zhemed/new-api-own` 发布 `v<版本>`、`<版本>` 与 `:latest`
 （多架构清单 + cosign 签名）。
 
-**Linux 二进制 / Electron(仅 Linux) / GitCode 同步已改为手动触发**（本项目只维护 Linux；避免每次发版扇出多个工作流）：
-
-```bash
-# Release（Linux amd64/arm64 + checksums；必须在 tag ref 上运行，否则上传步骤会被 if: refs/tags/ 跳过）
-gh workflow run release.yml --ref v0.0.4
-# Electron（仅 Linux：AppImage + deb）/ GitCode 同步同理，按需手动运行
-gh workflow run electron-build.yml --ref v0.0.4
-gh workflow run sync-release-to-gitcode.yml -f tag_name=v0.0.4
-```
+**交付只有镜像这一条路径**：推 tag 触发 `Publish Docker image (Multi-arch)`，产出
+`v<版本>` / `<版本>` / `:latest`。二进制 Release、Electron 桌面壳、GitCode 同步均已移除。

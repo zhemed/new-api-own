@@ -11,7 +11,7 @@
 | **构建部署** | `Dockerfile/.dev, install-docker.sh, scripts/forbid-extra-deploy-methods.sh, makefile, go.mod/sum, VERSION` | 9 | 29.7.2 标准 + 构建注入；部署方式唯一（禁止 compose，见 `.trellis/spec/guides/deployment-single-method.md`）| **保留** |
 | **文档配置** | `README*, AGENTS.md, CLAUDE.md, MAINTENANCE.md, LICENSE/NOTICE/THIRD-PARTY, .git*, .dockerignore, .env.example` | 13 | 项目规范与合规 | **保留**（受保护标识） |
 | **AI 协作** | `.agents/skills/{i18n-translate,shadcn-ui,vercel-react-best-practices}` | 14 | Agent 能力 | **保留**（已跟踪） |
-| **遗留兼容** | `bin/migration_*.sql(2)+time_test.sh`, `electron(12)`, `docs/translation-glossary.*`, `docs/AUDIT_REPORT.md` | ~20 | 历史迁移/桌面壳/词表/本次审计 | **保留或归档** |
+| **遗留兼容** | `bin/migration_*.sql(2)+time_test.sh`, `docs/translation-glossary.*`, `docs/AUDIT_REPORT.md` | ~8 | 历史迁移/词表/本次审计（`electron/` 已于 2026-10-06 移除）| **保留或归档** |
 
 ## 2. 关键疑问解答
 
@@ -23,7 +23,7 @@
 
 **`bin/` 那俩 `.sql` 能删吗？** 建议不动或移 `bin/archive/` 并注释。`git log --follow -- bin/` 显示历史迁移，留作可追溯，体积 <1K。
 
-**`electron/` 12 文件必须吗？** 可选。若不发桌面版，可标记 `optional` 并保持 `electron/dist` 忽略；删则影响 `electron/build.sh`（本项目只维护 Linux 桌面产物：AppImage + deb，`release.yml` 已不含桌面产物）。
+**`electron/` 呢？** 已于 2026-10-06 整体移除：交付只有镜像（`docker run` + 公开镜像），桌面壳与二进制 Release 均不在维护范围。
 
 **`docs/translation-glossary.fr/ru` 等有用吗？** 有用——i18n 术语基线，`web/src/i18n/locales/{7}.json` 依赖；未引用时可归档非删除。
 
@@ -39,7 +39,7 @@
 ## 4. 建议
 
 1. **不动**：核心/前端/构建/文档/AI 协作 5 类
-2. **可选归档**：`bin/migration_*.sql → bin/archive/` + README 注记；`electron` 若不发布桌面版则文档标注 `optional`
+2. **可选归档**：`bin/migration_*.sql → bin/archive/` + README 注记
 3. **后续**：`bun run knip` 跑一次复核 `web` 未用导出，`GOWORK=off go vet` 查 Go 死码，仅打 `// Deprecated` 不直接删
 
 > 结论：1986 文件均为有用或兼容保留，**无需精简**；如觉 GitHub 列表视觉冗余，仅因 `web` 与 `relay` 天然文件多，可通过 GitHub 折叠或本地 `ls` 过滤查看。

@@ -69,7 +69,7 @@ CI 需要的一次性仓库设置（仓库所有者操作）：
 
 - 允许 Actions 运行；本仓库工作流自带 `permissions:`（Release 需要 `contents: write`，镜像发布需要 `packages: write`）
 - GHCR 包 `new-api-own` 需与本仓库关联，或配置 `GHCR_TOKEN` secret（带 `write:packages`），否则 tag 构建推送镜像会 403；v0.0.2 已用内置 `GITHUB_TOKEN` 推送成功，说明当前关联有效
-- 可选：设置仓库变量 `GITCODE_REPOSITORY` 后，`Sync Release to GitCode` 工作流才会把每次 Release 同步到 GitCode（未设置时该工作流整体 skip）
+- 无需 GitCode 同步相关配置（该工作流已移除）
 
 发版流程与提交闸门见本文后续小节。
 
@@ -344,13 +344,9 @@ x-opencode-session and cannot be routed efficiently
    - `Publish Docker image (Multi-arch)` → 构建并推送 `ghcr.io/zhemed/new-api-own:v0.0.3`、
      `ghcr.io/zhemed/new-api-own:0.0.3`（去掉 `v` 的等值别名）与 `:latest`，多架构清单 + cosign 签名
 
-   下面三个工作流 `on:` 只保留 `workflow_dispatch`，**要手动 Run workflow**：
-
-   - `Release (Linux)` → **只出 Linux**（amd64/arm64 静态二进制 + checksums）；macOS/Windows job 已删除
-     （本项目只维护 Linux）。**必须在 tag ref 上运行**：`gh workflow run release.yml --ref v0.0.4`，
-     否则上传步骤因 `if: startsWith(github.ref, 'refs/tags/')` 被跳过
-   - `Build Electron App (Linux)` → 仅 Linux 安装包（AppImage + deb）
-   - `Sync Release to GitCode` → 同步到 GitCode（还需仓库变量 `GITCODE_REPOSITORY`；未设置时整体 skip）
+   **交付只有镜像这一条路径**：二进制 Release（`release.yml`）、Electron 桌面壳（`electron-build.yml`）、
+   GitCode 同步（`sync-release-to-gitcode.yml`）与手动分支镜像（`docker-image-branch.yml`）
+   均已移除（2026-10-06 用户定调：部署就是 `docker run` + 公开镜像，其余产物一律不要）。
 
 4. 校验：
 
@@ -360,7 +356,7 @@ x-opencode-session and cannot be routed efficiently
    ```
 
 5. 镜像内的版本号来自构建时的 tag：`Dockerfile` 把 `VERSION` 注入 Go ldflags（`common.Version`）与前端 `VITE_REACT_APP_VERSION`，而 CI 会用 tag 覆写 `VERSION` 文件内容，所以**必须走 tag 发版**；只改文件不推 tag 不会产生 Release，镜像里也会停在旧值。
-6. 版本注入的 `-ldflags -X` 必须写**完整模块路径** `github.com/QuantumNous/new-api/common.Version`；写成简写（`new-api/common.Version`）会被 Go 静默忽略，二进制版本停在内置默认值 `v0.0.0`（2026-09-18 修复 `release.yml` / `electron-build.yml`）。
+6. 版本注入的 `-ldflags -X` 必须写**完整模块路径** `github.com/QuantumNous/new-api/common.Version`；写成简写（`new-api/common.Version`）会被 Go 静默忽略，镜像内版本会停在内置默认值 `v0.0.0`（`Dockerfile` 用的是完整路径，勿改）。
 
 > 约定：`VERSION` 文件不带 `v`，tag 带 `v`，两者版本号一致；镜像同时提供 `v0.0.3` 与 `0.0.3` 两种拉取标签，指向同一份多架构清单。
 
