@@ -1021,3 +1021,37 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 若需反复批量新建同类渠道，再做方案 C
+
+
+## Session 33: README 部署命令改为当前日志内存模式（与实例逐项一致）
+<!-- trellis-session: v=2 fp=5e7360c45e106bd3 -->
+
+**Date**: 2026-10-07
+**Task**: README 部署命令改为当前日志内存模式（与实例逐项一致）
+**Branch**: `main`
+
+### Summary
+
+用户澄清诉求：不改 CI，只把 README 的首选部署命令替换成实例正在用的内存日志参数。已在 README.md 部署命令中补上 -e LOG_SQL_DSN=memory / LOG_MEMORY_MAX_BYTES=200MB / LOG_MEMORY_MAX_ROWS=200000 / LOG_CLEANUP_RETENTION_DAYS=7，并加一条说明（内存日志、200MB 上限、7 天、写入触发裁剪、无定时清理、重启即丢、去掉 LOG_SQL_DSN 即回落盘）。校验：文档侧与 docker inspect 实例侧环境变量逐项完全一致。按要求未动 CI、未动 README.en.md / MAINTENANCE.md 中的升级与回滚命令、未动代码。
+
+### Main Changes
+
+- 已向用户指出后续风险：升级/回滚命令里没有这四条环境变量，照那些命令重建容器会退回落盘模式（需用户点头再同步）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4a89762` | docs(readme): 部署命令改为当前的日志内存模式（LOG_SQL_DSN=memory 等四条） [task:default-build-on-github] |
+
+### Testing
+
+- [OK] [OK] 文档 vs 实例：四条 LOG_* 环境变量完全一致；提交推送 4a89762，工作树干净
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 如需同步 README.en.md 与 MAINTENANCE.md 的升级/回滚命令（避免升级时丢掉内存模式），需用户授权
