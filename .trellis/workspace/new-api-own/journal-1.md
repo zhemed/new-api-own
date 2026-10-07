@@ -987,3 +987,37 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 如需让“无默认值”的透传占位符在渠道测试中也有提示，可在测试结果里加说明（需用户点头）
+
+
+## Session 32: 评估：能否把 opencode 头做进源码（结论：用现成模板+复制，不改码）
+<!-- trellis-session: v=2 fp=3ce1457d469896fd -->
+
+**Date**: 2026-10-07
+**Task**: 评估：能否把 opencode 头做进源码（结论：用现成模板+复制，不改码）
+**Branch**: `main`
+
+### Summary
+
+只读评估四条路线：A 按渠道类型硬编码（否决——类型 60=ChannelTypeNewAPI 是通用类型，会污染所有同类渠道）；B 新增 opencode 专用类型+adaptor（隔离干净但厂商耦合、工作量中等）；C 通用「新建渠道默认 header_override」设置（后端 AddChannel 一处+设置+面板一项+测试，零厂商耦合，推荐用于反复批量新建）；D 用现成能力（面板内置 x-opencode-session 模板一键插入 + POST /api/channel/copy/:id 复制渠道，零改动）。关键发现：面板早有该头的内置模板，日常无需手打；此前问题只是没保存。用户决定先不动代码，日常走 D。
+
+### Main Changes
+
+- 否决按类型硬编码；记录创建渠道默认头覆盖的钩子点（controller/channel.go:612 AddChannel）供日后选用
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `56af210` | docs(task): 评估 opencode 头能否做进源码（附四条路线对比）[task:eval-opencode-header-default] |
+
+### Testing
+
+- [OK] [OK] 事实核对：constant/channel.go:60 类型 60=ChannelTypeNewAPI；param-override-editor-dialog.tsx:363/379 内置模板；router/channel-router.go:73 复制接口
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 若需反复批量新建同类渠道，再做方案 C

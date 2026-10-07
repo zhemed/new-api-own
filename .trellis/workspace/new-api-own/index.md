@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 31
+- **Total Sessions**: 32
 - **Last Active**: 2026-10-07
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~989 | Active |
+| `journal-1.md` | ~1023 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 32 | 2026-10-07 | 评估：能否把 opencode 头做进源码（结论：用现成模板+复制，不改码） | `56af210` | `main` |
 | 31 | 2026-10-07 | 保存 opencode 渠道请求头覆盖并验证测试通过（含一条自我更正） | `5058c8b` | `main` |
 | 30 | 2026-10-07 | 排查 opencode 渠道 400：请求头覆盖写法正确但未保存 | `34a77df` | `main` |
 | 29 | 2026-10-07 | 讨论：0.0.3 数据能否直接用 0.0.9 还原（结论：可以） | `379d98f` | `main` |
