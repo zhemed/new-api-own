@@ -919,3 +919,37 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 用户需要时可复制数据卷在另一端口跑 0.0.9 副本核对
+
+
+## Session 30: 排查 opencode 渠道 400：请求头覆盖写法正确但未保存
+<!-- trellis-session: v=2 fp=7c43985cfe1610e2 -->
+
+**Date**: 2026-10-07
+**Task**: 排查 opencode 渠道 400：请求头覆盖写法正确但未保存
+**Branch**: `main`
+
+### Summary
+
+用户截图显示 deepseek-flash 渠道测试 400（上游 opencode 报 MissingSessionID，要求 x-opencode-session），并已在面板配置请求头覆盖 {client_header:x-opencode-session|opencode-go-fallback}。排查：①占位符语义以代码与既有测试为准——无默认值的 {client_header:NAME} 在渠道测试中被跳过，带默认值者测试也照常解析，故用户写法正确；②真正症结是配置未保存：管理接口读到渠道 1 的顶层 header_override 为空（setting 里也没有），前端保存路径 channel-form.ts:870 写的是顶层字段，后端消费链路完整（model/channel.go:51 → GetHeaderOverride → api_request.go 三处注入）；③附带改进项：渠道测试无法验证无默认值的透传占位符，建议在测试结果里加提示（未改，需用户点头）。
+
+### Main Changes
+
+- 结论：写法正确、链路完整，只差保存；测试失败发生在保存之前
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `34a77df` | chore(task): archive 10-07-discuss-030-to-009-data |
+
+### Testing
+
+- [OK] [OK] 读用户实例渠道 1：header_override 为空（密钥未读取/未打印）；代码路径与既有测试用例逐一核对
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 可由 Lead 代保存该配置并重跑渠道测试，或用户自行点保存后再测

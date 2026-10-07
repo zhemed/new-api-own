@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 29
+- **Total Sessions**: 30
 - **Last Active**: 2026-10-07
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~921 | Active |
+| `journal-1.md` | ~955 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 30 | 2026-10-07 | 排查 opencode 渠道 400：请求头覆盖写法正确但未保存 | `34a77df` | `main` |
 | 29 | 2026-10-07 | 讨论：0.0.3 数据能否直接用 0.0.9 还原（结论：可以） | `379d98f` | `main` |
 | 28 | 2026-10-07 | 讨论：0.0.3 数据能否直接用 0.0.9 还原（结论：可以） | `3fb2ded` | `main` |
 | 27 | 2026-10-06 | 修复 v0.0.8 回归（zhCN 语言标签致日志页崩溃）并发 v0.0.9 | `96f4881` | `main` |
