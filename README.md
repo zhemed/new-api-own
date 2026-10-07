@@ -64,7 +64,13 @@ docker run -d --name new-api --restart always \
 docker pull ghcr.io/zhemed/new-api-own:<版本>   # 1. 先拉新镜像
 docker rm -f new-api                            # 2. 删旧容器（数据在 ./data，不受影响）
 docker run -d --name new-api --restart always \
-  --network host -v ./data:/data \
+  --network host \
+  --log-opt max-size=10m --log-opt max-file=3 \
+  -v ./data:/data \
+  -e LOG_SQL_DSN=memory \
+  -e LOG_MEMORY_MAX_BYTES=200MB \
+  -e LOG_MEMORY_MAX_ROWS=200000 \
+  -e LOG_CLEANUP_RETENTION_DAYS=7 \
   ghcr.io/zhemed/new-api-own:<版本>             # 3. 用新镜像重建
 ```
 
@@ -73,9 +79,20 @@ docker run -d --name new-api --restart always \
 ```bash
 docker pull ghcr.io/zhemed/new-api-own:0.0.5
 docker rm -f new-api
-docker run -d --name new-api --restart always --network host -v ./data:/data \
+docker run -d --name new-api --restart always \
+  --network host \
+  --log-opt max-size=10m --log-opt max-file=3 \
+  -v ./data:/data \
+  -e LOG_SQL_DSN=memory \
+  -e LOG_MEMORY_MAX_BYTES=200MB \
+  -e LOG_MEMORY_MAX_ROWS=200000 \
+  -e LOG_CLEANUP_RETENTION_DAYS=7 \
   ghcr.io/zhemed/new-api-own:0.0.5
 ```
+
+> **回滚注意**：上面四条 `LOG_*` 需要支持内存日志的版本（`LOG_SQL_DSN=memory` 自 `v0.0.4` 起，
+> `LOG_MEMORY_MAX_BYTES` 自 `v0.0.8` 起）。回滚到更早版本时，请把该版本不认识的变量去掉再重建。
+
 
 **为什么显式 `docker pull`、为什么不建议用 `:latest`**：`:latest` 是**本地标签**——
 `docker run …:latest` 不会去远端比对更新，本地有就直接用；本地标签陈旧时就会"升级了却还是旧版"

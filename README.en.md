@@ -35,11 +35,22 @@ curl -fsSL https://raw.githubusercontent.com/zhemed/new-api-own/main/install-doc
 ```bash
 docker run -d --name new-api --restart always \
   --network host \
+  --log-opt max-size=10m --log-opt max-file=3 \
   -v ./data:/data \
+  -e LOG_SQL_DSN=memory \
+  -e LOG_MEMORY_MAX_BYTES=200MB \
+  -e LOG_MEMORY_MAX_ROWS=200000 \
+  -e LOG_CLEANUP_RETENTION_DAYS=7 \
   ghcr.io/zhemed/new-api-own:latest
 ```
 
 - SQLite by default; data is stored in `./data`
+- The four `LOG_*` flags are the **log mode currently in use**: usage logs live in RAM
+  (cap **200MB**, retention **7 days**, trimmed on write, **no scheduled cleanup**) — it saves disk
+  writes and the logs are **lost on restart**; drop `LOG_SQL_DSN=memory` to go back to on-disk logs
+  (see [MAINTENANCE.md](./MAINTENANCE.md))
+- `--log-opt` caps **Docker's own json container log** (a separate writer that does not rotate by
+  default): 10MB per file, 3 files (≈30MB). It is unrelated to the app's own `/data/logs/*.log`
 - After deployment, visit `http://localhost:3000`
 - Building your own image (`docker build -t new-api-own .`) then running it is the **same**
   `docker run` form, not a second deployment method
@@ -57,7 +68,13 @@ Three steps (`<version>` is the target tag, e.g. `0.0.6`; **run this in your ori
 docker pull ghcr.io/zhemed/new-api-own:<version>   # 1. pull the new image first
 docker rm -f new-api                               # 2. remove the old container (data stays in ./data)
 docker run -d --name new-api --restart always \
-  --network host -v ./data:/data \
+  --network host \
+  --log-opt max-size=10m --log-opt max-file=3 \
+  -v ./data:/data \
+  -e LOG_SQL_DSN=memory \
+  -e LOG_MEMORY_MAX_BYTES=200MB \
+  -e LOG_MEMORY_MAX_ROWS=200000 \
+  -e LOG_CLEANUP_RETENTION_DAYS=7 \
   ghcr.io/zhemed/new-api-own:<version>             # 3. recreate from the new image
 ```
 
@@ -66,9 +83,21 @@ Rollback uses the same three steps with the previous tag (every historical tag s
 ```bash
 docker pull ghcr.io/zhemed/new-api-own:0.0.5
 docker rm -f new-api
-docker run -d --name new-api --restart always --network host -v ./data:/data \
+docker run -d --name new-api --restart always \
+  --network host \
+  --log-opt max-size=10m --log-opt max-file=3 \
+  -v ./data:/data \
+  -e LOG_SQL_DSN=memory \
+  -e LOG_MEMORY_MAX_BYTES=200MB \
+  -e LOG_MEMORY_MAX_ROWS=200000 \
+  -e LOG_CLEANUP_RETENTION_DAYS=7 \
   ghcr.io/zhemed/new-api-own:0.0.5
 ```
+
+> **Rollback note**: the four `LOG_*` variables need a version that supports memory logs
+> (`LOG_SQL_DSN=memory` since `v0.0.4`, `LOG_MEMORY_MAX_BYTES` since `v0.0.8`). When rolling back to an
+> older image, drop the variables that version does not know before recreating.
+
 
 **Why an explicit `docker pull`, and why not `:latest`**: `:latest` is a **local tag** — `docker run …:latest`
 does not check the registry for updates, it just uses whatever the local tag points at. That is how you

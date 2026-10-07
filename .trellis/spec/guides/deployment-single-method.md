@@ -10,12 +10,19 @@
 ```bash
 docker run -d --name new-api --restart always \
   --network host \
+  --log-opt max-size=10m --log-opt max-file=3 \
   -v ./data:/data \
+  -e LOG_SQL_DSN=memory \
+  -e LOG_MEMORY_MAX_BYTES=200MB \
+  -e LOG_MEMORY_MAX_ROWS=200000 \
+  -e LOG_CLEANUP_RETENTION_DAYS=7 \
   ghcr.io/zhemed/new-api-own:latest
 ```
 
 - 唯一形态：单容器 + `docker run`（`--network host`，数据挂 `./data:/data`）。
 - 数据：默认 SQLite，落在 `./data`。
+- 上面四条 `LOG_*` 与 `--log-opt` 是**当前在用的日志形态**（内存用量日志 + Docker 日志轮转上限），
+  与 README / MAINTENANCE 的部署、升级、回滚命令**完全一致**；改这一组参数时三处必须同步。
 - 自建镜像（`docker build -t new-api-own .`）后仍是**同一个** `docker run` 形态，
   不算第二种部署方式；**第二种编排形态**才算。
 
