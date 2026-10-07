@@ -953,3 +953,37 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 可由 Lead 代保存该配置并重跑渠道测试，或用户自行点保存后再测
+
+
+## Session 31: 保存 opencode 渠道请求头覆盖并验证测试通过（含一条自我更正）
+<!-- trellis-session: v=2 fp=113b20b0b4661f21 -->
+
+**Date**: 2026-10-07
+**Task**: 保存 opencode 渠道请求头覆盖并验证测试通过（含一条自我更正）
+**Branch**: `main`
+
+### Summary
+
+用户授权代保存并重跑测试。安全做法：管理接口不返回密钥，故用补丁式最小请求 {id, header_override}，保存前后校验 channels.key 的 sha256 一致（dd7dd290a541）与其它字段未变。过程中发现更新接口会对包含 status 的请求回 Invalid parameters（上游既有行为，v0.0.3 同逻辑，状态改动需走 /api/channel/:id/status），不影响面板。保存后渠道测试通过：{success:true, time:1.595}，上游接受默认头 opencode-go-fallback。同时更正 Lead 先前错误结论——曾依据手工请求被拒推断“面板保存一直失败”，但 transformFormDataToUpdatePayload 并不含 status，面板路径本身正常；真实情况是该配置此前从未保存过。
+
+### Main Changes
+
+- 自我更正：不得从手工请求被拒反推面板行为，须先读实际构造 payload 的代码
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5058c8b` | chore: record journal |
+
+### Testing
+
+- [OK] [OK] 保存成功且密钥哈希不变；渠道测试 success=true（time 1.595s），MissingSessionID 消失
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 如需让“无默认值”的透传占位符在渠道测试中也有提示，可在测试结果里加说明（需用户点头）
