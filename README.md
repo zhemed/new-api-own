@@ -35,10 +35,17 @@ curl -fsSL https://raw.githubusercontent.com/zhemed/new-api-own/main/install-doc
 docker run -d --name new-api --restart always \
   --network host \
   -v ./data:/data \
+  -e LOG_SQL_DSN=memory \
+  -e LOG_MEMORY_MAX_BYTES=200MB \
+  -e LOG_MEMORY_MAX_ROWS=200000 \
+  -e LOG_CLEANUP_RETENTION_DAYS=7 \
   ghcr.io/zhemed/new-api-own:latest
 ```
 
 - 默认使用 SQLite，数据保存在 `./data` 目录
+- 上面四条 `LOG_*` 就是**当前在用的日志模式**：日志放内存（体积上限 **200MB**、保留 **7 天**、
+  写入时按字节裁剪，**没有定时清理任务**）——省磁盘写入，代价是**日志重启即丢**；
+  想回到落盘模式，去掉 `LOG_SQL_DSN=memory` 重建即可。详见 [MAINTENANCE.md](./MAINTENANCE.md)
 - 部署完成后访问 `http://localhost:3000`
 - 自建镜像时（需要仓库访问权限）先 `docker build -t new-api-own .`，再把上面的镜像名换成
   `new-api-own` —— **命令形态不变**，这不是第二种部署方式
