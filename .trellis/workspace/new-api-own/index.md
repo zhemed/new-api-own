@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 33
+- **Total Sessions**: 34
 - **Last Active**: 2026-10-07
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1057 | Active |
+| `journal-1.md` | ~1091 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 34 | 2026-10-07 | 核验并解释：内存用量日志 vs /data/logs 文件日志 | `7be4308` | `main` |
 | 33 | 2026-10-07 | README 部署命令改为当前日志内存模式（与实例逐项一致） | `4a89762` | `main` |
 | 32 | 2026-10-07 | 评估：能否把 opencode 头做进源码（结论：用现成模板+复制，不改码） | `56af210` | `main` |
 | 31 | 2026-10-07 | 保存 opencode 渠道请求头覆盖并验证测试通过（含一条自我更正） | `5058c8b` | `main` |

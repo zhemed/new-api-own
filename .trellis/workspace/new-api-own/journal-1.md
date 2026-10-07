@@ -1055,3 +1055,37 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 如需同步 README.en.md 与 MAINTENANCE.md 的升级/回滚命令（避免升级时丢掉内存模式），需用户授权
+
+
+## Session 34: 核验并解释：内存用量日志 vs /data/logs 文件日志
+<!-- trellis-session: v=2 fp=148d8dd5ccc617af -->
+
+**Date**: 2026-10-07
+**Task**: 核验并解释：内存用量日志 vs /data/logs 文件日志
+**Branch**: `main`
+
+### Summary
+
+用户疑问：面板同时显示「内存日志占用 435 Bytes / 上限 200MB（1 行）」与「日志目录 /data/logs，5 文件 177.35KB」，文件目录在硬盘上，是否真的在内存、为何两个大小。核验结论：两者是不同数据流——①用量日志（DB logs 表）由 LOG_SQL_DSN=memory 放在进程内存，证据为内存计数从 435B/1行 增至 756B/2行、磁盘主库 logs 恒为 1 行不增长、容器启动日志自证 trimmed on write (no scheduled cleanup)；②文件日志为 [SYS]/[GIN]/[INFO]/[WARN] 文本日志，落在磁盘 /data/logs（-log-dir 默认 ./logs，容器内为 /data/logs），按天轮转、每次启动新建，5 个文件合计 200KB，属排障用途。建议保留文件日志（体积小且是重启后唯一线索），面板已有按数量/天数清理入口。
+
+### Main Changes
+
+- 回答用户：文件目录确实是磁盘，但那是文件日志；用量日志确实在内存（双向证据）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7be4308` | chore(task): archive 10-07-default-build-on-github |
+
+### Testing
+
+- [OK] [OK] 真机证据四条：内存计数增长、主库 logs 不增长、容器启动日志、/data/logs 文件清单与级别统计
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 如需关闭或迁移文件日志（-log-dir= / 改目录），需用户点头后再做
