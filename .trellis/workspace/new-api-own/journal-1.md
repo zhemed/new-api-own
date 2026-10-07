@@ -1123,3 +1123,37 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 升级/回滚命令仍未带这四条 env 与 --log-opt（照做会丢内存模式与日志上限），需要时再同步
+
+
+## Session 36: 主仓文档一致性：10 处 docker run 命令统一为当前日志形态
+<!-- trellis-session: v=2 fp=1cffcf3c743e6466 -->
+
+**Date**: 2026-10-07
+**Task**: 主仓文档一致性：10 处 docker run 命令统一为当前日志形态
+**Branch**: `main`
+
+### Summary
+
+用户要求「要一致」。把 README.md(3)、README.en.md(3)、MAINTENANCE.md(3) 与规范指南 deployment-single-method.md(1) 共 10 处 docker run 命令统一为实例真实形态（--network host + --log-opt max-size=10m max-file=3 + 四条 LOG_* 内存日志参数），并在三份文档回滚段补「回滚注意」（LOG_SQL_DSN=memory 自 v0.0.4、LOG_MEMORY_MAX_BYTES 自 v0.0.8 起，更早版本需去掉不认识的变量——版本边界用 git tag --contains 实测）。英文 README 部署段补齐等价说明；规范指南补「改这组参数三处必须同步」。校验：脚本解析全仓 10 处命令参数集合完全一致、围栏配平(14/14/44)、两件门禁通过、与 docker inspect 逐项一致。
+
+### Main Changes
+
+- 文档与现实一致：部署、升级、回滚三处命令不再会悄悄丢掉内存日志模式或 Docker 日志上限
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `03e82a8` | chore(task): archive 10-07-explain-memory-vs-file-logs |
+
+### Testing
+
+- [OK] [OK] 全仓命令参数集合一致 + 与实例 docker inspect（env 四条、log-opt 两项）一致
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 以后若要改这组日志参数，README×2 / MAINTENANCE / spec 指南共 4 个文件必须同步（指南里已写）
