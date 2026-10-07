@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 28
+- **Total Sessions**: 29
 - **Last Active**: 2026-10-07
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~887 | Active |
+| `journal-1.md` | ~921 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 29 | 2026-10-07 | 讨论：0.0.3 数据能否直接用 0.0.9 还原（结论：可以） | `379d98f` | `main` |
 | 28 | 2026-10-07 | 讨论：0.0.3 数据能否直接用 0.0.9 还原（结论：可以） | `3fb2ded` | `main` |
 | 27 | 2026-10-06 | 修复 v0.0.8 回归（zhCN 语言标签致日志页崩溃）并发 v0.0.9 | `96f4881` | `main` |
 | 26 | 2026-10-06 | v0.0.8：日志改为字节预算（写入触发），去掉 5 分钟定时清理 | `f2b3577` | `main` |

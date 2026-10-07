@@ -1,19 +1,36 @@
 # 讨论：0.0.3 的数据能否直接用 0.0.9 部署还原
 
-## Goal
+## 用户问题（2026-10-06）
 
-只读调查：对比 v0.0.3 与 v0.0.9 的数据结构差异（AutoMigrate 清单、手工迁移钩子、环境变量重命名、加密依赖），给出可行性与风险、安全验证步骤。
+「我之前部署的 0.0.3 版本的数据，能不能直接用 0.0.9 部署还原，这是个讨论」
 
-## Requirements
+## 结论
 
-- TBD
+**可以直接还原**：v0.0.3 与 v0.0.9 的数据结构一致，把原 `./data` 交给 0.0.9 即可
+（启动时 AutoMigrate 依然幂等）。唯一真实风险是**降级不可逆**，所以先备份。
 
-## Acceptance Criteria
+## 实测依据（只读调查）
 
-- [ ] TBD
+| 项 | 结果 |
+|---|---|
+| `AutoMigrate` 模型清单 v0.0.3 vs HEAD | **差异为空**（逐模型 `&Model{}` 集合完全相同）|
+| 数据模型字段 | 结构体字段零变化（`git diff … \| grep 'gorm:\|json:'` 无输出）|
+| model 层提交（v0.0.3..HEAD） | 仅 3 个（内存日志支持 / 审查修复 / 字节预算），**均为代码逻辑，无结构变更** |
+| SQLite 路径 | 两版同为 `one-api.db?_busy_timeout=30000`（`common/database.go:44`）|
+| 环境变量 | 全树提取对比：v0.0.3 的 96 个**无一消失**，现为 101 个（+5 新增）|
+| 存储加密 | **无字段级加密**；`CRYPTO_SECRET` 仅用于 HMAC 签名（`common/crypto.go:18`）→ 还原不需要解密密钥 |
 
-## Notes
+## 注意事项（已告知用户）
 
-- Keep `prd.md` focused on requirements, constraints, and acceptance criteria.
-- Lightweight tasks can remain PRD-only.
-- For complex tasks, add `design.md` for technical design and `implement.md` for execution planning before `task.py start`.
+1. **先备份** `cp -a data data.bak-$(date +%F)`：前向兼容已确认，**降级不保证**；
+2. 带上原环境变量，尤其 `SESSION_SECRET`（缺它只导致登录态失效、需重新登录，数据无损）；
+3. 开 `LOG_SQL_DSN=memory` 时老 `logs` 记录不显示（仍在文件中、不会被删）；
+4. 新变量（如 `LOG_MEMORY_MAX_BYTES`）按需添加，不加即旧行为。
+
+## 建议流程（零风险演练）
+
+复制数据卷 → 0.0.9 以**另一容器名 + 另一端口**跑副本 → 核对用户/渠道/令牌/倍率/日志计数 → 确认后切真身。
+
+## 用户决定
+
+本轮**不做**演练（选择「先不验」）；需要时再做。
