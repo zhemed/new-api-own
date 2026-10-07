@@ -1089,3 +1089,37 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 如需关闭或迁移文件日志（-log-dir= / 改目录），需用户点头后再做
+
+
+## Session 35: 评估文件日志对内存日志目的的影响；给 docker 日志加上限并同步 README
+<!-- trellis-session: v=2 fp=dc96e4a92e5ffbc4 -->
+
+**Date**: 2026-10-07
+**Task**: 评估文件日志对内存日志目的的影响；给 docker 日志加上限并同步 README
+**Branch**: `main`
+
+### Summary
+
+用户追问：保留 /data/logs 文件日志会不会影响“日志入内存”的目的。量化评估：原 DB 用量日志每请求 1 行 SQLite（0.4–1.0KB 载荷 + WAL/页 + 事务提交，带同步写=磨损主力）已被移除；保留的文件日志实测 186,640B/1878 行/622 请求 ≈ 99B/行、约 300B/请求，且 logger.go:56 仅用 O_APPEND|O_CREATE|O_WRONLY（无 fsync，靠页缓存合批），按天轮转、面板可手动清理 → 两条独立代码路径，保留不影响内存日志行为，省盘目的达成。顺带发现更值得处理的隐患：docker json 日志已 222KB 且 max-size 未设（不轮转、无限增长）。用户批准后重建容器加上 --log-opt max-size=10m --log-opt max-file=3（同镜像 0.0.9、环境变量与挂载原样保留），并把该参数与说明同步进 README 部署命令。
+
+### Main Changes
+
+- 实例已重建：日志驱动 json-file + max-size=10m + max-file=3；旧 222KB 日志随删容器清理；内存日志四条 env 与主库 logs 恒 1 行均保持
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6e3effd` | docs(task): 保留文件日志对内存日志目的的影响评估（含量化数据）[task:explain-memory-vs-file-logs] |
+
+### Testing
+
+- [OK] [OK] 真机验证：docker inspect 显示上限已生效、/api/status=v0.0.9、四条 LOG_* 与 README 文档逐项一致
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 升级/回滚命令仍未带这四条 env 与 --log-opt（照做会丢内存模式与日志上限），需要时再同步
