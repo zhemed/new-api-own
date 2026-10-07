@@ -851,3 +851,37 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 观察该页与内存占用；后续升级可走面板内更新（本页修复也随镜像生效）
+
+
+## Session 28: 讨论：0.0.3 数据能否直接用 0.0.9 还原（结论：可以）
+<!-- trellis-session: v=2 fp=93dfaa11ddfb1ba4 -->
+
+**Date**: 2026-10-07
+**Task**: 讨论：0.0.3 数据能否直接用 0.0.9 还原（结论：可以）
+**Branch**: `main`
+
+### Summary
+
+用户提问式讨论：旧 0.0.3 的数据卷能否直接交给 0.0.9 部署还原。只读调查四条硬证据：①AutoMigrate 模型清单两版差异为空；②数据模型结构体字段零变化（0.0.3 之后 model 层仅 3 个提交、全是代码逻辑）；③SQLite 路径/文件名一致；④全树环境变量对比：v0.0.3 的 96 个变量无一删除/改名（现 101 个）。另确认存储无字段级加密（CRYPTO_SECRET 仅 HMAC 签名）→ 还原不需要解密密钥。结论：可直接还原；唯一真实风险是降级不可逆，故先备份；并给出会话密钥/旧日志/新变量三点注意与零风险演练流程。
+
+### Main Changes
+
+- 回答要点：结构没变、明文存储、变量未改名；注意事项：备份、SESSION_SECRET、内存模式下旧日志不显示、新变量按需加
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3fb2ded` | chore(task): archive 10-06-upgrade-user-instance-008 |
+
+### Testing
+
+- [OK] [OK] 四条对比证据均为实测输出（git diff / git grep / PRAGMA）
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 用户选择本轮先不演练；如需，我可复制数据卷在别的端口跑 0.0.9 副本核对
