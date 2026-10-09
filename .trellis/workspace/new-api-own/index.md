@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 48
+- **Total Sessions**: 49
 - **Last Active**: 2026-10-09
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1567 | Active |
+| `journal-1.md` | ~1601 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 49 | 2026-10-09 | 剩余三项：依赖/抑制/死代码全清，knip 四类归零；398 条 exports/types 停手留痕 | `b33c1fa` | `main` |
 | 48 | 2026-10-09 | 三项收尾并发 v0.0.13；实例一次升级到最新（KPI 上色实测生效） | `550965e` | `main` |
 | 47 | 2026-10-09 | 四项收尾（KPI 上色/mock 标注/lint 清理/文档订正）并发 v0.0.12 | `a2ad71b` | `main` |
 | 46 | 2026-10-09 | 手机端上色实为已生效（更正）；盘点 6 类未处理问题 | `c1b2b23` | `main` |

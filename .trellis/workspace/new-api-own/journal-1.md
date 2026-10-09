@@ -1565,3 +1565,37 @@ v0.0.11 升级真实触发了内存日志的固有代价：更新重启进程 �
 ### Next Steps
 
 - 剩余不急项：knip 基线（398 条）、formatTokenVolume 死代码、2 条 disable 的彻底移除（需收窄类型契约）
+
+
+## Session 49: 剩余三项：依赖/抑制/死代码全清，knip 四类归零；398 条 exports/types 停手留痕
+<!-- trellis-session: v=2 fp=b8283dea71391a51 -->
+
+**Date**: 2026-10-09
+**Task**: 剩余三项：依赖/抑制/死代码全清，knip 四类归零；398 条 exports/types 停手留痕
+**Branch**: `main`
+
+### Summary
+
+①移除 3 个真无引用依赖（用户授权一次联网 bun remove），package.json/bun.lock 零残留；②新增显式递归 JSON 克隆 helper cloneJsonValue（零抑制、JSDoc 14 行契约、23 例单测、34 输入差分 0 偏差），两处调用点替换后全仓 prefer-structured-clone 抑制归零；③删除 formatTokenVolume 与 ApiTabIcon 死代码；④knip 四类清零（deps 6→0、devDeps 2→0、duplicate exports 1→0、config hints 2→0）；⑤修复真实隐患：tsgo -b 增量漏报 → typecheck/build:check 改 --force。未解决：Unused exports 301 + types 97，需跨 ~152 文件删声明，判定并发开发期风险不成比例而停手（期间发生过一次跨文件批量回滚误伤他人文件，成员如实报告并修复）。发布 v0.0.14 与 v0.0.15（镜像 latest 分别 ed480b992f319 / 073b3aa864782，Release 均成功）。
+
+### Main Changes
+
+- 把成员的 3 条工程经验写入留痕（tsgo 增量、按错误签名比对、并发期禁止跨文件回滚）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b33c1fa` | chore(web): 删除 formatTokenVolume 与 ApiTabIcon 两条死代码（0 引用）[task:resolve-remaining-three] |
+
+### Testing
+
+- [OK] [OK] 门禁全绿：tsgo --force 0 错误、lint 0/0、247 pass、format/i18n/build/knip(files) 全 0
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 待用户决定：是否在冻结期单线程清理剩余 398 条 exports/types；以及是否升级实例到 v0.0.15
