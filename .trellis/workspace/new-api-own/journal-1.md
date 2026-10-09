@@ -1191,3 +1191,37 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 等用户恢复：①真实 avg_tps 上色（相对分位）②mock 区块接真实数据或加示例标注
+
+
+## Session 38: TPS 数值按阈值上色（红<50 / 黄50-100 / 绿≥100，无数据不上色）
+<!-- trellis-session: v=2 fp=b2fbbaa6adf74927 -->
+
+**Date**: 2026-10-09
+**Task**: TPS 数值按阈值上色（红<50 / 黄50-100 / 绿≥100，无数据不上色）
+**Branch**: `main`
+
+### Summary
+
+用户要求把真实吞吐数字上色并固定三种颜色。实现：在 performance-metrics/lib/format.ts 新增 TpsLevel/getTpsLevel/getTpsTextClass（复用成功率的语义色范式与色值，左闭右开：50 计黄、100 计绿；非有限或≤0 视为无测量保持中性灰），应用到四处真实指标渲染点（详情页性能表 TPS 单元格、详情页 TPS 概览卡与头部指标、模型广场卡片紧凑吞吐）；未对 mock 区块（延迟/吞吐图表、30 天可用率）上色，未动控制台汇总 KPI。阈值以命名常量集中，待实例积累真实 perf_metrics 数据后校准。新增 3 例边界测试；前端 211 pass/0 fail，typecheck/build/i18n/format/knip 全绿；lint 的 2 个 error 位于未修改的既有文件 use-system-config.ts。
+
+### Main Changes
+
+- 回答用户：50 属黄（含下界）、100 属绿；无数据不上色；阈值先按大模型典型区间给，后续用真实分布校准
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e59b721` | chore: record journal |
+
+### Testing
+
+- [OK] [OK] 针对性测试 3/3（边界 49.9/50/99.9/100/173 + 无数据 0/-1/NaN/∞ + 三色映射）；全量 211 pass/0 fail
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 如需把配色扩展到控制台汇总 KPI 或接真实分布校准，等用户指示；发布后可在实例上肉眼验证

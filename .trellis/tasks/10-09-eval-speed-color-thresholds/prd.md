@@ -95,3 +95,27 @@
 
 - 对**真实的 `avg_tps`** 上色**有意义**（用户原始想法成立）；阈值仍建议相对分位；
 - 对 mock 的图表/可用率**不要**上色——先接真实数据，或至少显式标注"示例数据"（当前界面无任何标注）。
+
+## 实施记录（2026-10-09，用户："173 t/s 我就想让它有颜色，必须用那三种颜色"）
+
+### 阈值与边界（回答用户两问）
+
+- **左闭右开**：`[0,50) 红`、`[50,100) 黄`、`[100,+∞) 绿` → **50 算黄**、**100 算绿**；
+- **无测量不上色**：非有限值或 ≤0 → `unknown` → `text-muted-foreground`（0 表示"没测到"，不是"慢"）；
+- **平衡依据**：实例 `perf_metrics` 尚无数据，故先按大模型实测区间（大模型 20–60、中档 60–150、小/快模型 150–300）定 50/100；
+  两个阈值是**命名常量**（`TPS_MEDIUM_MIN` / `TPS_FAST_MIN`），待真实数据积累后用实例分布校准。
+
+### 实现（复用项目既有"分级 + 语义色"范式，与成功率一致）
+
+- `features/performance-metrics/lib/format.ts`：新增 `TpsLevel`、`getTpsLevel()`、`getTpsTextClass()`（色值与 `getSuccessRateTextClass` 同一套：
+  `text-emerald-600 dark:text-emerald-400` / `text-amber-600 dark:text-amber-400` / `text-red-600 dark:text-red-400` / `text-muted-foreground`）；
+- 应用到**真实指标**的四处：模型详情页性能表 TPS 单元格、详情页 TPS 概览卡、详情页头部 TPS 指标、
+  模型广场卡片紧凑吞吐（`model-perf-badge`）；
+- **未**应用到控制台的汇总 KPI（那是站点级平均，配色语义不同）——如需可一行扩展；
+- **未**给 mock 区块（延迟/吞吐图表、30 天可用率）上色（数据是生成的，上色会误导）。
+
+### 测试与门禁
+
+- 新增 `lib/__tests__/tps-color.test.ts`：边界（49.9/50/99.9/100/173）、无数据（0/-1/NaN/∞）、三色映射，共 3 例全过；
+- `bun test` **211 pass / 0 fail**；typecheck 0；build 0；i18n:check 0；format:check 0；knip(files) 0；
+- lint 报 2 个 error，位于 `web/src/hooks/use-system-config.ts`（**既有问题**、非本次改动，该文件未被修改）。

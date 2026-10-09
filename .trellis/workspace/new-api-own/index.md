@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 37
+- **Total Sessions**: 38
 - **Last Active**: 2026-10-09
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1193 | Active |
+| `journal-1.md` | ~1227 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 38 | 2026-10-09 | TPS 数值按阈值上色（红<50 / 黄50-100 / 绿≥100，无数据不上色） | `e59b721` | `main` |
 | 37 | 2026-10-09 | 更正：截图速度是真实指标；mock 只覆盖图表/可用率等区块 | `b936322` | `main` |
 | 36 | 2026-10-07 | 主仓文档一致性：10 处 docker run 命令统一为当前日志形态 | `03e82a8` | `main` |
 | 35 | 2026-10-07 | 评估文件日志对内存日志目的的影响；给 docker 日志加上限并同步 README | `6e3effd` | `main` |
