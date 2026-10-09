@@ -1157,3 +1157,37 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 以后若要改这组日志参数，README×2 / MAINTENANCE / spec 指南共 4 个文件必须同步（指南里已写）
+
+
+## Session 37: 更正：截图速度是真实指标；mock 只覆盖图表/可用率等区块
+<!-- trellis-session: v=2 fp=db403e3eb6dce903 -->
+
+**Date**: 2026-10-09
+**Task**: 更正：截图速度是真实指标；mock 只覆盖图表/可用率等区块
+**Branch**: `main`
+
+### Summary
+
+用户追问“假速度是什么”。深入排查后作出重要更正：①存在真实指标子系统 pkg/perf_metrics——在 service/quota.go:382 与 service/text_quota.go:541 每请求采集延迟/TTFT/输出tokens/成功率，按时间桶聚合且落 perf_metrics 表（重启不丢），经 /api/perf-metrics(|/summary) 提供给模型详情页性能区块（截图 avg_tps）、模型广场卡片与控制台面板；②mock 仅覆盖同页的延迟/吞吐图表、30天可用率火花线、API 区块（pricing/lib/mock-stats.ts 按模型名哈希生成，实跑证明 deepseek-v3 恒为 85.7/72.1 t/s、改名加空格即变 81.7/122.3；文件自述等真实接口上线后切换；来自代码基线 1092e46）。因此“给速度上色”对真实 avg_tps 是有意义的，阈值仍建议相对分位；mock 区块不应上色，至少需标注示例。用户要求全部暂停，本轮未改任何代码/实例。
+
+### Main Changes
+
+- 自我更正：不得把整页指标一概判为 mock；须逐区块核对数据通路（真实接口 vs mock 生成）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b936322` | docs(task): 速度数值上色可行性评估（关键：当前数据为 mock）[task:eval-speed-color-thresholds] |
+
+### Testing
+
+- [OK] [OK] 证据：perf_metrics 采集点与落库代码、mock 的确定性实跑、消费组件清单、文件头自述、引入提交
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 等用户恢复：①真实 avg_tps 上色（相对分位）②mock 区块接真实数据或加示例标注

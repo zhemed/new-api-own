@@ -65,3 +65,33 @@
 | 只上色（仍用 mock） | 阈值函数 + 渲染 + 测试 | 小，但**不建议** |
 | 真实吞吐 + 上色（推荐） | 后端聚合接口 + 前端替换 + 上色 + 测试 | 中（约 1–2 轮） |
 | 先不做 | 保持现状 | 0 |
+
+## 重要更正（Lead 自我修正，2026-10-09）
+
+先前结论「那列速度是 mock 假数据」**不完整、对截图那一列是错的**。实测澄清：
+
+### 截图那一列是**真实测量**
+
+- 真实指标子系统：`pkg/perf_metrics`（`metrics.go` / `flush.go` / `types.go`）；
+- 采集点：`service/quota.go:382`、`service/text_quota.go:541` → `perfmetrics.RecordRelaySample(relayInfo, ok, completionTokens)`
+  —— 每条真实请求采集 **延迟 / TTFT / 输出 tokens / 成功与否**；
+- 聚合与**落库**：时间桶 + Redis 计数 + `perf_metrics` 表（`model/perf_metric.go` 的 upsert）→ **重启不丢**；
+- 配置项：`setting/perf_metrics_setting`（Enabled / FlushIntervalMinutes / RetentionDays）；
+- 接口：`GET /api/perf-metrics`、`GET /api/perf-metrics/summary`（`controller/perf_metrics.go`）；
+- 使用方：模型详情页**性能区块**（截图那列 `avg_tps`）、模型广场卡片（`getPerfMetricsSummary`）、控制台性能总览/健康面板。
+
+### mock 只覆盖同一页面的**其他区块**
+
+`web/src/features/pricing/lib/mock-stats.ts`（按**模型名**哈希生成，`PROFILE_BY_NAME` + `seed.ts` 的 djb2+LCG）：
+
+- 用到它的组件：`model-details-charts.tsx`（延迟/吞吐图表）、`model-details-uptime-sparkline.tsx`（30 天可用率）、
+  `model-details-api.tsx`；
+- 实跑证据（真实代码）：`deepseek-v3` → default 85.7 t/s、vip 72.1 t/s（重复调用完全相同）；
+  把名字改成 `deepseek v3`（多一个空格）→ 81.7 / 122.3 —— 真实测速不可能因改名而变，故为生成值；
+- 该文件头部自述「后端尚未提供 latency/uptime/app-ranking 数据，等真实接口上线后应切换并删除这些 helper」；
+- 来历：`1092e46 chore: 自维护基线（基于 2026-08-01 代码基）`——来自代码基线，不是本轮引入。
+
+### 对上色的影响
+
+- 对**真实的 `avg_tps`** 上色**有意义**（用户原始想法成立）；阈值仍建议相对分位；
+- 对 mock 的图表/可用率**不要**上色——先接真实数据，或至少显式标注"示例数据"（当前界面无任何标注）。
