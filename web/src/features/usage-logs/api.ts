@@ -36,9 +36,7 @@ import type {
  * Build query parameters from filters
  * (defined here to avoid an import cycle with ./lib/utils)
  */
-export function buildQueryParams(
-  params: Record<string, unknown>
-): URLSearchParams {
+function buildQueryParams(params: Record<string, unknown>): URLSearchParams {
   const queryParams = new URLSearchParams()
 
   Object.entries(params).forEach(([key, value]) => {

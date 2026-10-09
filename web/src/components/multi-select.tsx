@@ -1,19 +1,15 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 import { Add01Icon } from '@hugeicons/core-free-icons'
@@ -38,11 +34,10 @@ import {
 import { copyToClipboard } from '@/lib/copy-to-clipboard'
 import { cn } from '@/lib/utils'
 
-export type Option = {
+type Option = {
   label: string
   value: string
 }
-
 interface MultiSelectProps {
   options: Option[]
   selected: string[]
@@ -78,9 +73,7 @@ interface MultiSelectProps {
    */
   copyChipOnClick?: boolean
 }
-
 const COMMA_REGEX = /[,，\n]/
-
 function splitDraft(value: string): { completed: string[]; draft: string } {
   if (!COMMA_REGEX.test(value)) {
     return { completed: [], draft: value }
@@ -94,7 +87,6 @@ function splitDraft(value: string): { completed: string[]; draft: string } {
     .filter(Boolean)
   return { completed, draft }
 }
-
 /**
  * MultiSelect — tags/chips style multi-select built on Base UI Combobox.
  *
@@ -115,20 +107,16 @@ function splitDraft(value: string): { completed: string[]; draft: string } {
 export function MultiSelect(props: MultiSelectProps) {
   const { t } = useTranslation()
   const placeholder = props.placeholder ?? t('Select items...')
-
   // Anchor the popup to the chips container so its width tracks the entire
   // input row, not just the leftover space at the end of wrapped chips.
   const chipsAnchorRef = useComboboxAnchor()
-
   const [inputValue, setInputValue] = React.useState('')
   const [open, setOpen] = React.useState(false)
   const [expanded, setExpanded] = React.useState(false)
-
   const selectedSet = React.useMemo(
     () => new Set(props.selected),
     [props.selected]
   )
-
   // Lookup of value -> display label so chips and items can show friendly names
   // even when the underlying option list changes (e.g. custom-added values).
   const labelMap = React.useMemo(() => {
@@ -138,7 +126,6 @@ export function MultiSelect(props: MultiSelectProps) {
     }
     return map
   }, [props.options])
-
   const trimmedInput = inputValue.trim()
   const inputMatchesExisting =
     trimmedInput.length > 0 &&
@@ -147,12 +134,10 @@ export function MultiSelect(props: MultiSelectProps) {
         (option) =>
           option.value === trimmedInput || option.label === trimmedInput
       ))
-
   const canCreate =
     props.allowCreate === true &&
     trimmedInput.length > 0 &&
     !inputMatchesExisting
-
   // We expose all known option values + every currently selected value to Base
   // UI's items list. This way Base UI filters them by the search query and the
   // user can still see the chip labels mapped correctly.
@@ -166,7 +151,6 @@ export function MultiSelect(props: MultiSelectProps) {
     }
     return [...set]
   }, [props.options, props.selected, canCreate, trimmedInput])
-
   const addValues = React.useCallback(
     (values: string[]) => {
       const next: string[] = []
@@ -183,7 +167,6 @@ export function MultiSelect(props: MultiSelectProps) {
     },
     [props]
   )
-
   const handleInputValueChange = (value: string) => {
     if (!props.allowCreate) {
       setInputValue(value)
@@ -197,7 +180,6 @@ export function MultiSelect(props: MultiSelectProps) {
     }
     setInputValue(value)
   }
-
   const handleValueChange = (next: string[]) => {
     props.onChange(next)
     // When an item is picked (multiple mode), Base UI keeps the input but most
@@ -207,7 +189,6 @@ export function MultiSelect(props: MultiSelectProps) {
       setInputValue('')
     }
   }
-
   const handleCopyChip = React.useCallback(
     async (
       event: React.MouseEvent<HTMLButtonElement>,
@@ -226,7 +207,6 @@ export function MultiSelect(props: MultiSelectProps) {
     },
     [t]
   )
-
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     // Enter without a highlighted option commits the typed value.
     if (event.key === 'Enter' && props.allowCreate && canCreate) {
@@ -244,7 +224,6 @@ export function MultiSelect(props: MultiSelectProps) {
       }
     }
   }
-
   return (
     <Combobox
       multiple
@@ -270,14 +249,12 @@ export function MultiSelect(props: MultiSelectProps) {
                 </span>
               )
             }
-
             const shouldLimit =
               typeof props.maxVisibleChips === 'number' && !expanded
             const visibleValues = shouldLimit
               ? values.slice(0, props.maxVisibleChips)
               : values
             const hiddenCount = values.length - visibleValues.length
-
             return (
               <>
                 {visibleValues.map((value) => {
@@ -349,7 +326,6 @@ export function MultiSelect(props: MultiSelectProps) {
           aria-label={placeholder}
         />
       </ComboboxChips>
-
       <ComboboxContent anchor={chipsAnchorRef}>
         <ComboboxList>
           <ComboboxCollection>

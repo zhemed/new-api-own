@@ -1,19 +1,15 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 /**
@@ -104,14 +100,12 @@ export interface CurrencyFormatOptions {
   /** Locale used for number formatting (defaults to the runtime locale) */
   locale?: Intl.LocalesArgument | undefined
 }
-
 type ResolvedCurrencyFormatOptions = Omit<
   Required<CurrencyFormatOptions>,
   'locale'
 > & {
   locale: Intl.LocalesArgument | undefined
 }
-
 type DisplayMeta =
   | {
       kind: 'currency'
@@ -129,7 +123,6 @@ type DisplayMeta =
       /** Number of tokens per USD */
       quotaPerUnit: number
     }
-
 const DEFAULT_FORMAT_OPTIONS: ResolvedCurrencyFormatOptions = {
   digitsLarge: 2,
   digitsSmall: 4,
@@ -139,26 +132,20 @@ const DEFAULT_FORMAT_OPTIONS: ResolvedCurrencyFormatOptions = {
   showSymbol: true,
   locale: undefined,
 }
-
 const DISPLAY_TYPE_VALUES = ['USD', 'CNY', 'TOKENS', 'CUSTOM'] as const
 type DisplayTypeLiteral = (typeof DISPLAY_TYPE_VALUES)[number]
-
-export function isCurrencyDisplayType(
-  value: unknown
-): value is CurrencyDisplayType {
+function isCurrencyDisplayType(value: unknown): value is CurrencyDisplayType {
   return (
     typeof value === 'string' &&
     DISPLAY_TYPE_VALUES.includes(value as DisplayTypeLiteral)
   )
 }
-
 export function parseCurrencyDisplayType(
   value: unknown,
   fallback: CurrencyDisplayType = 'USD'
 ): CurrencyDisplayType {
   return isCurrencyDisplayType(value) ? value : fallback
 }
-
 function getConfig(): CurrencyConfig {
   const { config } = useSystemConfigStore.getState()
   const currency = config?.currency ?? DEFAULT_CURRENCY_CONFIG
@@ -183,7 +170,6 @@ function getConfig(): CurrencyConfig {
       DEFAULT_CURRENCY_CONFIG.customCurrencySymbol,
   }
 }
-
 function getDisplayMeta(config: CurrencyConfig): DisplayMeta {
   switch (config.quotaDisplayType) {
     case 'CNY':
@@ -214,7 +200,6 @@ function getDisplayMeta(config: CurrencyConfig): DisplayMeta {
       }
   }
 }
-
 function getBillingDisplayMeta(config: CurrencyConfig): DisplayMeta {
   const meta = getDisplayMeta(config)
   if (meta.kind === 'tokens') {
@@ -227,7 +212,6 @@ function getBillingDisplayMeta(config: CurrencyConfig): DisplayMeta {
   }
   return meta
 }
-
 function mergeOptions(
   options?: CurrencyFormatOptions
 ): ResolvedCurrencyFormatOptions {
@@ -243,12 +227,10 @@ function mergeOptions(
     locale: options.locale ?? DEFAULT_FORMAT_OPTIONS.locale,
   }
 }
-
 function removeTrailingZeros(str: string): string {
   if (!str.includes('.')) return str
   return str.replace(/(\.[0-9]*?)0+$/, '$1').replace(/\.$/, '')
 }
-
 function formatNumberWithSuffix(
   value: number,
   digitsLarge: number,
@@ -260,18 +242,15 @@ function formatNumberWithSuffix(
     const result = value / 1000
     return `${removeTrailingZeros(result.toFixed(1))}k`
   }
-
   const digits = abs >= 1 ? digitsLarge : digitsSmall
   return removeTrailingZeros(value.toFixed(digits))
 }
-
 function adjustForMinimum(
   value: number,
   digits: number,
   minimumNonZero: number
 ): number {
   if (value === 0) return value
-
   const threshold = minimumNonZero > 0 ? minimumNonZero : Math.pow(10, -digits)
   const abs = Math.abs(value)
   if (abs > 0 && abs < threshold) {
@@ -279,7 +258,6 @@ function adjustForMinimum(
   }
   return value
 }
-
 function formatCurrencyValue(
   value: number,
   options: ResolvedCurrencyFormatOptions,
@@ -299,11 +277,9 @@ function formatCurrencyValue(
       options.abbreviate
     )
   }
-
   const digits =
     Math.abs(value) >= 1 ? options.digitsLarge : options.digitsSmall
   const adjustedValue = adjustForMinimum(value, digits, options.minimumNonZero)
-
   if (meta.kind === 'currency') {
     if (!options.showSymbol) {
       return new Intl.NumberFormat(options.locale, {
@@ -312,7 +288,6 @@ function formatCurrencyValue(
         maximumFractionDigits: options.compact ? 1 : digits,
       }).format(adjustedValue)
     }
-
     const formatted = new Intl.NumberFormat(options.locale, {
       style: 'currency',
       currency: meta.currencyCode,
@@ -323,16 +298,13 @@ function formatCurrencyValue(
     }).format(adjustedValue)
     return formatted
   }
-
   const decimal = new Intl.NumberFormat(options.locale, {
     notation: options.compact ? 'compact' : 'standard',
     minimumFractionDigits: 0,
     maximumFractionDigits: options.compact ? 1 : digits,
   }).format(adjustedValue)
-
   return options.showSymbol ? `${meta.symbol} ${decimal}` : decimal
 }
-
 /**
  * Get the current currency configuration and display metadata.
  *
@@ -347,7 +319,6 @@ export function getCurrencyDisplay() {
   const meta = getDisplayMeta(config)
   return { config, meta }
 }
-
 /**
  * Format a USD amount according to the admin-configured display settings.
  *
@@ -390,10 +361,8 @@ export function formatCurrencyFromUSD(
   options?: CurrencyFormatOptions
 ): string {
   if (amountUSD == null || Number.isNaN(amountUSD)) return '-'
-
   const { config, meta } = getCurrencyDisplay()
   const merged = mergeOptions(options)
-
   if (meta.kind === 'tokens') {
     const tokens = amountUSD * config.quotaPerUnit
     if (merged.compact) {
@@ -409,15 +378,12 @@ export function formatCurrencyFromUSD(
       merged.abbreviate
     )
   }
-
   const value =
     meta.kind === 'currency'
       ? amountUSD * meta.exchangeRate
       : amountUSD * meta.exchangeRate
-
   return formatCurrencyValue(value, merged, meta)
 }
-
 /**
  * Format USD amounts for billing/payment contexts (never shows tokens).
  *
@@ -453,7 +419,6 @@ export function formatBillingCurrencyFromUSD(
   options?: CurrencyFormatOptions
 ): string {
   if (amountUSD == null || Number.isNaN(amountUSD)) return '-'
-
   const { config } = getCurrencyDisplay()
   const meta = getBillingDisplayMeta(config)
   const merged = mergeOptions(options)
@@ -461,10 +426,8 @@ export function formatBillingCurrencyFromUSD(
     meta.kind === 'currency' || meta.kind === 'custom'
       ? amountUSD * meta.exchangeRate
       : amountUSD
-
   return formatCurrencyValue(value, merged, meta)
 }
-
 /**
  * Format raw quota values (token units) to display currency.
  *
@@ -498,12 +461,10 @@ export function formatQuotaWithCurrency(
   options?: CurrencyFormatOptions
 ): string {
   if (quota == null || Number.isNaN(quota)) return '-'
-
   const { config } = getCurrencyDisplay()
   const amountUSD = quota / config.quotaPerUnit
   return formatCurrencyFromUSD(amountUSD, options)
 }
-
 /**
  * Get the current currency label for UI display.
  *
@@ -525,11 +486,9 @@ export function formatQuotaWithCurrency(
  */
 export function getCurrencyLabel(): string {
   const { config, meta } = getCurrencyDisplay()
-
   if (meta.kind === 'tokens') {
     return 'Tokens'
   }
-
   switch (config.quotaDisplayType) {
     case 'CNY':
       return 'CNY'
@@ -540,7 +499,6 @@ export function getCurrencyLabel(): string {
       return 'USD'
   }
 }
-
 /**
  * Check if currency display is enabled (not in token-only mode).
  *
@@ -560,7 +518,6 @@ export function isCurrencyDisplayEnabled(): boolean {
   const { meta } = getCurrencyDisplay()
   return meta.kind !== 'tokens'
 }
-
 /**
  * Format an amount that is ALREADY in local currency.
  *
@@ -608,10 +565,8 @@ export function formatLocalCurrencyAmount(
   options?: CurrencyFormatOptions
 ): string {
   if (amount == null || Number.isNaN(amount)) return '-'
-
   const { config } = getCurrencyDisplay()
   const meta = getBillingDisplayMeta(config)
   const merged = mergeOptions(options)
-
   return formatCurrencyValue(amount, merged, meta)
 }

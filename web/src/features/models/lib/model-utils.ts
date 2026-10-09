@@ -30,6 +30,7 @@ import type { NameRule, Model } from '../types'
 /**
  * Format timestamp to standard date string (YYYY-MM-DD HH:mm:ss)
  */
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export function formatTimestamp(timestamp: number): string {
   if (!timestamp || timestamp === 0) return '-'
   return formatTimestampToDate(timestamp)
@@ -38,6 +39,7 @@ export function formatTimestamp(timestamp: number): string {
 /**
  * Format relative time
  */
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export function formatRelativeTime(timestamp: number): string {
   if (!timestamp || timestamp === 0) return 'Never'
 
@@ -74,6 +76,7 @@ export function parseModelTags(tags: string | undefined): string[] {
 /**
  * Format tags array to string
  */
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export function formatTagsString(tags: string[]): string {
   return tags.join(',')
 }
@@ -85,6 +88,7 @@ export function formatTagsString(tags: string[]): string {
 /**
  * Parse endpoints JSON string
  */
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export function parseEndpoints(
   endpoints: string | undefined
 ): Record<string, unknown> | unknown[] | null {
@@ -124,6 +128,7 @@ export function formatEndpointsDisplay(
 /**
  * Get name rule label
  */
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export function getNameRuleLabelByRule(rule: NameRule, t: TFunction): string {
   const config = getNameRuleConfig(t)
   return config[rule]?.label || '-'
@@ -132,6 +137,7 @@ export function getNameRuleLabelByRule(rule: NameRule, t: TFunction): string {
 /**
  * Get name rule config by rule
  */
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export function getNameRuleConfigByRule(rule: NameRule, t: TFunction) {
   const config = getNameRuleConfig(t)
   return config[rule] || config[0]
@@ -144,6 +150,7 @@ export function getNameRuleConfigByRule(rule: NameRule, t: TFunction) {
 /**
  * Format quota types array
  */
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export function formatQuotaTypes(
   quotaTypes: number[] | undefined,
   t: TFunction
@@ -160,6 +167,7 @@ export function formatQuotaTypes(
 /**
  * Validate model name
  */
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export function validateModelName(name: string): boolean {
   return name.trim().length > 0
 }
@@ -167,6 +175,7 @@ export function validateModelName(name: string): boolean {
 /**
  * Validate endpoints JSON
  */
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export function validateEndpointsJSON(endpoints: string): boolean {
   if (!endpoints || endpoints.trim() === '') return true
 
@@ -192,6 +201,7 @@ export function isModelEnabled(model: Model): boolean {
 /**
  * Check if model syncs with official
  */
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export function isModelSyncOfficial(model: Model): boolean {
   return model.sync_official === 1
 }

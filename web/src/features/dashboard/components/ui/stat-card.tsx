@@ -1,19 +1,15 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { LucideIcon } from 'lucide-react'
@@ -31,13 +27,11 @@ type StatCardDetailTone =
   | 'success'
   | 'warning'
   | 'destructive'
-
-export interface StatCardDetail {
+interface StatCardDetail {
   label: string
   value: string
   tone?: StatCardDetailTone
 }
-
 interface StatCardProps {
   title: string
   value: string | number
@@ -53,7 +47,6 @@ interface StatCardProps {
   iconTone?: IconBadgeTone
   compactMobile?: boolean
 }
-
 const TONE_CLASSES: Record<StatCardTone, string> = {
   'accent-1':
     'from-overview-accent-1/80 via-overview-accent-1/45 to-overview-accent-1/5 dark:from-overview-accent-1/70 dark:via-overview-accent-1/30',
@@ -62,19 +55,16 @@ const TONE_CLASSES: Record<StatCardTone, string> = {
   'accent-3':
     'from-overview-accent-3/80 via-overview-accent-3/45 to-overview-accent-3/5 dark:from-overview-accent-3/70 dark:via-overview-accent-3/30',
 }
-
 const LINE_TONE_CLASSES: Record<StatCardTone, string> = {
   'accent-1': 'text-overview-accent-1',
   'accent-2': 'text-overview-accent-2',
   'accent-3': 'text-overview-accent-3',
 }
-
 const ICON_TONE_BY_STAT_TONE: Record<StatCardTone, IconBadgeTone> = {
   'accent-1': 'chart-1',
   'accent-2': 'chart-2',
   'accent-3': 'chart-3',
 }
-
 const DETAIL_TONE_CLASSES: Record<StatCardDetailTone, string> = {
   default: 'text-foreground',
   muted: 'text-muted-foreground',
@@ -82,30 +72,24 @@ const DETAIL_TONE_CLASSES: Record<StatCardDetailTone, string> = {
   warning: 'text-warning',
   destructive: 'text-destructive',
 }
-
 interface SparklineBucket {
   position: number
   height: number
 }
-
 function normalizeSparkline(values?: number[]): SparklineBucket[] {
   if (!values?.length) return []
-
   const sanitized = values.map((value) => Math.max(0, Number(value) || 0))
   const max = Math.max(...sanitized)
   if (max <= 0) {
     return sanitized.map((_, position) => ({ position, height: 0 }))
   }
-
   return sanitized.map((value, position) => ({
     position,
     height: Math.max(8, (value / max) * 100),
   }))
 }
-
 function buildLineSparkline(values?: number[]) {
   if (!values?.length) return null
-
   const sanitized = values.map((value) => Math.max(0, Number(value) || 0))
   const width = 160
   const height = 36
@@ -113,7 +97,6 @@ function buildLineSparkline(values?: number[]) {
   const max = Math.max(...sanitized)
   const min = Math.min(...sanitized)
   const range = max - min
-
   const points = sanitized.map((value, index) => {
     const x =
       sanitized.length === 1
@@ -126,10 +109,8 @@ function buildLineSparkline(values?: number[]) {
       normalized = 0.5
     }
     const y = height - padding - normalized * (height - padding * 2)
-
     return { x, y }
   })
-
   const linePath = points
     .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`)
     .join(' ')
@@ -137,20 +118,16 @@ function buildLineSparkline(values?: number[]) {
   const lastPoint = points.at(-1)
   if (!firstPoint || !lastPoint) return null
   const areaPath = `${linePath} L ${lastPoint.x} ${height} L ${firstPoint.x} ${height} Z`
-
   return {
     areaPath,
     linePath,
   }
 }
-
 function LineSparkline(props: { values?: number[]; tone: StatCardTone }) {
   const rawGradientId = useId()
   const gradientId = `stat-card-line-${rawGradientId.replaceAll(':', '')}`
   const paths = buildLineSparkline(props.values)
-
   if (!paths) return <div className='h-8' aria-hidden='true' />
-
   return (
     <div
       className={cn(
@@ -184,10 +161,8 @@ function LineSparkline(props: { values?: number[]; tone: StatCardTone }) {
     </div>
   )
 }
-
 function BarSparkline(props: { values?: number[]; tone: StatCardTone }) {
   const sparkline = normalizeSparkline(props.values)
-
   return (
     <div className='flex h-8 items-end gap-1' aria-hidden='true'>
       {sparkline.map((bucket) => (
@@ -204,7 +179,6 @@ function BarSparkline(props: { values?: number[]; tone: StatCardTone }) {
     </div>
   )
 }
-
 function StatCardDetails(props: { details: StatCardDetail[] }) {
   return (
     <div className='grid grid-cols-2 gap-2'>
@@ -230,7 +204,6 @@ function StatCardDetails(props: { details: StatCardDetail[] }) {
     </div>
   )
 }
-
 export function StatCard(props: StatCardProps) {
   const Icon = props.icon
   const tone = props.tone ?? 'accent-3'
@@ -287,7 +260,6 @@ export function StatCard(props: StatCardProps) {
       </div>
     )
   }
-
   let visualization: ReactNode
   if (props.details?.length) {
     visualization = <StatCardDetails details={props.details} />
@@ -296,7 +268,6 @@ export function StatCard(props: StatCardProps) {
   } else {
     visualization = <BarSparkline values={props.sparkline} tone={tone} />
   }
-
   return (
     <div
       className={cn(
@@ -322,9 +293,7 @@ export function StatCard(props: StatCardProps) {
         </div>
         {props.action && <div className='shrink-0'>{props.action}</div>}
       </div>
-
       {valueContent}
-
       <div className='hidden sm:block'>{visualization}</div>
     </div>
   )

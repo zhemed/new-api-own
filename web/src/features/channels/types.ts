@@ -1,28 +1,22 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 import { z } from 'zod'
-
 // ============================================================================
 // Channel Schema & Types
 // ============================================================================
-
-export const channelInfoSchema = z.object({
+const channelInfoSchema = z.object({
   is_multi_key: z.boolean().default(false),
   multi_key_size: z.number().default(0),
   multi_key_status_list: z.record(z.string(), z.number()).optional(),
@@ -31,10 +25,7 @@ export const channelInfoSchema = z.object({
   multi_key_polling_index: z.number().default(0),
   multi_key_mode: z.enum(['random', 'polling']).default('random'),
 })
-
-export type ChannelInfo = z.infer<typeof channelInfoSchema>
-
-export const channelSchema = z.object({
+const channelSchema = z.object({
   id: z.number(),
   type: z.number(),
   key: z.string(),
@@ -72,13 +63,10 @@ export const channelSchema = z.object({
   }),
   settings: z.string().default('{}'), // other_settings JSON
 })
-
 export type Channel = z.infer<typeof channelSchema>
-
 // ============================================================================
 // Channel Settings Types
 // ============================================================================
-
 export interface ChannelSettings {
   force_format?: boolean
   thinking_to_content?: boolean
@@ -89,7 +77,7 @@ export interface ChannelSettings {
   http_protocol?: 'auto' | 'http1' | string
   http2_connection_shards?: number
 }
-
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export interface ChannelOtherSettings {
   azure_responses_version?: string
   vertex_key_type?: 'json' | 'api_key'
@@ -110,11 +98,9 @@ export interface ChannelOtherSettings {
   upstream_model_update_last_detected_models?: string[]
   advanced_custom?: AdvancedCustomConfig
 }
-
 export interface AdvancedCustomConfig {
   advanced_routes?: AdvancedCustomRoute[]
 }
-
 export interface AdvancedCustomRoute {
   incoming_path?: string
   upstream_path?: string
@@ -122,13 +108,11 @@ export interface AdvancedCustomRoute {
   models?: string[]
   auth?: AdvancedCustomRouteAuth
 }
-
 export interface AdvancedCustomRouteAuth {
   type?: AdvancedCustomAuthType
   name?: string
   value?: string
 }
-
 export type AdvancedCustomConverter =
   | 'none'
   | 'anthropic_messages_to_openai_chat_completions'
@@ -138,13 +122,10 @@ export type AdvancedCustomConverter =
   | 'openai_responses_to_gemini_generate_content'
   | 'gemini_generate_content_to_openai_chat_completions'
   | 'openai_chat_completions_to_gemini_generate_content'
-
 export type AdvancedCustomAuthType = 'none' | 'header' | 'query'
-
 // ============================================================================
 // API Response Types
 // ============================================================================
-
 export interface GetChannelsResponse {
   success: boolean
   message?: string
@@ -156,7 +137,6 @@ export interface GetChannelsResponse {
     type_counts?: Record<string, number>
   }
 }
-
 export interface SearchChannelsResponse {
   success: boolean
   message?: string
@@ -166,13 +146,11 @@ export interface SearchChannelsResponse {
     type_counts?: Record<string, number>
   }
 }
-
 export interface GetChannelResponse {
   success: boolean
   message?: string
   data?: Channel
 }
-
 export interface ChannelOpsResponse {
   success: boolean
   message?: string
@@ -180,7 +158,6 @@ export interface ChannelOpsResponse {
     retry_times: number
   }
 }
-
 export interface ChannelTestResponse {
   success: boolean
   message?: string
@@ -191,20 +168,17 @@ export interface ChannelTestResponse {
     error?: string
   }
 }
-
 export interface ChannelBalanceResponse {
   success: boolean
   message?: string
   balance?: number
   currency?: string
 }
-
 export interface FetchModelsResponse {
   success: boolean
   message?: string
   data?: string[]
 }
-
 export interface CopyChannelResponse {
   success: boolean
   message?: string
@@ -212,11 +186,9 @@ export interface CopyChannelResponse {
     id: number
   }
 }
-
 // ============================================================================
 // Multi-Key Management Types
 // ============================================================================
-
 export interface KeyStatus {
   index: number
   status: number // 1: enabled, 2: manual disabled, 3: auto disabled
@@ -224,7 +196,6 @@ export interface KeyStatus {
   reason?: string
   key_preview?: string
 }
-
 export type MultiKeyConfirmAction = {
   type:
     | 'enable'
@@ -235,7 +206,6 @@ export type MultiKeyConfirmAction = {
     | 'delete-disabled'
   keyIndex?: number
 }
-
 export interface MultiKeyStatusResponse {
   success: boolean
   message?: string
@@ -250,11 +220,9 @@ export interface MultiKeyStatusResponse {
     auto_disabled_count: number
   }
 }
-
 // ============================================================================
 // API Request Parameters
 // ============================================================================
-
 export type ChannelSortBy =
   | 'id'
   | 'name'
@@ -262,9 +230,7 @@ export type ChannelSortBy =
   | 'balance'
   | 'response_time'
   | 'test_time'
-
-export type ChannelSortOrder = 'asc' | 'desc'
-
+type ChannelSortOrder = 'asc' | 'desc'
 export interface GetChannelsParams {
   p?: number
   page_size?: number
@@ -276,7 +242,6 @@ export interface GetChannelsParams {
   sort_by?: ChannelSortBy
   sort_order?: ChannelSortOrder
 }
-
 export interface SearchChannelsParams {
   keyword?: string
   group?: string
@@ -290,16 +255,10 @@ export interface SearchChannelsParams {
   p?: number
   page_size?: number
 }
-
-export interface ChannelTestParams {
-  test_model?: string
-}
-
 export interface CopyChannelParams {
   suffix?: string
   reset_balance?: boolean
 }
-
 export interface MultiKeyManageParams {
   channel_id: number
   action:
@@ -315,16 +274,13 @@ export interface MultiKeyManageParams {
   page_size?: number
   status?: number // 1=enabled, 2=manual_disabled, 3=auto_disabled
 }
-
 export interface BatchDeleteParams {
   ids: number[]
 }
-
 export interface BatchSetTagParams {
   ids: number[]
   tag: string | null
 }
-
 export interface TagOperationParams {
   tag: string
   new_tag?: string
@@ -334,43 +290,12 @@ export interface TagOperationParams {
   models?: string
   groups?: string
 }
-
 // ============================================================================
 // Form Data Types
 // ============================================================================
-
-export interface ChannelFormData {
-  name: string
-  type: number
-  base_url: string
-  key: string
-  openai_organization?: string
-  models: string
-  group: string
-  model_mapping?: string
-  priority?: number
-  weight?: number
-  test_model?: string
-  auto_ban?: number
-  status: number
-  status_code_mapping?: string
-  tag?: string
-  remark?: string
-  setting?: string
-  param_override?: string
-  header_override?: string
-  settings?: string
-  other?: string
-  // Multi-key specific
-  multi_key_mode?: 'single' | 'batch' | 'multi_to_single'
-  multi_key_type?: 'random' | 'polling'
-  batch_add_set_key_prefix_2_name?: boolean
-}
-
 // ============================================================================
 // Add Channel Request (special structure)
 // ============================================================================
-
 export interface AddChannelRequest {
   mode: 'single' | 'batch' | 'multi_to_single'
   multi_key_mode?: 'random' | 'polling'

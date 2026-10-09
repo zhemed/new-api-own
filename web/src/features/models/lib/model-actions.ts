@@ -1,19 +1,15 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { QueryClient } from '@tanstack/react-query'
@@ -22,15 +18,13 @@ import { toast } from 'sonner'
 
 import { updateModelStatus, deleteModel as deleteModelAPI } from '../api'
 import { modelsQueryKeys } from './query-keys'
-
 // ============================================================================
 // Model Status Actions
 // ============================================================================
-
 /**
  * Enable a model
  */
-export async function handleEnableModel(
+async function handleEnableModel(
   id: number,
   queryClient?: QueryClient,
   onSuccess?: () => void
@@ -50,11 +44,10 @@ export async function handleEnableModel(
     )
   }
 }
-
 /**
  * Disable a model
  */
-export async function handleDisableModel(
+async function handleDisableModel(
   id: number,
   queryClient?: QueryClient,
   onSuccess?: () => void
@@ -74,7 +67,6 @@ export async function handleDisableModel(
     )
   }
 }
-
 /**
  * Toggle model status
  */
@@ -90,11 +82,9 @@ export async function handleToggleModelStatus(
     await handleEnableModel(id, queryClient, onSuccess)
   }
 }
-
 // ============================================================================
 // Model Delete Actions
 // ============================================================================
-
 /**
  * Delete a single model
  */
@@ -118,7 +108,6 @@ export async function handleDeleteModel(
     )
   }
 }
-
 /**
  * Batch delete models
  */
@@ -131,14 +120,11 @@ export async function handleBatchDeleteModels(
     toast.error(i18next.t('Please select at least one model'))
     return
   }
-
   try {
     const deletePromises = ids.map((id) => deleteModelAPI(id))
     const results = await Promise.all(deletePromises)
-
     let successCount = 0
     let failedCount = 0
-
     results.forEach((res, index) => {
       if (res.success) {
         successCount++
@@ -148,7 +134,6 @@ export async function handleBatchDeleteModels(
         console.error(`Failed to delete model ${ids[index]}:`, res.message)
       }
     })
-
     if (successCount > 0) {
       toast.success(
         i18next.t('Successfully deleted {{count}} model(s)', {
@@ -158,7 +143,6 @@ export async function handleBatchDeleteModels(
       queryClient?.invalidateQueries({ queryKey: modelsQueryKeys.lists() })
       onSuccess?.(successCount)
     }
-
     if (failedCount > 0) {
       toast.error(
         i18next.t('Failed to delete {{count}} model(s)', { count: failedCount })
@@ -168,11 +152,9 @@ export async function handleBatchDeleteModels(
     toast.error((error as Error)?.message || i18next.t('Batch delete failed'))
   }
 }
-
 // ============================================================================
 // Batch Status Actions
 // ============================================================================
-
 /**
  * Batch enable models
  */
@@ -185,14 +167,11 @@ export async function handleBatchEnableModels(
     toast.error(i18next.t('Please select at least one model'))
     return
   }
-
   try {
     const enablePromises = ids.map((id) => updateModelStatus(id, 1))
     const results = await Promise.all(enablePromises)
-
     let successCount = 0
     let failedCount = 0
-
     results.forEach((res) => {
       if (res.success) {
         successCount++
@@ -200,7 +179,6 @@ export async function handleBatchEnableModels(
         failedCount++
       }
     })
-
     if (successCount > 0) {
       toast.success(
         i18next.t('Successfully enabled {{count}} model(s)', {
@@ -210,7 +188,6 @@ export async function handleBatchEnableModels(
       queryClient?.invalidateQueries({ queryKey: modelsQueryKeys.lists() })
       onSuccess?.()
     }
-
     if (failedCount > 0) {
       toast.error(
         i18next.t('Failed to enable {{count}} model(s)', { count: failedCount })
@@ -220,7 +197,6 @@ export async function handleBatchEnableModels(
     toast.error((error as Error)?.message || i18next.t('Batch enable failed'))
   }
 }
-
 /**
  * Batch disable models
  */
@@ -233,14 +209,11 @@ export async function handleBatchDisableModels(
     toast.error(i18next.t('Please select at least one model'))
     return
   }
-
   try {
     const disablePromises = ids.map((id) => updateModelStatus(id, 0))
     const results = await Promise.all(disablePromises)
-
     let successCount = 0
     let failedCount = 0
-
     results.forEach((res) => {
       if (res.success) {
         successCount++
@@ -248,7 +221,6 @@ export async function handleBatchDisableModels(
         failedCount++
       }
     })
-
     if (successCount > 0) {
       toast.success(
         i18next.t('Successfully disabled {{count}} model(s)', {
@@ -258,7 +230,6 @@ export async function handleBatchDisableModels(
       queryClient?.invalidateQueries({ queryKey: modelsQueryKeys.lists() })
       onSuccess?.()
     }
-
     if (failedCount > 0) {
       toast.error(
         i18next.t('Failed to disable {{count}} model(s)', {

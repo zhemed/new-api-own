@@ -1,19 +1,15 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 import type {
@@ -24,11 +20,9 @@ import type {
 import { useEffect, useMemo, useState } from 'react'
 
 type SearchRecord = Record<string, unknown>
-
 // Page size persists globally under the established storage key (raw number
 // string), so the choice is remembered across tables and upgrades.
 const PAGE_SIZE_STORAGE_KEY = 'page-size'
-
 function getStoredPageSize(): number | undefined {
   try {
     const n = Number.parseInt(
@@ -40,7 +34,6 @@ function getStoredPageSize(): number | undefined {
     return undefined
   }
 }
-
 function setStoredPageSize(size: number) {
   try {
     localStorage.setItem(PAGE_SIZE_STORAGE_KEY, String(size))
@@ -48,15 +41,13 @@ function setStoredPageSize(size: number) {
     /* ignore */
   }
 }
-
-export type NavigateFn = (opts: {
+type NavigateFn = (opts: {
   search:
     | true
     | SearchRecord
     | ((prev: SearchRecord) => Partial<SearchRecord> | SearchRecord)
   replace?: boolean
 }) => void
-
 type UseTableUrlStateParams = {
   search: SearchRecord
   navigate: NavigateFn
@@ -89,7 +80,6 @@ type UseTableUrlStateParams = {
       }
   >
 }
-
 type UseTableUrlStateReturn = {
   // Global filter
   globalFilter?: string
@@ -106,7 +96,6 @@ type UseTableUrlStateReturn = {
     opts?: { resetTo?: 'first' | 'last' }
   ) => void
 }
-
 export function useTableUrlState(
   params: UseTableUrlStateParams
 ): UseTableUrlStateReturn {
@@ -117,16 +106,13 @@ export function useTableUrlState(
     globalFilter: globalFilterCfg,
     columnFilters: columnFiltersCfg = [],
   } = params
-
   const pageKey = paginationCfg?.pageKey ?? ('page' as string)
   const pageSizeKey = paginationCfg?.pageSizeKey ?? ('pageSize' as string)
   const defaultPage = paginationCfg?.defaultPage ?? 1
   const defaultPageSize = paginationCfg?.defaultPageSize ?? 20
-
   const globalFilterKey = globalFilterCfg?.key ?? ('filter' as string)
   const globalFilterEnabled = globalFilterCfg?.enabled ?? true
   const trimGlobal = globalFilterCfg?.trim ?? true
-
   // Build initial column filters from the current search params
   const initialColumnFilters: ColumnFiltersState = useMemo(() => {
     const collected: ColumnFiltersState = []
@@ -148,16 +134,13 @@ export function useTableUrlState(
     }
     return collected
   }, [columnFiltersCfg, search])
-
   const [columnFilters, setColumnFilters] =
     useState<ColumnFiltersState>(initialColumnFilters)
-
   // URL 为单一数据源：仅当 search（URL）变化时同步，避免依赖 initialColumnFilters 造成死循环（config 常为内联引用）
   useEffect(() => {
     setColumnFilters(initialColumnFilters)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search])
-
   const pagination: PaginationState = useMemo(() => {
     const rawPage = (search as SearchRecord)[pageKey]
     const rawPageSize = (search as SearchRecord)[pageSizeKey]
@@ -168,7 +151,6 @@ export function useTableUrlState(
         : (getStoredPageSize() ?? defaultPageSize)
     return { pageIndex: Math.max(0, pageNum - 1), pageSize: pageSizeNum }
   }, [search, pageKey, pageSizeKey, defaultPage, defaultPageSize])
-
   const onPaginationChange: OnChangeFn<PaginationState> = (updater) => {
     const next = typeof updater === 'function' ? updater(pagination) : updater
     const nextPage = next.pageIndex + 1
@@ -182,13 +164,11 @@ export function useTableUrlState(
       }),
     })
   }
-
   const [globalFilter, setGlobalFilter] = useState<string | undefined>(() => {
     if (!globalFilterEnabled) return undefined
     const raw = (search as SearchRecord)[globalFilterKey]
     return typeof raw === 'string' ? raw : ''
   })
-
   const onGlobalFilterChange: OnChangeFn<string> | undefined =
     globalFilterEnabled
       ? (updater) => {
@@ -207,14 +187,11 @@ export function useTableUrlState(
           })
         }
       : undefined
-
   const onColumnFiltersChange: OnChangeFn<ColumnFiltersState> = (updater) => {
     const next =
       typeof updater === 'function' ? updater(columnFilters) : updater
     setColumnFilters(next)
-
     const patch: Record<string, unknown> = {}
-
     for (const cfg of columnFiltersCfg) {
       const found = next.find((f) => f.id === cfg.columnId)
       const serialize = cfg.serialize ?? ((v: unknown) => v)
@@ -229,7 +206,6 @@ export function useTableUrlState(
         patch[cfg.searchKey] = value.length > 0 ? serialize(value) : undefined
       }
     }
-
     navigate({
       search: (prev) => ({
         ...(prev as SearchRecord),
@@ -238,7 +214,6 @@ export function useTableUrlState(
       }),
     })
   }
-
   const ensurePageInRange = (
     pageCount: number,
     opts: { resetTo?: 'first' | 'last' } = { resetTo: 'first' }
@@ -255,7 +230,6 @@ export function useTableUrlState(
       })
     }
   }
-
   return {
     globalFilter: globalFilterEnabled ? (globalFilter ?? '') : undefined,
     onGlobalFilterChange,

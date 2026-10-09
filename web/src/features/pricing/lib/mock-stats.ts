@@ -42,6 +42,7 @@ export type UptimeDayPoint = {
 }
 
 /** Aggregate uptime over the most recent 30 days. */
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export function aggregateUptime(points: UptimeDayPoint[]): {
   uptime_pct: number
   incidents: number

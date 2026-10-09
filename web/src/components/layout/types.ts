@@ -1,24 +1,19 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { LinkProps } from '@tanstack/react-router'
 import type { TFunction } from 'i18next'
-
 /**
  * Base navigation item type
  */
@@ -35,7 +30,6 @@ type BaseNavItem = {
    */
   requiredRole?: number
 }
-
 /**
  * Navigation link type - single link item
  */
@@ -44,7 +38,6 @@ export type NavLink = BaseNavItem & {
   items?: never
   type?: never
 }
-
 /**
  * Navigation collapsible type - collapsible navigation with sub-items
  */
@@ -53,7 +46,6 @@ export type NavCollapsible = BaseNavItem & {
   url?: never
   type?: never
 }
-
 /**
  * Dynamic chat presets type - dynamically loaded chat preset list from API
  */
@@ -62,12 +54,10 @@ export type NavChatPresets = BaseNavItem & {
   url?: never
   items?: never
 }
-
 /**
  * Navigation item union type
  */
 export type NavItem = NavCollapsible | NavLink | NavChatPresets
-
 /**
  * Navigation group type - a group of navigation items in sidebar
  */
@@ -76,7 +66,6 @@ export type NavGroup = {
   title: string
   items: NavItem[]
 }
-
 /**
  * Root sidebar data type
  *
@@ -86,7 +75,6 @@ export type NavGroup = {
 export type SidebarData = {
   navGroups: NavGroup[]
 }
-
 /**
  * Top navigation link type
  */
@@ -98,17 +86,15 @@ export type TopNavLink = {
   requiresAuth?: boolean
   external?: boolean
 }
-
 /**
  * Back-navigation descriptor for a nested sidebar view
  */
-export type SidebarViewParent = {
+type SidebarViewParent = {
   /** Destination URL for the back button */
   to: LinkProps['to'] | (string & {})
   /** Visible label, e.g. "Back to Dashboard" — already localized */
   label: string
 }
-
 /**
  * Nested sidebar view configuration
  *
@@ -127,7 +113,6 @@ export type SidebarView = {
   /** Nav group builder, called per render with the active translator */
   getNavGroups: (t: TFunction) => NavGroup[]
 }
-
 /**
  * Resolved sidebar view returned by `useSidebarView()`
  *

@@ -1,19 +1,15 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 import { formatBillingCurrencyFromUSD } from '@/lib/currency'
@@ -37,7 +33,6 @@ type DynamicPriceOptions = {
   usdExchangeRate?: number
   groupRatioMultiplier?: number
 }
-
 export type DynamicPriceEntry = {
   key: string
   field: string
@@ -47,7 +42,6 @@ export type DynamicPriceEntry = {
   formatted: string
   variable: BillingVar
 }
-
 export type DynamicPricingSummary = {
   tiers: ParsedTier[]
   tier: ParsedTier | null
@@ -59,20 +53,16 @@ export type DynamicPricingSummary = {
   primaryEntries: DynamicPriceEntry[]
   secondaryEntries: DynamicPriceEntry[]
 }
-
 const PRIMARY_DYNAMIC_FIELDS = new Set(['inputPrice', 'outputPrice'])
-
 export function isDynamicPricingModel(model: PricingModel): boolean {
   return model.billing_mode === 'tiered_expr' && Boolean(model.billing_expr)
 }
-
 export function getDynamicDisplayGroupRatio(
   model: PricingModel,
   selectedGroup?: string
 ): number {
   return getDisplayGroupRatio(model, selectedGroup)
 }
-
 function applyRechargeRate(
   price: number,
   showWithRecharge: boolean,
@@ -82,8 +72,7 @@ function applyRechargeRate(
   if (!showWithRecharge) return price
   return (price * priceRate) / usdExchangeRate
 }
-
-export function formatDynamicUnitPrice(
+function formatDynamicUnitPrice(
   valuePerMillionTokens: number,
   options: DynamicPriceOptions
 ): string {
@@ -99,14 +88,12 @@ export function formatDynamicUnitPrice(
     priceRate,
     usdExchangeRate
   )
-
   return formatBillingCurrencyFromUSD(displayPrice, {
     digitsLarge: 4,
     digitsSmall: 6,
     abbreviate: false,
   })
 }
-
 export function getDynamicPricingTiers(model: PricingModel): ParsedTier[] {
   if (!isDynamicPricingModel(model)) return []
   const { billingExpr } = splitBillingExprAndRequestRules(
@@ -114,26 +101,22 @@ export function getDynamicPricingTiers(model: PricingModel): ParsedTier[] {
   )
   return parseTiersFromExpr(billingExpr)
 }
-
-export function hasDynamicRequestRules(model: PricingModel): boolean {
+function hasDynamicRequestRules(model: PricingModel): boolean {
   if (!isDynamicPricingModel(model)) return false
   const { requestRuleExpr } = splitBillingExprAndRequestRules(
     model.billing_expr || ''
   )
   return Boolean(tryParseRequestRuleExpr(requestRuleExpr || '')?.length)
 }
-
 export function getDynamicPriceEntries(
   tier: ParsedTier | null,
   options: DynamicPriceOptions
 ): DynamicPriceEntry[] {
   if (!tier) return []
-
   return BILLING_PRICING_VARS.flatMap((variable) => {
     if (!variable.field) return []
     const value = Number(tier[variable.field])
     if (!Number.isFinite(value) || value <= 0) return []
-
     return [
       {
         key: variable.key,
@@ -152,18 +135,15 @@ export function getDynamicPriceEntries(
     return 0
   })
 }
-
 export function getDynamicPricingSummary(
   model: PricingModel,
   options: DynamicPriceOptions
 ): DynamicPricingSummary | null {
   if (!isDynamicPricingModel(model)) return null
-
   const tiers = getDynamicPricingTiers(model)
   const tier = tiers[0] || null
   const entries = getDynamicPriceEntries(tier, options)
   const rawExpression = model.billing_expr || ''
-
   return {
     tiers,
     tier,

@@ -16,6 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export type JsonParseResult<T> =
   | { success: true; data: T }
   | { success: false; error: string }
@@ -168,6 +169,7 @@ export function safeJsonParseWithValidation<T>(
   return parsed
 }
 
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export function tryJsonParse<T = unknown>(
   value: string | undefined | null
 ): JsonParseResult<T> {

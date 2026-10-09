@@ -28,12 +28,14 @@ import {
 // Types
 // ============================================================================
 
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export interface DialogHandlers {
   open: () => void
   close: () => void
   toggle: () => void
 }
 
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export interface DialogStateHandlers {
   reset: () => void
   isOpen: boolean
@@ -62,6 +64,7 @@ export interface DialogsHandlers<T extends string> {
  * handlers.close()
  * handlers.toggle()
  */
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export function useDialog(
   initialOpen = false
 ): readonly [boolean, DialogHandlers] {

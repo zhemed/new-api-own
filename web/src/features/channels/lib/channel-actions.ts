@@ -1,19 +1,15 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { QueryClient } from '@tanstack/react-query'
@@ -42,11 +38,9 @@ import {
 } from '../api'
 import { CHANNEL_STATUS, ERROR_MESSAGES, SUCCESS_MESSAGES } from '../constants'
 import type { ChannelTestResponse, CopyChannelParams } from '../types'
-
 // ============================================================================
 // Query Keys
 // ============================================================================
-
 export const channelsQueryKeys = {
   all: ['channels'] as const,
   lists: () => [...channelsQueryKeys.all, 'list'] as const,
@@ -55,7 +49,6 @@ export const channelsQueryKeys = {
   details: () => [...channelsQueryKeys.all, 'detail'] as const,
   detail: (id: number) => [...channelsQueryKeys.details(), id] as const,
 }
-
 function getChannelTestResponseTime(
   response: ChannelTestResponse
 ): number | undefined {
@@ -63,7 +56,6 @@ function getChannelTestResponseTime(
   if (typeof responseTime === 'number' && Number.isFinite(responseTime)) {
     return responseTime
   }
-
   if (
     typeof response.time === 'number' &&
     Number.isFinite(response.time) &&
@@ -71,53 +63,42 @@ function getChannelTestResponseTime(
   ) {
     return Math.round(response.time * 1000)
   }
-
   return undefined
 }
-
 function formatChannelTestDuration(responseTime?: number): string | undefined {
   if (responseTime === undefined) return undefined
-
   if (responseTime >= 1000) {
     return `${(responseTime / 1000).toFixed(2)} s`
   }
-
   return `${Math.max(1, Math.round(responseTime))} ms`
 }
-
 function getChannelTestLabel(options?: {
   channelName?: string
   testModel?: string
 }): string {
   const channelName = options?.channelName?.trim()
   const testModel = options?.testModel?.trim()
-
   if (channelName && testModel) {
     return i18next.t('Channel {{name}} model {{model}}', {
       name: channelName,
       model: testModel,
     })
   }
-
   if (channelName) {
     return i18next.t('Channel {{name}}', { name: channelName })
   }
-
   if (testModel) {
     return i18next.t('Model {{model}}', { model: testModel })
   }
-
   return i18next.t('Channel')
 }
-
 // ============================================================================
 // Single Channel Actions
 // ============================================================================
-
 /**
  * Enable a channel
  */
-export async function handleEnableChannel(
+async function handleEnableChannel(
   id: number,
   queryClient?: QueryClient,
   onSuccess?: () => void
@@ -135,11 +116,10 @@ export async function handleEnableChannel(
     toast.error(i18next.t(ERROR_MESSAGES.UPDATE_FAILED))
   }
 }
-
 /**
  * Disable a channel
  */
-export async function handleDisableChannel(
+async function handleDisableChannel(
   id: number,
   queryClient?: QueryClient,
   onSuccess?: () => void
@@ -160,7 +140,6 @@ export async function handleDisableChannel(
     toast.error(i18next.t(ERROR_MESSAGES.UPDATE_FAILED))
   }
 }
-
 /**
  * Toggle channel status (enable/disable)
  */
@@ -176,7 +155,6 @@ export async function handleToggleChannelStatus(
     await handleEnableChannel(id, queryClient, onSuccess)
   }
 }
-
 /**
  * Delete a channel
  */
@@ -198,7 +176,6 @@ export async function handleDeleteChannel(
     toast.error(i18next.t(ERROR_MESSAGES.DELETE_FAILED))
   }
 }
-
 /**
  * Update a specific channel field (e.g., priority, weight)
  */
@@ -230,7 +207,6 @@ export async function handleUpdateChannelField(
     toast.error(i18next.t(ERROR_MESSAGES.UPDATE_FAILED))
   }
 }
-
 /**
  * Update a specific field for all channels with a tag
  */
@@ -264,7 +240,6 @@ export async function handleUpdateTagField(
     toast.error(i18next.t(ERROR_MESSAGES.UPDATE_FAILED))
   }
 }
-
 /**
  * Test channel connectivity
  */
@@ -294,7 +269,6 @@ export async function handleTestChannel(
           ...(options.stream ? { stream: true } : {}),
         }
       : undefined
-
   try {
     const response = await testChannel(id, payload)
     const responseTime = getChannelTestResponseTime(response)
@@ -338,7 +312,6 @@ export async function handleTestChannel(
     onTestComplete?.(false, undefined, errorMsg)
   }
 }
-
 /**
  * Copy a channel
  */
@@ -361,7 +334,6 @@ export async function handleCopyChannel(
     toast.error(i18next.t('Failed to copy channel'))
   }
 }
-
 /**
  * Update channel balance
  */
@@ -396,11 +368,9 @@ export async function handleUpdateChannelBalance(
     )
   }
 }
-
 // ============================================================================
 // Batch Actions
 // ============================================================================
-
 /**
  * Batch delete channels
  */
@@ -413,7 +383,6 @@ export async function handleBatchDelete(
     toast.error(i18next.t('No channels selected'))
     return
   }
-
   try {
     const response = await batchDeleteChannels({ ids })
     if (response.success) {
@@ -431,7 +400,6 @@ export async function handleBatchDelete(
     toast.error(i18next.t(ERROR_MESSAGES.DELETE_FAILED))
   }
 }
-
 /**
  * Batch enable channels
  */
@@ -444,12 +412,10 @@ export async function handleBatchEnable(
     toast.error(i18next.t('No channels selected'))
     return
   }
-
   try {
     const response = await batchUpdateChannelStatus(ids, CHANNEL_STATUS.ENABLED)
     const successCount = response.success ? response.data || 0 : 0
     const failCount = ids.length - successCount
-
     if (successCount > 0) {
       toast.success(
         i18next.t('{{count}} channel(s) enabled', { count: successCount })
@@ -457,7 +423,6 @@ export async function handleBatchEnable(
       queryClient?.invalidateQueries({ queryKey: channelsQueryKeys.lists() })
       onSuccess?.()
     }
-
     if (!response.success) {
       toast.error(response.message || i18next.t('Failed to enable channels'))
     } else if (failCount > 0) {
@@ -469,7 +434,6 @@ export async function handleBatchEnable(
     toast.error(i18next.t('Failed to enable channels'))
   }
 }
-
 /**
  * Batch disable channels
  */
@@ -482,7 +446,6 @@ export async function handleBatchDisable(
     toast.error(i18next.t('No channels selected'))
     return
   }
-
   try {
     const response = await batchUpdateChannelStatus(
       ids,
@@ -490,7 +453,6 @@ export async function handleBatchDisable(
     )
     const successCount = response.success ? response.data || 0 : 0
     const failCount = ids.length - successCount
-
     if (successCount > 0) {
       toast.success(
         i18next.t('{{count}} channel(s) disabled', { count: successCount })
@@ -498,7 +460,6 @@ export async function handleBatchDisable(
       queryClient?.invalidateQueries({ queryKey: channelsQueryKeys.lists() })
       onSuccess?.()
     }
-
     if (!response.success) {
       toast.error(response.message || i18next.t('Failed to disable channels'))
     } else if (failCount > 0) {
@@ -512,7 +473,6 @@ export async function handleBatchDisable(
     toast.error(i18next.t('Failed to disable channels'))
   }
 }
-
 /**
  * Batch set tag
  */
@@ -526,7 +486,6 @@ export async function handleBatchSetTag(
     toast.error(i18next.t('No channels selected'))
     return
   }
-
   try {
     const response = await batchSetChannelTag({ ids, tag })
     if (response.success) {
@@ -540,11 +499,9 @@ export async function handleBatchSetTag(
     toast.error(i18next.t('Failed to set tag'))
   }
 }
-
 // ============================================================================
 // Tag-Based Actions
 // ============================================================================
-
 /**
  * Enable all channels with a tag
  */
@@ -570,7 +527,6 @@ export async function handleEnableTagChannels(
     toast.error(i18next.t('Failed to enable tag channels'))
   }
 }
-
 /**
  * Disable all channels with a tag
  */
@@ -596,11 +552,9 @@ export async function handleDisableTagChannels(
     toast.error(i18next.t('Failed to disable tag channels'))
   }
 }
-
 // ============================================================================
 // System Actions
 // ============================================================================
-
 /**
  * Delete all disabled channels
  */
@@ -627,7 +581,6 @@ export async function handleDeleteAllDisabled(
     toast.error(i18next.t('Failed to delete disabled channels'))
   }
 }
-
 /**
  * Repair channel consistency
  */
@@ -658,7 +611,6 @@ export async function handleFixAbilities(
     toast.error(i18next.t('Failed to repair channel consistency'))
   }
 }
-
 /**
  * Test all enabled channels
  */
@@ -685,7 +637,6 @@ export async function handleTestAllChannels(
     toast.error(i18next.t('Failed to test all channels'))
   }
 }
-
 /**
  * Update balance for all enabled channels
  */

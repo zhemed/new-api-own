@@ -1,31 +1,26 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 import { create } from 'zustand'
 
 import type { AdminCapabilities } from '@/lib/admin-permissions'
 
-export type UserPermissions = {
+type UserPermissions = {
   sidebar_settings?: boolean
   sidebar_modules?: Record<string, unknown>
   admin_permissions?: AdminCapabilities
 }
-
 export interface AuthUser {
   id: number
   username: string
@@ -54,7 +49,6 @@ export interface AuthUser {
   sidebar_modules?: string
   permissions?: UserPermissions
 }
-
 export interface LoginSession {
   sid: string
   current: boolean
@@ -65,7 +59,6 @@ export interface LoginSession {
   last_active_at: number
   expires_at: number
 }
-
 export interface AuthBundle {
   access_token: string
   token_type: 'Bearer' | string
@@ -73,9 +66,7 @@ export interface AuthBundle {
   user: AuthUser
   session: LoginSession
 }
-
 export type AuthBootstrapState = 'idle' | 'checking' | 'complete'
-
 interface AuthState {
   auth: {
     user: AuthUser | null
@@ -91,7 +82,6 @@ interface AuthState {
     reset: (bootstrapState?: AuthBootstrapState) => void
   }
 }
-
 export const useAuthStore = create<AuthState>()((set) => ({
   auth: {
     user: null,

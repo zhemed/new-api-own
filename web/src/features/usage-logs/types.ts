@@ -1,48 +1,39 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 /**
  * Type definitions for usage logs
  */
 import type { UsageLog } from './data/schema'
-
 // ============================================================================
 // Log Category Types
 // ============================================================================
-
 /**
  * Log category for different log types
  */
 export type LogCategory = 'common' | 'drawing' | 'task'
-
 // ============================================================================
 // Filter Types
 // ============================================================================
-
 /**
  * Common filters (shared across all log types)
  */
-export interface CommonFilters {
+interface CommonFilters {
   startTime?: Date
   endTime?: Date
   channel?: string
 }
-
 /**
  * Common logs specific filters
  */
@@ -54,30 +45,25 @@ export interface CommonLogFilters extends CommonFilters {
   requestId?: string
   upstreamRequestId?: string
 }
-
 /**
  * Drawing logs specific filters
  */
 export interface DrawingLogFilters extends CommonFilters {
   mjId?: string
 }
-
 /**
  * Task logs specific filters
  */
 export interface TaskLogFilters extends CommonFilters {
   taskId?: string
 }
-
 /**
  * Union type for all log filters
  */
 export type LogFilters = CommonLogFilters | DrawingLogFilters | TaskLogFilters
-
 // ============================================================================
 // Common Logs Additional Types
 // ============================================================================
-
 /**
  * Parsed data from the 'other' field in usage logs
  */
@@ -91,7 +77,6 @@ export interface ChannelAffinityInfo {
   key_fp?: string
   using_group?: string
 }
-
 export const USAGE_BILLING_PATH = {
   LOCAL: 'local',
   UPSTREAM: 'upstream',
@@ -102,16 +87,13 @@ export const USAGE_BILLING_PATH = {
   GEMINI: 'billing-usage-gemini',
   GEMINI_ESTIMATED: 'billing-usage-gemini-estimated',
 } as const
-
-export type UsageBillingPath =
+type UsageBillingPath =
   (typeof USAGE_BILLING_PATH)[keyof typeof USAGE_BILLING_PATH]
-
-export interface ToolSurchargeItem {
+interface ToolSurchargeItem {
   name: string
   count: number
   price: number
 }
-
 export interface LogOtherData {
   admin_info?: {
     is_multi_key?: boolean
@@ -242,7 +224,6 @@ export interface LogOtherData {
   subscription_remain?: number
   subscription_total?: number
 }
-
 /**
  * Log statistics data
  */
@@ -251,11 +232,9 @@ export interface LogStatistics {
   rpm: number
   tpm: number
 }
-
 // ============================================================================
 // Drawing Logs (MjProxy) Types
 // ============================================================================
-
 export interface MidjourneyLog {
   id: number
   user_id: number
@@ -279,11 +258,9 @@ export interface MidjourneyLog {
   created_at?: number
   updated_at?: number
 }
-
 // ============================================================================
 // Task Logs Types
 // ============================================================================
-
 export interface TaskLog {
   id: number
   user_id: number
@@ -303,11 +280,9 @@ export interface TaskLog {
   created_at?: number
   updated_at?: number
 }
-
 // ============================================================================
 // Common Log Types
 // ============================================================================
-
 export interface GetLogsParams {
   p?: number
   page_size?: number
@@ -322,7 +297,6 @@ export interface GetLogsParams {
   request_id?: string
   upstream_request_id?: string
 }
-
 export interface GetLogsResponse {
   success: boolean
   message?: string
@@ -333,7 +307,6 @@ export interface GetLogsResponse {
     page_size: number
   }
 }
-
 export interface GetLogStatsParams {
   type?: number
   username?: string
@@ -346,17 +319,14 @@ export interface GetLogStatsParams {
   request_id?: string
   upstream_request_id?: string
 }
-
 export interface GetLogStatsResponse {
   success: boolean
   message?: string
   data?: LogStatistics
 }
-
 // ============================================================================
 // Drawing Log Types
 // ============================================================================
-
 export interface GetMidjourneyLogsParams {
   p?: number
   page_size?: number
@@ -365,11 +335,9 @@ export interface GetMidjourneyLogsParams {
   start_timestamp?: number
   end_timestamp?: number
 }
-
 // ============================================================================
 // Task Log Types
 // ============================================================================
-
 export interface GetTaskLogsParams {
   p?: number
   page_size?: number
@@ -378,11 +346,9 @@ export interface GetTaskLogsParams {
   start_timestamp?: number
   end_timestamp?: number
 }
-
 // ============================================================================
 // Fetch Logs Configuration
 // ============================================================================
-
 /**
  * Configuration for fetching logs by category
  */
@@ -394,11 +360,9 @@ export interface FetchLogsConfig {
   searchParams: Record<string, unknown>
   columnFilters: Array<{ id: string; value: unknown }>
 }
-
 // ============================================================================
 // User Info Types
 // ============================================================================
-
 export interface UserInfo {
   id: number
   username: string

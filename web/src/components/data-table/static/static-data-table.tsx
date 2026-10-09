@@ -1,19 +1,15 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 import * as React from 'react'
@@ -40,7 +36,6 @@ type StaticDataTableBaseProps = {
     'className' | 'children'
   >
 }
-
 type StaticDataTableDataProps<TData = unknown> = StaticDataTableBaseProps & {
   columns: StaticDataTableColumn<TData>[]
   data: TData[]
@@ -52,30 +47,25 @@ type StaticDataTableDataProps<TData = unknown> = StaticDataTableBaseProps & {
   emptyClassName?: string
   headerRowClassName?: string
 }
-
 type StaticDataTableChildrenProps = StaticDataTableBaseProps & {
   children: React.ReactNode
   columns?: never
   data?: never
 }
-
 type StaticDataTableProps<TData = unknown> =
   | StaticDataTableDataProps<TData>
   | StaticDataTableChildrenProps
-
-export type StaticDataTableColumn<TData = unknown> = {
+type StaticDataTableColumn<TData = unknown> = {
   id: string
   header: React.ReactNode
   className?: string
   cellClassName?: string | ((row: TData, index: number) => string | undefined)
   cell?: (row: TData, index: number) => React.ReactNode
 }
-
 export function StaticDataTable<TData = unknown>(
   props: StaticDataTableProps<TData>
 ) {
   const { className, tableClassName, containerProps, tableProps } = props
-
   return (
     <div
       className={cn(staticDataTableClassNames.container, className)}
@@ -91,7 +81,6 @@ export function StaticDataTable<TData = unknown>(
     </div>
   )
 }
-
 function StaticDataTableWithColumns<TData>({
   columns,
   data,
@@ -114,7 +103,6 @@ function StaticDataTableWithColumns<TData>({
       renderRow={renderRow}
     />
   ))
-
   return (
     <>
       <TableHeader>
@@ -141,7 +129,6 @@ function StaticDataTableWithColumns<TData>({
     </>
   )
 }
-
 type StaticDataTableRowProps<TData> = Required<
   Pick<StaticDataTableDataProps<TData>, 'columns'>
 > &
@@ -149,7 +136,6 @@ type StaticDataTableRowProps<TData> = Required<
     row: TData
     index: number
   }
-
 function StaticDataTableRow<TData>({
   row,
   index,
@@ -160,7 +146,6 @@ function StaticDataTableRow<TData>({
   if (renderRow) {
     return <>{renderRow(row, index)}</>
   }
-
   return (
     <TableRow className={getRowClassName?.(row, index)}>
       {columns.map((column) => (
@@ -177,7 +162,6 @@ function StaticDataTableRow<TData>({
     </TableRow>
   )
 }
-
 function renderStaticCellContent<TData>(
   column: StaticDataTableColumn<TData>,
   row: TData,
@@ -185,17 +169,13 @@ function renderStaticCellContent<TData>(
 ) {
   const content = column.cell?.(row, index)
   const textContent = getPrimitiveTextContent(content)
-
   if (!textContent) return content
-
   return <TruncatedCell tooltipContent={textContent}>{content}</TruncatedCell>
 }
-
 function getPrimitiveTextContent(content: React.ReactNode): string | null {
   if (typeof content === 'string' || typeof content === 'number') {
     return String(content)
   }
-
   if (
     React.isValidElement<{ children?: React.ReactNode }>(content) &&
     (typeof content.props.children === 'string' ||
@@ -203,10 +183,8 @@ function getPrimitiveTextContent(content: React.ReactNode): string | null {
   ) {
     return String(content.props.children)
   }
-
   return null
 }
-
 function getStaticCellClassName<TData>(
   column: StaticDataTableColumn<TData>,
   row: TData,
@@ -216,13 +194,11 @@ function getStaticCellClassName<TData>(
     ? column.cellClassName(row, index)
     : column.cellClassName
 }
-
 type StaticDataTableEmptyRowProps = {
   colSpan: number
   children: React.ReactNode
   className?: string
 }
-
 function StaticDataTableEmptyRow({
   colSpan,
   children,

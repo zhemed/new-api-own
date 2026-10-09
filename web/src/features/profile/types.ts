@@ -1,25 +1,20 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 // ============================================================================
 // Profile Type Definitions
 // ============================================================================
-
 /**
  * Generic API response
  */
@@ -28,7 +23,6 @@ export interface ApiResponse<T = unknown> {
   message?: string
   data?: T
 }
-
 /**
  * User profile data
  */
@@ -82,12 +76,10 @@ export interface UserProfile {
   /** LinuxDO ID (OAuth) */
   linux_do_id?: string
 }
-
 /**
  * Notification type
  */
 export type NotifyType = 'email' | 'webhook' | 'bark' | 'gotify'
-
 /**
  * Parsed user settings
  */
@@ -119,7 +111,6 @@ export interface UserSettings {
   /** Preferred interface/API response language */
   language?: string
 }
-
 /**
  * User update request
  */
@@ -128,7 +119,6 @@ export interface UpdateUserRequest {
   password?: string
   original_password?: string
 }
-
 /**
  * User settings update request
  */
@@ -146,14 +136,12 @@ export interface UpdateUserSettingsRequest {
   record_ip_log?: boolean
   upstream_model_update_notify_enabled?: boolean
 }
-
 /**
  * Account deletion request
  */
 export interface DeleteAccountRequest {
   password?: string
 }
-
 /**
  * Account binding item
  */
@@ -166,7 +154,6 @@ export interface BindingItem {
   isEnabled: boolean
   onBind: () => void
 }
-
 /**
  * Two-Factor Authentication Status
  */
@@ -175,7 +162,6 @@ export interface TwoFAStatus {
   locked: boolean
   backup_codes_remaining: number
 }
-
 /**
  * Two-Factor Authentication Setup Data
  */
@@ -184,11 +170,9 @@ export interface TwoFASetupData {
   qr_code_data: string
   backup_codes: string[]
 }
-
 // ============================================================================
 // Checkin Type Definitions
 // ============================================================================
-
 /**
  * Checkin record for a specific date
  */
@@ -198,11 +182,10 @@ export interface CheckinRecord {
   /** Quota awarded for this check-in */
   quota_awarded: number
 }
-
 /**
  * Checkin statistics
  */
-export interface CheckinStats {
+interface CheckinStats {
   /** Whether user has checked in today */
   checked_in_today: boolean
   /** Total number of check-ins */
@@ -214,7 +197,6 @@ export interface CheckinStats {
   /** Check-in records for the queried month */
   records: CheckinRecord[]
 }
-
 /**
  * Check-in status response
  */
@@ -224,7 +206,6 @@ export interface CheckinStatusResponse {
   /** Check-in statistics */
   stats: CheckinStats
 }
-
 /**
  * Check-in action response
  */

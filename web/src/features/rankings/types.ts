@@ -1,19 +1,15 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 // ----------------------------------------------------------------------------
@@ -21,10 +17,8 @@ For commercial licensing, please contact support@quantumnous.com
 // ----------------------------------------------------------------------------
 //
 // Shape of the real data shown on the /rankings page.
-
 export type RankingPeriod = 'today' | 'week' | 'month' | 'year'
-
-export type RankingCategoryId =
+type RankingCategoryId =
   | 'all'
   | 'programming'
   | 'roleplay'
@@ -37,7 +31,6 @@ export type RankingCategoryId =
   | 'education'
   | 'productivity'
   | 'multimodal'
-
 export type ModelRanking = {
   rank: number
   /** Previous rank in the same period; undefined means "new". */
@@ -53,7 +46,6 @@ export type ModelRanking = {
   /** Period-over-period change in token volume (%). */
   growth_pct: number
 }
-
 export type VendorRanking = {
   rank: number
   vendor: string
@@ -66,7 +58,6 @@ export type VendorRanking = {
   /** Top model from this vendor in the period. */
   top_model: string
 }
-
 export type RankingMover = {
   model_name: string
   vendor: string
@@ -77,12 +68,11 @@ export type RankingMover = {
   /** Token-volume change percent. */
   growth_pct: number
 }
-
 /**
  * One sample of a model's token usage at a given timestamp.
  * Flat shape ready to feed VChart's stacked-bar spec.
  */
-export type ModelHistoryPoint = {
+type ModelHistoryPoint = {
   ts: string
   /** Pre-formatted x-axis label (e.g. "May 5", "12:00"). */
   label: string
@@ -92,7 +82,6 @@ export type ModelHistoryPoint = {
   /** Token count routed through the model in this bucket. */
   tokens: number
 }
-
 export type ModelHistorySeries = {
   /** Flat points ready for VChart, ordered oldest → newest. */
   points: ModelHistoryPoint[]
@@ -101,20 +90,18 @@ export type ModelHistorySeries = {
   /** Bucket count (used for sizing axis ticks). */
   buckets: number
 }
-
 /**
  * One sample of a vendor's market share at a given timestamp. `share` is
  * normalised within the bucket (sums to 1.0 across all vendors at the same
  * `ts`); `tokens` is preserved for tooltip use.
  */
-export type VendorSharePoint = {
+type VendorSharePoint = {
   ts: string
   label: string
   vendor: string
   share: number
   tokens: number
 }
-
 export type VendorShareSeries = {
   /** Flat points ready for VChart, ordered oldest → newest. */
   points: VendorSharePoint[]
@@ -122,7 +109,6 @@ export type VendorShareSeries = {
   vendors: Array<{ name: string; total: number; share: number }>
   buckets: number
 }
-
 export type RankingsSnapshot = {
   // Overall (all categories) ------------------------------------------------
   models: ModelRanking[]

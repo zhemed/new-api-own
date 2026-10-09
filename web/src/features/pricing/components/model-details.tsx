@@ -1127,6 +1127,7 @@ const TAB_META: Record<
   api: { icon: Code2, labelKey: 'API' },
 }
 
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export interface ModelDetailsContentProps {
   model: PricingModel
   groupRatio: Record<string, number>
@@ -1139,6 +1140,7 @@ export interface ModelDetailsContentProps {
   showRechargePrice?: boolean
 }
 
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export function ModelDetailsContent(props: ModelDetailsContentProps) {
   const { t } = useTranslation()
   const showRechargePrice = props.showRechargePrice ?? false

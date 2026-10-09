@@ -1,19 +1,15 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 import { BILLING_CACHE_VAR_MAP } from './billing-expr'
@@ -21,13 +17,11 @@ import { BILLING_CACHE_VAR_MAP } from './billing-expr'
 export const CACHE_MODE_TIMED = 'timed'
 export const CACHE_MODE_GENERIC = 'generic'
 export type CacheMode = typeof CACHE_MODE_TIMED | typeof CACHE_MODE_GENERIC
-
 export type TierConditionInput = {
   var: 'p' | 'c' | 'len'
   op: '<' | '<=' | '>' | '>='
   value: number | string
 }
-
 export type VisualTier = {
   label: string
   conditions: TierConditionInput[]
@@ -43,11 +37,9 @@ export type VisualTier = {
   audio_output_unit_cost?: number
   [field: string]: unknown
 }
-
 export type VisualConfig = {
   tiers: VisualTier[]
 }
-
 export function getTierCacheMode(
   tier: Partial<VisualTier> | null | undefined
 ): CacheMode {
@@ -57,7 +49,6 @@ export function getTierCacheMode(
     ? CACHE_MODE_TIMED
     : CACHE_MODE_GENERIC
 }
-
 export function normalizeVisualTier(
   tier: Partial<VisualTier> = {}
 ): VisualTier {
@@ -77,7 +68,6 @@ export function normalizeVisualTier(
     audio_output_unit_cost: Number(tier.audio_output_unit_cost) || 0,
   }
 }
-
 export function createDefaultVisualConfig(): VisualConfig {
   return {
     tiers: [
@@ -91,7 +81,6 @@ export function createDefaultVisualConfig(): VisualConfig {
     ],
   }
 }
-
 export function normalizeVisualConfig(
   config: VisualConfig | null | undefined
 ): VisualConfig {
@@ -103,7 +92,6 @@ export function normalizeVisualConfig(
     tiers: config.tiers.map((tier) => normalizeVisualTier(tier)),
   }
 }
-
 function buildConditionStr(conditions: TierConditionInput[]): string {
   if (!conditions || conditions.length === 0) return ''
   return conditions
@@ -111,7 +99,6 @@ function buildConditionStr(conditions: TierConditionInput[]): string {
     .map((c) => `${c.var} ${c.op} ${c.value}`)
     .join(' && ')
 }
-
 function buildTierBodyExpr(tier: VisualTier): string {
   const parts: string[] = []
   const ic = Number(tier.input_unit_cost) || 0
@@ -124,7 +111,6 @@ function buildTierBodyExpr(tier: VisualTier): string {
   }
   return parts.join(' + ')
 }
-
 export function generateExprFromVisualConfig(
   config: VisualConfig | null | undefined
 ): string {
@@ -132,7 +118,6 @@ export function generateExprFromVisualConfig(
     return 'p * 0 + c * 0'
   }
   const tiers = config.tiers
-
   if (tiers.length === 1) {
     const tier = tiers[0]
     const label = tier.label || 'default'
@@ -143,14 +128,12 @@ export function generateExprFromVisualConfig(
     }
     return body
   }
-
   const parts: string[] = []
   for (let i = 0; i < tiers.length; i++) {
     const tier = tiers[i]
     const label = tier.label || `tier_${i + 1}`
     const body = `tier("${label}", ${buildTierBodyExpr(tier)})`
     const cond = buildConditionStr(tier.conditions)
-
     if (i < tiers.length - 1 && cond) {
       parts.push(`${cond} ? ${body}`)
     } else {
@@ -159,7 +142,6 @@ export function generateExprFromVisualConfig(
   }
   return parts.join(' : ')
 }
-
 export function tryParseVisualConfig(
   exprStr: string | null | undefined
 ): VisualConfig | null {
@@ -172,9 +154,7 @@ export function tryParseVisualConfig(
     const optCacheStr = cacheVarNames
       .map((v) => `(?:\\s*\\+\\s*${v}\\s*\\*\\s*([\\d.eE+-]+))?`)
       .join('')
-
     const bodyPat = `p\\s*\\*\\s*([\\d.eE+-]+)\\s*\\+\\s*c\\s*\\*\\s*([\\d.eE+-]+)${optCacheStr}`
-
     const singleRe = new RegExp(`^tier\\("([^"]*)",\\s*${bodyPat}\\)$`)
     const simple = body.match(singleRe)
     if (simple) {
@@ -192,7 +172,6 @@ export function tryParseVisualConfig(
         tiers: [normalizeVisualTier(tier as Partial<VisualTier>)],
       })
     }
-
     const condGroup =
       `((?:(?:p|c|len)\\s*(?:<|<=|>|>=)\\s*[\\d.eE+]+)` +
       `(?:\\s*&&\\s*(?:p|c|len)\\s*(?:<|<=|>|>=)\\s*[\\d.eE+]+)*)`
@@ -231,7 +210,6 @@ export function tryParseVisualConfig(
       tiers.push(normalizeVisualTier(tier as Partial<VisualTier>))
     }
     if (tiers.length === 0) return null
-
     const cfg = normalizeVisualConfig({ tiers })
     const regenerated = generateExprFromVisualConfig(cfg)
     if (regenerated.replaceAll(/\s+/g, '') !== body.replaceAll(/\s+/g, '')) {
@@ -242,11 +220,9 @@ export function tryParseVisualConfig(
     return null
   }
 }
-
 // ---------------------------------------------------------------------------
 // Local cost evaluator (for the estimator preview)
 // ---------------------------------------------------------------------------
-
 const ESTIMATOR_VARS = [
   { var: 'cr', stateKey: 'cacheReadTokens' },
   { var: 'cc', stateKey: 'cacheCreateTokens' },
@@ -256,18 +232,15 @@ const ESTIMATOR_VARS = [
   { var: 'ai', stateKey: 'audioInputTokens' },
   { var: 'ao', stateKey: 'audioOutputTokens' },
 ] as const
-
 export type ExtraTokenValues = Record<
   (typeof ESTIMATOR_VARS)[number]['stateKey'],
   number
 >
-
 export type EvalResult = {
   cost: number
   matchedTier: string
   error: string | null
 }
-
 export function evalExprLocally(
   exprStr: string,
   promptTokens: number,
@@ -313,11 +286,8 @@ export function evalExprLocally(
     return { cost: 0, matchedTier: '', error: message }
   }
 }
-
 export function exprUsesExtraVars(exprStr: string): boolean {
   if (!exprStr) return false
   const varNames = ESTIMATOR_VARS.map((f) => f.var).join('|')
   return new RegExp(`\\b(${varNames})\\b`).test(exprStr)
 }
-
-export const ESTIMATOR_EXTRA_FIELDS = ESTIMATOR_VARS

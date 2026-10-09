@@ -1,19 +1,15 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 import { SystemInfoSection } from '../general/system-info-section'
@@ -88,16 +84,13 @@ const SITE_SECTIONS = [
     },
   },
 ] as const
-
-export type SiteSectionId = (typeof SITE_SECTIONS)[number]['id']
-
+type SiteSectionId = (typeof SITE_SECTIONS)[number]['id']
 const siteRegistry = createSectionRegistry<SiteSectionId, SiteSettings>({
   sections: SITE_SECTIONS,
   defaultSection: 'system-info',
   basePath: '/system-settings/site',
   urlStyle: 'path',
 })
-
 export const SITE_SECTION_IDS = siteRegistry.sectionIds
 export const SITE_DEFAULT_SECTION = siteRegistry.defaultSection
 export const getSiteSectionNavItems = siteRegistry.getSectionNavItems

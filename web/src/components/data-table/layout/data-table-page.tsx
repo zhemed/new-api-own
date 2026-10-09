@@ -1,19 +1,15 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 import type {
@@ -23,20 +19,16 @@ import type {
 } from '@tanstack/react-table'
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 import * as React from 'react'
@@ -61,81 +53,67 @@ import { DataTableToolbar } from '../toolbar/toolbar'
 import { DataTableViewModeToggle } from '../toolbar/view-mode-toggle'
 import { DataTableCardGrid } from './card-grid'
 import { MobileCardList } from './mobile-card-list'
-
 /**
  * Pass-through configuration for the default {@link DataTableToolbar}.
  * Pass `toolbar` (ReactNode) instead to fully replace the default toolbar.
  */
-export type DataTablePageToolbarProps<TData> = Omit<
+type DataTablePageToolbarProps<TData> = Omit<
   React.ComponentProps<typeof DataTableToolbar<TData>>,
   'table'
 >
-
 export type DataTablePageProps<TData> = {
   /**
    * TanStack Table instance returned from `useReactTable`.
    */
   table: TanstackTable<TData>
-
   /**
    * Column definitions. Used for skeleton column count and empty-state colSpan.
    */
   columns: ColumnDef<TData, unknown>[]
-
   /**
    * Initial loading state — renders {@link TableSkeleton} or mobile skeleton.
    */
   isLoading?: boolean
-
   /**
    * Refetch / background loading — dims the table without removing rows.
    */
   isFetching?: boolean
-
   /**
    * Empty-state title (used for both desktop {@link TableEmpty} and mobile fallback).
    */
   emptyTitle?: string
-
   /**
    * Empty-state description.
    */
   emptyDescription?: string
-
   /**
    * Empty-state icon override (desktop only; mobile uses default Database icon).
    */
   emptyIcon?: React.ReactNode
-
   /**
    * Empty-state extra content — e.g. a "Create" button below the message.
    */
   emptyAction?: React.ReactNode
-
   /**
    * Custom toolbar node — fully replaces the default {@link DataTableToolbar}.
    * Useful for layouts like "primary buttons + toolbar" or feature-specific filter cards.
    * If provided, `toolbarProps` is ignored.
    */
   toolbar?: React.ReactNode
-
   /**
    * Pass-through props for the default {@link DataTableToolbar}.
    * Ignored if `toolbar` is provided. Pass `null` to omit the toolbar entirely.
    */
   toolbarProps?: DataTablePageToolbarProps<TData> | null
-
   /**
    * Bulk action bar — typically a wrapped {@link DataTableBulkActions} component.
    * Rendered only on desktop (mobile selection is uncommon).
    */
   bulkActions?: React.ReactNode
-
   /**
    * Custom mobile list node — fully replaces the default {@link MobileCardList}.
    */
   mobile?: React.ReactNode
-
   /**
    * Pass-through props for the default {@link MobileCardList}.
    * Ignored if `mobile` is provided.
@@ -144,13 +122,11 @@ export type DataTablePageProps<TData> = {
     getRowKey?: (row: Row<TData>) => string | number
     getRowClassName?: (row: Row<TData>) => string | undefined
   }
-
   /**
    * Disable the mobile-specific layout entirely — always renders desktop table.
    * Useful for pages where the table is read-only and short.
    */
   hideMobile?: boolean
-
   /**
    * Row className resolver — applied to both desktop `TableRow` and mobile card.
    * Composes with the default `data-state="selected"` styling on desktop.
@@ -162,7 +138,6 @@ export type DataTablePageProps<TData> = {
     row: Row<TData>,
     ctx: { isMobile: boolean }
   ) => string | undefined
-
   /**
    * Custom desktop row renderer — replaces the default `<TableRow>`/`<TableCell>` mapping.
    * Use for expanded rows, aggregate rows, click-on-row navigation, etc.
@@ -171,19 +146,16 @@ export type DataTablePageProps<TData> = {
     row: Row<TData>,
     helpers: DataTableRenderRowHelpers
   ) => React.ReactNode
-
   /**
    * Desktop column className resolver. Use for semantic alignment/spacing only;
    * fixed-column behavior should be configured with `pinnedColumns`.
    */
   getColumnClassName?: DataTableColumnClassName
-
   /**
    * Fixed desktop columns. The shared table component owns sticky position,
    * layering, shadows, and row-state backgrounds.
    */
   pinnedColumns?: DataTablePinnedColumn[]
-
   /**
    * Apply explicit column widths from `header.getSize()` to `<TableHead>`.
    * Enable this when your column definitions include `size` and you want it honored.
@@ -191,52 +163,43 @@ export type DataTablePageProps<TData> = {
    * which would unintentionally constrain layouts that don't define sizes).
    */
   applyHeaderSize?: boolean
-
   /**
    * Optional skeleton key prefix for stable React keys across re-renders.
    */
   skeletonKeyPrefix?: string
-
   /**
    * Whether to render pagination. Defaults to `true`.
    */
   showPagination?: boolean
-
   /**
    * Render pagination via `PageFooterPortal` (sticks to page footer).
    * Defaults to `true`. Set `false` to render inline below the table.
    */
   paginationInFooter?: boolean
-
   /**
    * Extra content rendered between the table/mobile list and the pagination.
    * E.g. summary stats, helper text.
    */
   afterTable?: React.ReactNode
-
   /**
    * Outer wrapper className (applied to the toolbar+table column).
    */
   className?: string
-
   /**
    * Make the desktop table consume the available page height and scroll inside
    * the table body while keeping the header fixed. Defaults to `true`.
    */
   fixedHeight?: boolean
-
   /**
    * Desktop table container className (the bordered scroll wrapper).
    */
   tableClassName?: string
-
   /**
    * Desktop `<TableHeader>` className override.
    * Use for header color/spacing overrides. Fixed-height pages keep the header
    * outside the scrollable body automatically.
    */
   tableHeaderClassName?: string
-
   /**
    * Opt into the table/card view toggle. Defaults to `false`, so existing
    * pages render the table only and behave exactly as before. When enabled, a
@@ -246,32 +209,27 @@ export type DataTablePageProps<TData> = {
    * mobile. Mobile card mode reuses the same card renderer in a single column.
    */
   enableCardView?: boolean
-
   /**
    * Controlled view mode. When provided, `onViewModeChange` should update it.
    * Leave unset to let the page manage view mode internally (optionally
    * persisted via `viewModeStorageKey`).
    */
   viewMode?: DataTableViewMode
-
   /**
    * Change handler for the controlled `viewMode`.
    */
   onViewModeChange?: (mode: DataTableViewMode) => void
-
   /**
    * localStorage key for persisting the (uncontrolled) view mode per table.
    * Ignored when `viewMode` is controlled.
    */
   viewModeStorageKey?: string
-
   /**
    * Initial (uncontrolled) view mode. When unset, defaults to `'card'` if
    * `enableCardView` is `true`, otherwise `'table'`. A persisted selection
    * (via `viewModeStorageKey`) always takes precedence over this default.
    */
   defaultViewMode?: DataTableViewMode
-
   /**
    * Custom card renderer for card view. When omitted, cards are generated
    * generically from the column definitions (driven by column meta).
@@ -279,13 +237,11 @@ export type DataTablePageProps<TData> = {
   renderCard?: React.ComponentProps<
     typeof DataTableCardGrid<TData>
   >['renderCard']
-
   /**
    * Responsive grid className override for the card view.
    */
   cardGridClassName?: string
 }
-
 /**
  * Unified table page wrapper. Encapsulates the canonical structure used across
  * all list pages: toolbar → desktop table / mobile list → pagination, plus
@@ -310,7 +266,6 @@ export type DataTablePageProps<TData> = {
 export function DataTablePage<TData>(props: DataTablePageProps<TData>) {
   const isMobile = useMediaQuery('(max-width: 640px)')
   const showMobile = isMobile && !props.hideMobile
-
   const [internalViewMode, setInternalViewMode] = useDataTableViewMode({
     storageKey: props.viewModeStorageKey,
     // When card view is enabled, prefer it as the default unless the consumer
@@ -323,16 +278,13 @@ export function DataTablePage<TData>(props: DataTablePageProps<TData>) {
   const viewMode = props.viewMode ?? internalViewMode
   const setViewMode = props.onViewModeChange ?? setInternalViewMode
   const cardViewActive = !!props.enableCardView
-
   const viewToggle = cardViewActive ? (
     <DataTableViewModeToggle value={viewMode} onChange={setViewMode} />
   ) : undefined
-
   const toolbarNode = renderToolbar(props, viewToggle)
   const mobileNode = renderMobile(props, showMobile, cardViewActive, viewMode)
   const desktopNode = renderDesktop(props, showMobile, cardViewActive, viewMode)
   const paginationNode = renderPagination(props)
-
   return (
     <>
       <div
@@ -348,16 +300,13 @@ export function DataTablePage<TData>(props: DataTablePageProps<TData>) {
         {desktopNode}
         {props.afterTable}
       </div>
-
       {/* Bulk actions are typically a fixed-position toolbar; let the consumer
           handle its own visibility, we just gate it to non-mobile. */}
       {!showMobile && props.bulkActions}
-
       {paginationNode}
     </>
   )
 }
-
 function renderToolbar<TData>(
   props: DataTablePageProps<TData>,
   viewToggle: React.ReactNode
@@ -380,23 +329,19 @@ function renderToolbar<TData>(
   }
   return null
 }
-
 function renderPagination<TData>(
   props: DataTablePageProps<TData>
 ): React.ReactNode {
   if (props.showPagination === false) {
     return null
   }
-
   const pagination = <DataTablePagination table={props.table} />
-
   return props.paginationInFooter !== false ? (
     <PageFooterPortal>{pagination}</PageFooterPortal>
   ) : (
     <div className='pt-2'>{pagination}</div>
   )
 }
-
 function renderMobile<TData>(
   props: DataTablePageProps<TData>,
   showMobile: boolean,
@@ -406,7 +351,6 @@ function renderMobile<TData>(
   if (!showMobile) {
     return null
   }
-
   const isFetchingOnly = props.isFetching && !props.isLoading
   const ownGetRowClassName = props.getRowClassName
   const mobileGetRowClassName =
@@ -414,7 +358,6 @@ function renderMobile<TData>(
     (ownGetRowClassName
       ? (row: Row<TData>) => ownGetRowClassName(row, { isMobile: true })
       : undefined)
-
   let mobileContent = props.mobile
   if (mobileContent === undefined) {
     if (cardViewActive && viewMode === DATA_TABLE_VIEW_MODES.TABLE) {
@@ -473,10 +416,8 @@ function renderMobile<TData>(
       )
     }
   }
-
   return <div className='min-h-0 flex-1 overflow-y-auto'>{mobileContent}</div>
 }
-
 function renderDesktop<TData>(
   props: DataTablePageProps<TData>,
   showMobile: boolean,
@@ -486,10 +427,8 @@ function renderDesktop<TData>(
   if (showMobile) {
     return null
   }
-
   const isFetchingOnly = props.isFetching && !props.isLoading
   const fixedHeight = props.fixedHeight !== false
-
   if (cardViewActive && viewMode === DATA_TABLE_VIEW_MODES.CARD) {
     return (
       <div
@@ -515,7 +454,6 @@ function renderDesktop<TData>(
       </div>
     )
   }
-
   return (
     <DataTableView
       table={props.table}

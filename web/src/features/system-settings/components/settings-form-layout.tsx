@@ -1,19 +1,15 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { ComponentProps, ReactNode } from 'react'
@@ -27,11 +23,9 @@ type SettingsFormGridProps = {
   children: ReactNode
   className?: string
 }
-
 type SettingsFormGridItemProps = SettingsFormGridProps & {
   span?: 'default' | 'full'
 }
-
 type SettingsSwitchItemProps = ComponentProps<typeof FormItem>
 type SettingsSwitchRowProps = ComponentProps<'div'>
 type SettingsControlGroupProps = ComponentProps<'div'>
@@ -43,10 +37,8 @@ type SettingsSwitchFieldProps = SettingsSwitchRowProps & {
   description?: ReactNode
   disabled?: boolean
 }
-
 const settingsSwitchRowClassName =
   'flex min-w-0 flex-row items-center justify-between gap-4 py-2.5'
-
 export function SettingsFormGrid(props: SettingsFormGridProps) {
   return (
     <div
@@ -64,7 +56,6 @@ export function SettingsFormGrid(props: SettingsFormGridProps) {
     </div>
   )
 }
-
 export function SettingsFormGridItem(props: SettingsFormGridItemProps) {
   return (
     <div
@@ -79,7 +70,6 @@ export function SettingsFormGridItem(props: SettingsFormGridItemProps) {
     </div>
   )
 }
-
 export function SettingsSwitchItem({
   className,
   ...props
@@ -92,11 +82,7 @@ export function SettingsSwitchItem({
     />
   )
 }
-
-export function SettingsSwitchRow({
-  className,
-  ...props
-}: SettingsSwitchRowProps) {
+function SettingsSwitchRow({ className, ...props }: SettingsSwitchRowProps) {
   return (
     <div
       data-settings-form-span='full'
@@ -105,7 +91,6 @@ export function SettingsSwitchRow({
     />
   )
 }
-
 export function SettingsSwitchField({
   checked,
   onCheckedChange,
@@ -131,7 +116,6 @@ export function SettingsSwitchField({
     </SettingsSwitchRow>
   )
 }
-
 export function SettingsSwitchContent(props: SettingsFormGridProps) {
   return (
     <div className={cn('min-w-0 space-y-0.5', props.className)}>
@@ -139,7 +123,6 @@ export function SettingsSwitchContent(props: SettingsFormGridProps) {
     </div>
   )
 }
-
 export function SettingsControlGroup({
   className,
   ...props
@@ -155,7 +138,6 @@ export function SettingsControlGroup({
     />
   )
 }
-
 export function SettingsControlChildren({
   className,
   ...props
@@ -167,7 +149,6 @@ export function SettingsControlChildren({
     />
   )
 }
-
 export function SettingsForm({ className, ...props }: ComponentProps<'form'>) {
   return (
     <form

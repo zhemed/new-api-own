@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { API_KEY_STATUS } from '@/features/keys/constants'
 
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export type ChatLinkType = 'web' | 'custom-protocol' | 'fluent'
 
 export type ChatPreset = {
@@ -40,6 +41,7 @@ export type ResolveChatUrlParams = {
   serverAddress: string
 }
 
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export type ActiveApiKey = {
   key: string
   status: number
@@ -74,6 +76,7 @@ function toBase64(value: string) {
   return ''
 }
 
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export function detectChatLinkType(url: string): ChatLinkType {
   if (HTTP_REGEX.test(url)) {
     return 'web'
@@ -201,6 +204,7 @@ export function resolveChatUrl({
   return url
 }
 
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export function getFirstActiveKey(
   keys: ActiveApiKey[] | undefined
 ): ActiveApiKey | undefined {

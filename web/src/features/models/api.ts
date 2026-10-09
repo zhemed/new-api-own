@@ -131,6 +131,7 @@ export async function getVendors(params?: {
 /**
  * Search vendors
  */
+/** @public cross-module API/contract kept intentionally; deleting it requires updating callers. */
 export async function searchVendors(params: {
   keyword?: string
   p?: number
@@ -143,6 +144,7 @@ export async function searchVendors(params: {
 /**
  * Get single vendor by ID
  */
+/** @public cross-module API/contract kept intentionally; deleting it requires updating callers. */
 export async function getVendor(id: number): Promise<GetVendorResponse> {
   const res = await api.get(`/api/vendors/${id}`)
   return res.data
@@ -402,6 +404,7 @@ export async function listDeploymentContainers(
 /**
  * Get single container details
  */
+/** @public cross-module API/contract kept intentionally; deleting it requires updating callers. */
 export async function getDeploymentContainerDetails(
   deploymentId: string | number,
   containerId: string
@@ -460,6 +463,7 @@ export async function getHardwareTypes(): Promise<{
 /**
  * Get locations for deployment
  */
+/** @public cross-module API/contract kept intentionally; deleting it requires updating callers. */
 export async function getDeploymentLocations(): Promise<{
   success: boolean
   message?: string

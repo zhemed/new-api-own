@@ -28,6 +28,7 @@ import { parseModelTags as parseTagsFromUtils } from './model-utils'
 /**
  * Model form validation schema
  */
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export const modelFormSchema = z.object({
   id: z.number().optional(),
   model_name: z.string().min(1, 'Model name is required'),
@@ -43,6 +44,7 @@ export const modelFormSchema = z.object({
   quota_types: z.array(z.number()).default([]),
 })
 
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export type ModelFormValues = z.infer<typeof modelFormSchema>
 
 // ============================================================================
@@ -52,6 +54,7 @@ export type ModelFormValues = z.infer<typeof modelFormSchema>
 /**
  * Vendor form validation schema
  */
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export const vendorFormSchema = z.object({
   id: z.number().optional(),
   name: z.string().min(1, 'Vendor name is required'),
@@ -60,6 +63,7 @@ export const vendorFormSchema = z.object({
   status: z.number().default(1),
 })
 
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export type VendorFormValues = z.infer<typeof vendorFormSchema>
 
 // ============================================================================
@@ -69,6 +73,7 @@ export type VendorFormValues = z.infer<typeof vendorFormSchema>
 /**
  * Transform model to form default values
  */
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export function transformModelToFormDefaults(model: Model): ModelFormValues {
   return {
     id: model.id,
@@ -89,6 +94,7 @@ export function transformModelToFormDefaults(model: Model): ModelFormValues {
 /**
  * Transform form data to model create/update payload
  */
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export function transformFormDataToModelPayload(
   formData: ModelFormValues
 ): Partial<Model> {
@@ -115,6 +121,7 @@ export function transformFormDataToModelPayload(
 /**
  * Format tags array to string
  */
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export function formatTagsArray(tags: string[]): string {
   return tags.filter(Boolean).join(',')
 }
@@ -122,6 +129,7 @@ export function formatTagsArray(tags: string[]): string {
 /**
  * Validate JSON string
  */
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export function validateJSON(value: string): boolean {
   if (!value || value.trim() === '') return true
 
@@ -136,6 +144,7 @@ export function validateJSON(value: string): boolean {
 /**
  * Validate endpoints JSON
  */
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export function validateEndpoints(endpoints: string): boolean {
   return validateJSON(endpoints)
 }

@@ -1,39 +1,31 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { Row, Table } from '@tanstack/react-table'
 import { Database } from 'lucide-react'
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 import * as React from 'react'
@@ -51,9 +43,8 @@ import { cn } from '@/lib/utils'
 
 import { tableHasCompactMeta } from './card-cell-utils'
 import { CardRowContent } from './card-row-content'
-
 /** Helpers passed to a custom {@link DataTableCardGridProps.renderCard}. */
-export type DataTableCardHelpers = {
+type DataTableCardHelpers = {
   /**
    * Whether the table declares compact card meta (`mobileTitle`/`mobileBadge`).
    * Provided so custom renderers can match the default layout decision.
@@ -64,7 +55,6 @@ export type DataTableCardHelpers = {
    */
   isSelected: boolean
 }
-
 export interface DataTableCardGridProps<TData> {
   table: Table<TData>
   isLoading?: boolean
@@ -88,10 +78,8 @@ export interface DataTableCardGridProps<TData> {
   /** Stable key prefix for skeleton cards. */
   skeletonKeyPrefix?: string
 }
-
 const DEFAULT_GRID_CLASSNAME =
   'grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3'
-
 function CardGridSkeleton(props: {
   gridClassName?: string
   keyPrefix?: string
@@ -121,7 +109,6 @@ function CardGridSkeleton(props: {
     </div>
   )
 }
-
 /**
  * Desktop card view for table data — a responsive grid of bordered cards.
  *
@@ -135,18 +122,15 @@ function CardGridSkeleton(props: {
  */
 export function DataTableCardGrid<TData>(props: DataTableCardGridProps<TData>) {
   const { t } = useTranslation()
-
   const resolvedEmptyTitle = props.emptyTitle ?? t('No Data')
   const resolvedEmptyDescription =
     props.emptyDescription ?? t('No data available')
-
   const visibleColumns = props.table.getVisibleLeafColumns()
   const compact = React.useMemo(
     () => tableHasCompactMeta(props.table),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [visibleColumns]
   )
-
   if (props.isLoading) {
     return (
       <CardGridSkeleton
@@ -155,9 +139,7 @@ export function DataTableCardGrid<TData>(props: DataTableCardGridProps<TData>) {
       />
     )
   }
-
   const rows = props.table.getRowModel().rows
-
   if (!rows || rows.length === 0) {
     return (
       <div className='rounded-lg border p-6'>
@@ -173,7 +155,6 @@ export function DataTableCardGrid<TData>(props: DataTableCardGridProps<TData>) {
       </div>
     )
   }
-
   return (
     <div className={props.gridClassName ?? DEFAULT_GRID_CLASSNAME}>
       {rows.map((row) => {

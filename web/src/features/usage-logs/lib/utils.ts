@@ -92,12 +92,6 @@ function timestampToSeconds(ms: number): number {
 }
 
 /**
- * Build query parameters from filters
- * (re-exported from ../api to avoid an import cycle)
- */
-export { buildQueryParams } from '../api'
-
-/**
  * Build time range parameters with default values
  * Shared logic for all log types
  */
@@ -129,7 +123,7 @@ function buildTimeRangeParams(
  * Build base parameters with time range (for drawing and task logs)
  * @param useMilliseconds - Whether to use millisecond timestamps (true for drawing logs, false for task logs)
  */
-export function buildBaseParams(config: {
+function buildBaseParams(config: {
   page: number
   pageSize: number
   searchParams: Record<string, unknown>

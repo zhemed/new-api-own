@@ -1,19 +1,15 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 import { splitBillingExprAndRequestRules } from '@/features/pricing/lib/billing-expr'
@@ -33,7 +29,6 @@ export type ModelPricingSnapshotInput = {
   billingMode: string
   billingExpr: string
 }
-
 export type ModelPricingSnapshot = {
   name: string
   price?: string
@@ -49,7 +44,6 @@ export type ModelPricingSnapshot = {
   requestRuleExpr?: string
   hasConflict: boolean
 }
-
 export type ModelRow = ModelPricingSnapshot & {
   saved?: ModelPricingSnapshot
   draft?: ModelPricingSnapshot
@@ -57,35 +51,28 @@ export type ModelRow = ModelPricingSnapshot & {
   isDraftDeleted: boolean
   isDraftNew: boolean
 }
-
-export const hasPricingValue = (value?: string) =>
-  value !== undefined && value !== ''
-
+const hasPricingValue = (value?: string) => value !== undefined && value !== ''
 export const isBasePricingUnset = (snapshot?: ModelPricingSnapshot) =>
   !snapshot ||
   (snapshot.billingMode !== 'tiered_expr' &&
     !hasPricingValue(snapshot.price) &&
     !hasPricingValue(snapshot.ratio))
-
 const toNumberOrNull = (value?: string) => {
   if (!hasPricingValue(value)) return null
   const num = Number(value)
   return Number.isFinite(num) ? num : null
 }
-
 const ratioToPrice = (ratio?: string, denominator?: string) => {
   const ratioNumber = toNumberOrNull(ratio)
   const denominatorNumber = denominator ? toNumberOrNull(denominator) : 2
   if (ratioNumber === null || denominatorNumber === null) return ''
   return formatPricingNumber(ratioNumber * denominatorNumber)
 }
-
 export const getModeLabel = (mode?: string) => {
   if (mode === 'per-request') return 'Per-request'
   if (mode === 'tiered_expr') return 'Expression'
   return 'Per-token'
 }
-
 export const getModeVariant = (
   mode?: string
 ): 'warning' | 'info' | 'success' => {
@@ -93,7 +80,6 @@ export const getModeVariant = (
   if (mode === 'tiered_expr') return 'info'
   return 'success'
 }
-
 const getExpressionSummary = (
   row: ModelPricingSnapshot,
   t: (key: string) => string
@@ -104,7 +90,6 @@ const getExpressionSummary = (
   }
   return t('Expression pricing')
 }
-
 export const getPriceSummary = (
   row: ModelPricingSnapshot,
   t: (key: string) => string
@@ -115,10 +100,8 @@ export const getPriceSummary = (
   if (row.billingMode === 'per-request') {
     return row.price ? `$${row.price} / ${t('request')}` : t('Unset price')
   }
-
   const inputPrice = ratioToPrice(row.ratio)
   if (!inputPrice) return t('Unset price')
-
   const extraCount = [
     row.completionRatio,
     row.cacheRatio,
@@ -127,12 +110,10 @@ export const getPriceSummary = (
     row.audioRatio,
     row.audioCompletionRatio,
   ].filter(hasPricingValue).length
-
   return extraCount > 0
     ? `${t('Input')} $${inputPrice} · ${extraCount} ${t('extras')}`
     : `${t('Input')} $${inputPrice}`
 }
-
 export const getPriceDetail = (
   row: ModelPricingSnapshot,
   t: (key: string) => string
@@ -145,10 +126,8 @@ export const getPriceDetail = (
   if (row.billingMode === 'per-request') {
     return t('Fixed request price')
   }
-
   const inputPrice = ratioToPrice(row.ratio)
   if (!inputPrice) return t('No base input price')
-
   const details = [
     row.completionRatio &&
       `${t('Output')} $${ratioToPrice(row.completionRatio, inputPrice)}`,
@@ -159,10 +138,8 @@ export const getPriceDetail = (
   ]
     .filter(Boolean)
     .slice(0, 2)
-
   return details.length > 0 ? details.join(' · ') : t('Base input price only')
 }
-
 export const buildModelSnapshots = ({
   modelPrice,
   modelRatio,
@@ -215,7 +192,6 @@ export const buildModelSnapshots = ({
     fallback: {},
     context: 'billing expression',
   })
-
   const modelNames = new Set([
     ...Object.keys(priceMap),
     ...Object.keys(ratioMap),
@@ -228,7 +204,6 @@ export const buildModelSnapshots = ({
     ...Object.keys(billingModeMap),
     ...Object.keys(billingExprMap),
   ])
-
   return [...modelNames].map((name) => {
     const price = priceMap[name]?.toString() || ''
     const ratio = ratioMap[name]?.toString() || ''
@@ -238,7 +213,6 @@ export const buildModelSnapshots = ({
     const image = imageMap[name]?.toString() || ''
     const audio = audioMap[name]?.toString() || ''
     const audioCompletion = audioCompletionMap[name]?.toString() || ''
-
     const modeForModel = billingModeMap[name]
     if (modeForModel === 'tiered_expr') {
       const fullExpr = billingExprMap[name] || ''
@@ -260,7 +234,6 @@ export const buildModelSnapshots = ({
         hasConflict: false,
       }
     }
-
     return {
       name,
       price,
@@ -284,7 +257,6 @@ export const buildModelSnapshots = ({
     }
   })
 }
-
 export const getSnapshotSignature = (snapshot?: ModelPricingSnapshot) => {
   if (!snapshot) return ''
   return JSON.stringify({

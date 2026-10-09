@@ -35,6 +35,7 @@ export type RefreshOutcome =
   | { kind: 'transient_error'; error: unknown }
   | { kind: 'out_of_sync'; code?: string }
 
+/** @public Kept intentionally: auth rotation contract (paired with api.ts). */
 export interface AuthRefreshHTTPResponse {
   status: number
   data?: unknown
@@ -52,6 +53,7 @@ export interface AuthRefreshRuntime {
   isCurrent?: () => boolean
 }
 
+/** @public Kept intentionally: auth rotation contract (paired with api.ts). */
 export interface AuthTokenRotation {
   access_token: string
   token_type: string
@@ -59,6 +61,7 @@ export interface AuthTokenRotation {
   session: LoginSession
 }
 
+/** @public Kept intentionally: auth rotation contract (paired with api.ts). */
 export class AuthRotationError extends Error {
   constructor(message: string) {
     super(message)
@@ -377,6 +380,7 @@ export async function bootstrapAuthentication(): Promise<RefreshOutcome> {
   return refreshAuthentication()
 }
 
+/** @public Kept intentionally: auth rotation contract (paired with api.ts). */
 export function getCommonHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',

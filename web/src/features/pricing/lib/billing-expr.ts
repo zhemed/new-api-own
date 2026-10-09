@@ -1,19 +1,15 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 /**
@@ -27,11 +23,9 @@ For commercial licensing, please contact support@quantumnous.com
  * the regular expressions are exact rather than tolerant of arbitrary
  * expression syntax.
  */
-
 // ---------------------------------------------------------------------------
 // Variable registry
 // ---------------------------------------------------------------------------
-
 export type BillingVar = {
   key: string
   field: string | null
@@ -43,8 +37,7 @@ export type BillingVar = {
   isConditionOnly?: boolean
   group?: string
 }
-
-export const BILLING_VARS: BillingVar[] = [
+const BILLING_VARS: BillingVar[] = [
   {
     key: 'p',
     field: 'inputPrice',
@@ -136,43 +129,30 @@ export const BILLING_VARS: BillingVar[] = [
     group: 'media',
   },
 ]
-
 /** Vars that have real price fields (excludes condition-only vars like `len`) */
 export const BILLING_PRICING_VARS: BillingVar[] = BILLING_VARS.filter(
   (v) => !v.isConditionOnly
 )
-
-/** Vars valid in tier conditions (`p`, `c`, `len`) */
-export const BILLING_CONDITION_VARS: string[] = BILLING_VARS.filter(
-  (v) => v.isBase || v.isConditionOnly
-).map((v) => v.key)
-
 const BILLING_VAR_KEY_TO_FIELD = Object.fromEntries(
   BILLING_PRICING_VARS.map((v) => [v.key, v.field as string])
 ) as Record<string, string>
-
 export const BILLING_EXTRA_VARS: BillingVar[] = BILLING_VARS.filter(
   (v) => !v.isBase && !v.isConditionOnly
 )
-
 export const BILLING_CACHE_VAR_MAP = BILLING_EXTRA_VARS.map((v) => ({
   field: v.tierField as string,
   exprVar: v.key,
 }))
-
 const BILLING_VAR_REGEX = new RegExp(
   `\\b(${BILLING_PRICING_VARS.map((v) => v.key).join('|')})\\s*\\*\\s*([\\d.eE+-]+)`,
   'g'
 )
-
 // ---------------------------------------------------------------------------
 // Request rule constants
 // ---------------------------------------------------------------------------
-
 export const SOURCE_PARAM = 'param'
 export const SOURCE_HEADER = 'header'
 export const SOURCE_TIME = 'time'
-
 export const MATCH_EQ = 'eq'
 export const MATCH_CONTAINS = 'contains'
 export const MATCH_GT = 'gt'
@@ -181,10 +161,8 @@ export const MATCH_LT = 'lt'
 export const MATCH_LTE = 'lte'
 export const MATCH_EXISTS = 'exists'
 export const MATCH_RANGE = 'range'
-
 export const TIME_FUNCS = ['hour', 'minute', 'weekday', 'month', 'day'] as const
 export type TimeFunc = (typeof TIME_FUNCS)[number]
-
 export const COMMON_TIMEZONES: { value: string; label: string }[] = [
   { value: 'Asia/Shanghai', label: 'UTC+8 Shanghai (Asia/Shanghai)' },
   { value: 'UTC', label: 'UTC' },
@@ -201,16 +179,13 @@ export const COMMON_TIMEZONES: { value: string; label: string }[] = [
   { value: 'Asia/Seoul', label: 'UTC+9 Seoul (Asia/Seoul)' },
   { value: 'Australia/Sydney', label: 'UTC+10 Sydney (Australia/Sydney)' },
 ]
-
 const NUMERIC_LITERAL_REGEX = /^-?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/
-
 export type ParamHeaderCondition = {
   source: 'param' | 'header'
   path: string
   mode: string
   value: string
 }
-
 export type TimeCondition = {
   source: 'time'
   timeFunc: TimeFunc
@@ -220,37 +195,30 @@ export type TimeCondition = {
   rangeStart: string
   rangeEnd: string
 }
-
 export type RequestCondition = TimeCondition | ParamHeaderCondition
-
 export type RequestRuleGroup = {
   conditions: RequestCondition[]
   multiplier: string
 }
-
 export type TierCondition = {
   var: 'p' | 'c' | 'len'
   op: '<' | '<=' | '>' | '>='
   value: number
 }
-
 export type ParsedTier = {
   label: string
   conditions: TierCondition[]
   [field: string]: unknown
 }
-
 // ---------------------------------------------------------------------------
 // Tier parser
 // ---------------------------------------------------------------------------
-
 function stripExprVersion(exprStr: string): { version: number; body: string } {
   if (!exprStr) return { version: 1, body: '' }
   const m = exprStr.match(/^v(\d+):([\s\S]*)$/)
   if (m) return { version: Number(m[1]), body: m[2] }
   return { version: 1, body: exprStr }
 }
-
 function parseTierBody(bodyStr: string): Record<string, number> {
   const coeffs: Record<string, number> = {}
   const re = new RegExp(BILLING_VAR_REGEX.source, 'g')
@@ -264,7 +232,6 @@ function parseTierBody(bodyStr: string): Record<string, number> {
   }
   return tier
 }
-
 export function parseTiersFromExpr(exprStr: string): ParsedTier[] {
   if (!exprStr) return []
   try {
@@ -303,7 +270,6 @@ export function parseTiersFromExpr(exprStr: string): ParsedTier[] {
     return []
   }
 }
-
 export function normalizeTierLabel(label: string | undefined): string {
   if (!label) return ''
   return label
@@ -312,11 +278,9 @@ export function normalizeTierLabel(label: string | undefined): string {
     .replaceAll(/\s+/g, '')
     .toLowerCase()
 }
-
 // ---------------------------------------------------------------------------
 // Request rule parser
 // ---------------------------------------------------------------------------
-
 function splitTopLevelMultiply(expr: string): string[] {
   const parts: string[] = []
   let start = 0
@@ -334,7 +298,6 @@ function splitTopLevelMultiply(expr: string): string[] {
   parts.push(expr.slice(start).trim())
   return parts.filter(Boolean)
 }
-
 function splitTopLevelAnd(expr: string): string[] {
   const parts: string[] = []
   let start = 0
@@ -352,7 +315,6 @@ function splitTopLevelAnd(expr: string): string[] {
   parts.push(expr.slice(start).trim())
   return parts.filter(Boolean)
 }
-
 function parseExprLiteral(raw: string): string | null {
   const text = raw.trim()
   if (text === 'true' || text === 'false') return text
@@ -363,7 +325,6 @@ function parseExprLiteral(raw: string): string | null {
     return null
   }
 }
-
 function tryParseTimeCondition(expr: string): RequestCondition | null {
   let m = expr.match(
     /^(hour|minute|weekday|month|day)\("([^"]+)"\) >= ([\d.eE+-]+) \|\| \1\("\2"\) < ([\d.eE+-]+)$/
@@ -414,17 +375,13 @@ function tryParseTimeCondition(expr: string): RequestCondition | null {
   }
   return null
 }
-
 function tryParseRequestCondition(expr: string): RequestCondition | null {
   const tc = tryParseTimeCondition(expr)
   if (tc) return tc
-
   let m = expr.match(/^header\("([^"]+)"\) != ""$/)
   if (m) return { source: 'header', path: m[1], mode: MATCH_EXISTS, value: '' }
-
   m = expr.match(/^param\("([^"]+)"\) != nil$/)
   if (m) return { source: 'param', path: m[1], mode: MATCH_EXISTS, value: '' }
-
   m = expr.match(/^has\(header\("([^"]+)"\), ((?:"(?:[^"\\]|\\.)*"))\)$/)
   if (m) {
     return {
@@ -434,7 +391,6 @@ function tryParseRequestCondition(expr: string): RequestCondition | null {
       value: JSON.parse(m[2]) as string,
     }
   }
-
   m = expr.match(
     /^param\("([^"]+)"\) != nil && has\(param\("([^"]+)"\), ((?:"(?:[^"\\]|\\.)*"))\)$/
   )
@@ -446,7 +402,6 @@ function tryParseRequestCondition(expr: string): RequestCondition | null {
       value: JSON.parse(m[3]) as string,
     }
   }
-
   m = expr.match(
     /^param\("([^"]+)"\) != nil && param\("([^"]+)"\) (>|>=|<|<=) ([\d.eE+-]+)$/
   )
@@ -459,7 +414,6 @@ function tryParseRequestCondition(expr: string): RequestCondition | null {
     }
     return { source: 'param', path: m[1], mode: opMap[m[3]], value: m[4] }
   }
-
   m = expr.match(/^(param|header)\("([^"]+)"\) == (.+)$/)
   if (m) {
     const parsedValue = parseExprLiteral(m[3])
@@ -471,17 +425,13 @@ function tryParseRequestCondition(expr: string): RequestCondition | null {
       value: String(parsedValue),
     }
   }
-
   return null
 }
-
 function tryParseRuleGroupFactor(part: string): RequestRuleGroup | null {
   const m = part.match(/^\((.+) \? ([\d.eE+-]+) : 1\)$/s)
   if (!m) return null
-
   const conditionStr = m[1]
   const multiplier = m[2]
-
   const andParts = splitTopLevelAnd(conditionStr)
   const conditions: RequestCondition[] = []
   for (const ap of andParts) {
@@ -492,13 +442,11 @@ function tryParseRuleGroupFactor(part: string): RequestRuleGroup | null {
   if (conditions.length === 0) return null
   return { conditions, multiplier }
 }
-
 export function tryParseRequestRuleExpr(
   expr: string
 ): RequestRuleGroup[] | null {
   const trimmed = (expr || '').trim()
   if (!trimmed) return []
-
   const parts = splitTopLevelMultiply(trimmed)
   const groups: RequestRuleGroup[] = []
   for (const part of parts) {
@@ -508,11 +456,9 @@ export function tryParseRequestRuleExpr(
   }
   return groups
 }
-
 // ---------------------------------------------------------------------------
 // Combine / split billing expr and request rules
 // ---------------------------------------------------------------------------
-
 function hasFullOuterParens(expr: string): boolean {
   if (!expr.startsWith('(') || !expr.endsWith(')')) return false
   let depth = 0
@@ -523,7 +469,6 @@ function hasFullOuterParens(expr: string): boolean {
   }
   return depth === 0
 }
-
 function unwrapOuterParens(expr: string): string {
   let current = (expr || '').trim()
   while (hasFullOuterParens(current)) {
@@ -531,20 +476,16 @@ function unwrapOuterParens(expr: string): string {
   }
   return current
 }
-
 export function splitBillingExprAndRequestRules(expr: string): {
   billingExpr: string
   requestRuleExpr: string
 } {
   const trimmed = (expr || '').trim()
   if (!trimmed) return { billingExpr: '', requestRuleExpr: '' }
-
   const parts = splitTopLevelMultiply(trimmed)
   if (parts.length <= 1) return { billingExpr: trimmed, requestRuleExpr: '' }
-
   const ruleParts: string[] = []
   const baseParts: string[] = []
-
   parts.forEach((part) => {
     const parsed = tryParseRequestRuleExpr(part)
     if (parsed && parsed.length > 0) {
@@ -553,17 +494,14 @@ export function splitBillingExprAndRequestRules(expr: string): {
       baseParts.push(part)
     }
   })
-
   if (ruleParts.length === 0 || baseParts.length !== 1) {
     return { billingExpr: trimmed, requestRuleExpr: '' }
   }
-
   return {
     billingExpr: unwrapOuterParens(baseParts[0]),
     requestRuleExpr: ruleParts.join(' * '),
   }
 }
-
 export function combineBillingExpr(
   baseExpr: string,
   requestRuleExpr: string
@@ -574,15 +512,12 @@ export function combineBillingExpr(
   if (!rules) return base
   return `(${base}) * ${rules}`
 }
-
 // ---------------------------------------------------------------------------
 // Editor: empty constructors
 // ---------------------------------------------------------------------------
-
 export function createEmptyCondition(): ParamHeaderCondition {
   return { source: 'param', path: '', mode: MATCH_EQ, value: '' }
 }
-
 export function createEmptyTimeCondition(): TimeCondition {
   return {
     source: 'time',
@@ -594,21 +529,13 @@ export function createEmptyTimeCondition(): TimeCondition {
     rangeEnd: '',
   }
 }
-
 export function createEmptyRuleGroup(): RequestRuleGroup {
   return { conditions: [createEmptyCondition()], multiplier: '' }
 }
-
-export function createEmptyTimeRuleGroup(): RequestRuleGroup {
-  return { conditions: [createEmptyTimeCondition()], multiplier: '' }
-}
-
 // ---------------------------------------------------------------------------
 // Editor: match option helpers
 // ---------------------------------------------------------------------------
-
 export type MatchOption = { value: string; labelKey: string }
-
 export function getRequestRuleMatchOptions(source: string): MatchOption[] {
   if (source === SOURCE_TIME) {
     return [
@@ -632,16 +559,13 @@ export function getRequestRuleMatchOptions(source: string): MatchOption[] {
     { value: MATCH_LTE, labelKey: 'Less than or equal' },
   ]
 }
-
 // ---------------------------------------------------------------------------
 // Editor: normalize a single condition
 // ---------------------------------------------------------------------------
-
 function isTimeFunc(value: unknown): value is TimeFunc {
   return typeof value === 'string' && TIME_FUNCS.includes(value as TimeFunc)
 }
-
-export function normalizeCondition(
+function normalizeCondition(
   cond: Partial<RequestCondition> | null | undefined
 ): RequestCondition {
   let source: RequestCondition['source']
@@ -652,7 +576,6 @@ export function normalizeCondition(
   } else {
     source = 'param'
   }
-
   if (source === 'time') {
     const timeCond = cond as Partial<TimeCondition> | null | undefined
     const timeFunc: TimeFunc = isTimeFunc(timeCond?.timeFunc)
@@ -673,7 +596,6 @@ export function normalizeCondition(
       rangeEnd: timeCond?.rangeEnd == null ? '' : String(timeCond.rangeEnd),
     }
   }
-
   const phCond = cond as Partial<ParamHeaderCondition> | null | undefined
   const options = getRequestRuleMatchOptions(source)
   const mode = options.some((item) => item.value === phCond?.mode)
@@ -686,11 +608,9 @@ export function normalizeCondition(
     value: phCond?.value == null ? '' : String(phCond.value),
   }
 }
-
 // ---------------------------------------------------------------------------
 // Editor: build expression strings
 // ---------------------------------------------------------------------------
-
 function buildExprLiteral(mode: string, value: string): string {
   const text = String(value || '').trim()
   if (mode === MATCH_CONTAINS) return JSON.stringify(text)
@@ -698,13 +618,11 @@ function buildExprLiteral(mode: string, value: string): string {
   if (NUMERIC_LITERAL_REGEX.test(text)) return text
   return JSON.stringify(text)
 }
-
 function buildTimeConditionExpr(cond: TimeCondition): string {
   const normalized = normalizeCondition(cond) as TimeCondition
   const { timeFunc, timezone, mode } = normalized
   const tz = JSON.stringify(timezone)
   const fn = `${timeFunc}(${tz})`
-
   if (mode === MATCH_RANGE) {
     const s = normalized.rangeStart.trim()
     const e = normalized.rangeEnd.trim()
@@ -722,18 +640,15 @@ function buildTimeConditionExpr(cond: TimeCondition): string {
   }
   return `${fn} ${opMap[mode] || '=='} ${v}`
 }
-
 function buildRequestConditionExpr(cond: RequestCondition): string {
   if (cond.source === 'time') return buildTimeConditionExpr(cond)
   const normalized = normalizeCondition(cond) as ParamHeaderCondition
   const path = normalized.path.trim()
   if (!path) return ''
-
   const sourceExpr =
     normalized.source === 'header'
       ? `header(${JSON.stringify(path)})`
       : `param(${JSON.stringify(path)})`
-
   switch (normalized.mode) {
     case MATCH_EXISTS:
       return normalized.source === 'header'
@@ -762,7 +677,6 @@ function buildRequestConditionExpr(cond: RequestCondition): string {
       return `${sourceExpr} == ${buildExprLiteral(normalized.mode, normalized.value)}`
   }
 }
-
 function buildRuleGroupFactor(group: RequestRuleGroup): string {
   const multiplier = (group.multiplier || '').trim()
   if (!NUMERIC_LITERAL_REGEX.test(multiplier)) return ''
@@ -770,14 +684,12 @@ function buildRuleGroupFactor(group: RequestRuleGroup): string {
     .map(buildRequestConditionExpr)
     .filter(Boolean)
   if (condExprs.length === 0) return ''
-
   const combined =
     condExprs.length === 1
       ? condExprs[0]
       : condExprs.map((e) => (e.includes(' || ') ? `(${e})` : e)).join(' && ')
   return `(${combined} ? ${multiplier} : 1)`
 }
-
 export function buildRequestRuleExpr(groups: RequestRuleGroup[]): string {
   return (groups || []).map(buildRuleGroupFactor).filter(Boolean).join(' * ')
 }

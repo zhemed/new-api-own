@@ -1,38 +1,30 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { AuthBundle } from '@/stores/auth-store'
-
 // ============================================================================
 // API Payloads
 // ============================================================================
-
 export interface LoginPayload {
   username: string
   password: string
   turnstile?: string
 }
-
 export interface TwoFAPayload {
   code: string
   flow_token: string
 }
-
 export interface RegisterPayload {
   username: string
   password: string
@@ -41,26 +33,9 @@ export interface RegisterPayload {
   aff_code?: string
   turnstile?: string
 }
-
-export interface PasswordResetPayload {
-  email: string
-  turnstile?: string
-}
-
-export interface EmailVerificationPayload {
-  email: string
-  turnstile?: string
-}
-
-export interface BindEmailPayload {
-  email: string
-  code: string
-}
-
 // ============================================================================
 // API Responses
 // ============================================================================
-
 export interface LoginResponse {
   success: boolean
   message: string
@@ -72,23 +47,19 @@ export interface LoginResponse {
         expires_at?: number
       }
 }
-
 export interface Login2FAResponse {
   success: boolean
   message: string
   data?: AuthBundle
 }
-
 export interface ApiResponse<T = unknown> {
   success: boolean
   message: string
   data?: T
 }
-
 // ============================================================================
 // System Status
 // ============================================================================
-
 export interface SystemStatus {
   success?: boolean
   message?: string
@@ -182,11 +153,10 @@ export interface SystemStatus {
   custom_oauth_providers?: CustomOAuthProviderInfo[]
   [key: string]: unknown
 }
-
 // ============================================================================
 // OAuth
 // ============================================================================
-
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export interface OAuthProvider {
   name: string
   type: 'github' | 'discord' | 'oidc' | 'linuxdo' | 'telegram' | 'wechat'
@@ -194,7 +164,6 @@ export interface OAuthProvider {
   clientId?: string
   authEndpoint?: string
 }
-
 export interface CustomOAuthProviderInfo {
   id: number
   name: string
@@ -204,11 +173,9 @@ export interface CustomOAuthProviderInfo {
   authorization_endpoint: string
   scopes: string
 }
-
 // ============================================================================
 // Form Props
 // ============================================================================
-
 export interface AuthFormProps extends React.HTMLAttributes<HTMLFormElement> {
   redirectTo?: string
 }

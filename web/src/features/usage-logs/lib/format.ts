@@ -1,19 +1,15 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { StatusBadgeProps } from '@/components/status-badge'
@@ -27,8 +23,8 @@ import {
 import type { UsageLog } from '../data/schema'
 import type { LogOtherData } from '../types'
 
+/** @public Cross-module formatting contract kept intentionally; deleting it requires updating callers. */
 export { normalizeTierLabel }
-
 const PARAM_OVERRIDE_ACTION_MAP: Record<string, string> = {
   set: 'Set',
   delete: 'Delete',
@@ -53,7 +49,6 @@ const PARAM_OVERRIDE_ACTION_MAP: Record<string, string> = {
   sync_fields: 'Sync Fields',
   return_error: 'Return Error',
 }
-
 /**
  * Get localized label for a param override action
  */
@@ -64,7 +59,6 @@ export function getParamOverrideActionLabel(
   const key = PARAM_OVERRIDE_ACTION_MAP[action.toLowerCase()]
   return key ? t(key) : action
 }
-
 /**
  * Parse a param override audit line into action and content
  */
@@ -79,7 +73,6 @@ export function parseAuditLine(
     content: line.slice(firstSpace + 1),
   }
 }
-
 /**
  * Check if the log is a violation fee log
  */
@@ -91,11 +84,9 @@ export function isViolationFeeLog(other: LogOtherData | null): boolean {
     Boolean(other.violation_fee_marker)
   )
 }
-
 function isPositiveFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value > 0
 }
-
 function hasLegacySearchSurcharge(
   enabled: boolean | undefined,
   count: number | undefined,
@@ -107,7 +98,6 @@ function hasLegacySearchSurcharge(
     isPositiveFiniteNumber(price)
   )
 }
-
 /**
  * Check whether a consume log includes an actual tool-call surcharge.
  * Structured surcharge items cover current logs, while the legacy fields keep
@@ -115,7 +105,6 @@ function hasLegacySearchSurcharge(
  */
 export function hasToolSurcharge(other: LogOtherData | null): boolean {
   if (!other) return false
-
   const hasStructuredSurcharge =
     Array.isArray(other.tool_surcharges) &&
     other.tool_surcharges.some(
@@ -126,7 +115,6 @@ export function hasToolSurcharge(other: LogOtherData | null): boolean {
         isPositiveFiniteNumber(item.price)
     )
   if (hasStructuredSurcharge) return true
-
   if (
     hasLegacySearchSurcharge(
       other.web_search,
@@ -136,7 +124,6 @@ export function hasToolSurcharge(other: LogOtherData | null): boolean {
   ) {
     return true
   }
-
   if (
     hasLegacySearchSurcharge(
       other.file_search,
@@ -146,13 +133,11 @@ export function hasToolSurcharge(other: LogOtherData | null): boolean {
   ) {
     return true
   }
-
   return (
     other.image_generation_call === true &&
     isPositiveFiniteNumber(other.image_generation_call_price)
   )
 }
-
 /**
  * Parse the 'other' field from JSON string to object
  */
@@ -166,18 +151,14 @@ export function parseLogOther(other: string): LogOtherData | null {
     return null
   }
 }
-
 /**
  * Get time color based on duration (in seconds)
  */
-export function getTimeColor(
-  seconds: number
-): 'success' | 'warning' | 'danger' {
+function getTimeColor(seconds: number): 'success' | 'warning' | 'danger' {
   if (seconds < 10) return 'success'
   if (seconds < 30) return 'warning'
   return 'danger'
 }
-
 /**
  * Get first-response-token color based on latency (in seconds)
  */
@@ -188,18 +169,16 @@ export function getFirstResponseTimeColor(
   if (seconds < 10) return 'warning'
   return 'danger'
 }
-
 /**
  * Get throughput color based on generated tokens per second
  */
-export function getThroughputColor(
+function getThroughputColor(
   tokensPerSecond: number
 ): 'success' | 'warning' | 'danger' {
   if (tokensPerSecond >= 30) return 'success'
   if (tokensPerSecond >= 15) return 'warning'
   return 'danger'
 }
-
 /**
  * Get response color using throughput only when enough output tokens exist.
  */
@@ -210,7 +189,6 @@ export function getResponseTimeColor(
   if (completionTokens < 100 || seconds <= 0) return getTimeColor(seconds)
   return getThroughputColor(completionTokens / seconds)
 }
-
 /**
  * Format model name with mapping indicator
  */
@@ -225,14 +203,12 @@ export function formatModelName(log: UsageLog): {
     other?.upstream_model_name &&
     other.upstream_model_name !== ''
   )
-
   return {
     name: log.model_name,
     isMapped,
     actualModel: isMapped ? other.upstream_model_name : undefined,
   }
 }
-
 /**
  * Decode a base64-encoded billing expression. Safely returns an empty string
  * when the input is missing or malformed (e.g. legacy logs without expr_b64).
@@ -245,15 +221,12 @@ export function decodeBillingExprB64(exprB64: string | undefined): string {
         ? window.atob(exprB64)
         : Buffer.from(exprB64, 'base64').toString('binary')
     const bytes = new Uint8Array(binaryString.length)
-
     for (let i = 0; i < binaryString.length; i++) {
       bytes[i] = binaryString.charCodeAt(i)
     }
-
     if (typeof TextDecoder !== 'undefined') {
       return new TextDecoder().decode(bytes)
     }
-
     return decodeURIComponent(
       Array.prototype.map
         .call(bytes, (byte: number) => `%${byte.toString(16).padStart(2, '0')}`)
@@ -263,26 +236,25 @@ export function decodeBillingExprB64(exprB64: string | undefined): string {
     return ''
   }
 }
-
 /**
  * Resolve which parsed tier corresponds to the matched_tier label in a log
  * entry. Missing or unknown labels do not fall back to another tier because
  * that would display guessed unit prices.
  */
-export function resolveMatchedTier(
+function resolveMatchedTier(
   tiers: ParsedTier[],
   matchedLabel: string | undefined
 ): ParsedTier | null {
   if (tiers.length === 0) return null
   if (!matchedLabel) return null
   const found = tiers.find((tier) => {
+    /** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
     const l1 = normalizeTierLabel(tier.label)
     const l2 = normalizeTierLabel(matchedLabel)
     return l1 === l2 && l1 !== ''
   })
   return found || null
 }
-
 /**
  * Tiered pricing summary derived from an `other` log payload using the
  * billing-expression library. Returns null when the entry is not a tiered
@@ -293,7 +265,6 @@ export interface TieredBillingSummary {
   tier: ParsedTier
   priceEntries: Array<{ field: string; shortLabel: string; price: number }>
 }
-
 /**
  * Whether the request payload reports any cache-related token usage. Used to
  * suppress cache pricing rows from the tiered breakdown when the request did
@@ -310,7 +281,6 @@ export function hasAnyCacheTokens(
     (other.cache_creation_tokens_1h || 0) > 0
   )
 }
-
 export function getTieredBillingSummary(
   other: LogOtherData | null
 ): TieredBillingSummary | null {
@@ -320,9 +290,7 @@ export function getTieredBillingSummary(
   const tiers = parseTiersFromExpr(exprStr)
   const tier = resolveMatchedTier(tiers, other.matched_tier)
   if (!tier) return null
-
   const cacheTokensPresent = hasAnyCacheTokens(other)
-
   const priceEntries: TieredBillingSummary['priceEntries'] = []
   for (const v of BILLING_PRICING_VARS) {
     if (!v.field) continue
@@ -339,7 +307,6 @@ export function getTieredBillingSummary(
   }
   return { tiers, tier, priceEntries }
 }
-
 /**
  * Calculate duration and return formatted result with color variant
  * @param submitTime - Submit timestamp
@@ -352,15 +319,12 @@ export function formatDuration(
   unit: 'seconds' | 'milliseconds' = 'milliseconds'
 ): { durationSec: number; variant: StatusBadgeProps['variant'] } | null {
   if (!submitTime || !finishTime) return null
-
   const durationSec =
     unit === 'milliseconds'
       ? (finishTime - submitTime) / 1000
       : finishTime - submitTime
-
   return { durationSec, variant: durationSec > 60 ? 'red' : 'green' }
 }
-
 /**
  * Maps a language-independent audit/login operation `action` to an i18n
  * template string (the template itself is the i18n key, with {{placeholders}}).
@@ -451,7 +415,6 @@ const AUDIT_TEMPLATES: Record<string, string> = {
   // Generic middleware fallback
   generic: '{{method}} {{route}}',
 }
-
 /**
  * Render the localized content of an audit/login log from its structured
  * `other.op` descriptor. Returns null when the log has no recognized action,

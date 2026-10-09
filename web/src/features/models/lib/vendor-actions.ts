@@ -30,6 +30,7 @@ import { vendorsQueryKeys, modelsQueryKeys } from './query-keys'
 /**
  * Delete a vendor
  */
+/** @public cross-module API/contract kept intentionally; deleting it requires updating callers. */
 export async function handleDeleteVendor(
   id: number,
   queryClient?: QueryClient,

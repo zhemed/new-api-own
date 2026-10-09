@@ -1,38 +1,30 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 import { ChevronsUpDown, Check, CpuIcon, LayersIcon } from 'lucide-react'
 /*
 Copyright (C) 2023-2026 QuantumNous
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
-
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 For commercial licensing, please contact support@quantumnous.com
 */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -73,7 +65,6 @@ interface ModelOption {
   category?: string
   description?: string
 }
-
 interface GroupOption {
   label: string
   value: string
@@ -81,7 +72,6 @@ interface GroupOption {
   desc?: string
   description?: string
 }
-
 interface ModelSelectorProps {
   selectedModel: string
   models: ModelOption[]
@@ -89,7 +79,6 @@ interface ModelSelectorProps {
   className?: string
   disabled?: boolean
 }
-
 interface GroupSelectorProps {
   selectedGroup: string
   groups: GroupOption[]
@@ -97,7 +86,6 @@ interface GroupSelectorProps {
   className?: string
   disabled?: boolean
 }
-
 const ModelTriggerButton = React.forwardRef<
   React.ComponentRef<typeof Button>,
   React.ComponentPropsWithoutRef<typeof Button> & {
@@ -131,9 +119,7 @@ const ModelTriggerButton = React.forwardRef<
     <ChevronsUpDown className='text-muted-foreground hidden h-4 w-4 opacity-50 sm:block' />
   </Button>
 ))
-
 ModelTriggerButton.displayName = 'ModelTriggerButton'
-
 const GroupTriggerButton = React.forwardRef<
   React.ComponentRef<typeof Button>,
   React.ComponentPropsWithoutRef<typeof Button> & {
@@ -167,25 +153,21 @@ const GroupTriggerButton = React.forwardRef<
     <ChevronsUpDown className='text-muted-foreground hidden h-4 w-4 opacity-50 sm:block' />
   </Button>
 ))
-
 GroupTriggerButton.displayName = 'GroupTriggerButton'
-
 /**
  * Model Selector Component
  * Styled following Scira's form-component design patterns
  */
-export const ModelSelector: React.FC<ModelSelectorProps> = React.memo(
+const ModelSelector: React.FC<ModelSelectorProps> = React.memo(
   ({ selectedModel, models, onModelChange, className, disabled = false }) => {
     const { t } = useTranslation()
     const [open, setOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
     const isMobile = useIsMobile()
-
     const currentModel = useMemo(
       () => models.find((m) => m.value === selectedModel),
       [models, selectedModel]
     )
-
     // Group models by category
     const groupedModels = useMemo(
       () =>
@@ -202,14 +184,11 @@ export const ModelSelector: React.FC<ModelSelectorProps> = React.memo(
         ),
       [models, t]
     )
-
     // Filter models by search query
     const filteredModels = useMemo(() => {
       if (!searchQuery.trim()) return groupedModels
-
       const query = searchQuery.toLowerCase()
       const filtered: Record<string, ModelOption[]> = {}
-
       Object.entries(groupedModels).forEach(([category, categoryModels]) => {
         const matches = categoryModels.filter(
           (m) =>
@@ -221,10 +200,8 @@ export const ModelSelector: React.FC<ModelSelectorProps> = React.memo(
           filtered[category] = matches
         }
       })
-
       return filtered
     }, [groupedModels, searchQuery])
-
     const handleModelChange = useCallback(
       (value: string) => {
         onModelChange(value)
@@ -233,7 +210,6 @@ export const ModelSelector: React.FC<ModelSelectorProps> = React.memo(
       },
       [onModelChange]
     )
-
     // Shared command content
     const renderModelCommandContent = () => (
       <Command
@@ -315,7 +291,6 @@ export const ModelSelector: React.FC<ModelSelectorProps> = React.memo(
         </CommandList>
       </Command>
     )
-
     return isMobile ? (
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerTrigger asChild>
@@ -362,24 +337,20 @@ export const ModelSelector: React.FC<ModelSelectorProps> = React.memo(
     )
   }
 )
-
 ModelSelector.displayName = 'ModelSelector'
-
 /**
  * Group Selector Component
  * Styled following Scira's form-component design patterns
  */
-export const GroupSelector: React.FC<GroupSelectorProps> = React.memo(
+const GroupSelector: React.FC<GroupSelectorProps> = React.memo(
   ({ selectedGroup, groups, onGroupChange, className, disabled = false }) => {
     const { t } = useTranslation()
     const [open, setOpen] = useState(false)
     const isMobile = useIsMobile()
-
     const currentGroup = useMemo(
       () => groups.find((g) => g.value === selectedGroup),
       [groups, selectedGroup]
     )
-
     const handleGroupChange = useCallback(
       (value: string) => {
         onGroupChange(value)
@@ -387,7 +358,6 @@ export const GroupSelector: React.FC<GroupSelectorProps> = React.memo(
       },
       [onGroupChange]
     )
-
     // Shared command content
     const renderGroupCommandContent = () => (
       <Command
@@ -399,7 +369,6 @@ export const GroupSelector: React.FC<GroupSelectorProps> = React.memo(
         filter={(value, search) => {
           const group = groups.find((g) => g.value === value)
           if (!group || !search) return 1
-
           const searchTerm = search.toLowerCase()
           const searchableFields = [
             group.label,
@@ -408,7 +377,6 @@ export const GroupSelector: React.FC<GroupSelectorProps> = React.memo(
           ]
             .join(' ')
             .toLowerCase()
-
           return searchableFields.includes(searchTerm) ? 1 : 0
         }}
       >
@@ -463,7 +431,6 @@ export const GroupSelector: React.FC<GroupSelectorProps> = React.memo(
         </CommandList>
       </Command>
     )
-
     return isMobile ? (
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerTrigger asChild>
@@ -552,9 +519,7 @@ export const GroupSelector: React.FC<GroupSelectorProps> = React.memo(
     )
   }
 )
-
 GroupSelector.displayName = 'GroupSelector'
-
 // Export combined selector component
 export interface ModelGroupSelectorProps {
   // Model props
@@ -569,7 +534,6 @@ export interface ModelGroupSelectorProps {
   className?: string
   disabled?: boolean
 }
-
 /**
  * Combined Model and Group Selector Component
  * Provides both model and group selection in a unified interface
@@ -591,7 +555,6 @@ export const ModelGroupSelector: React.FC<ModelGroupSelectorProps> = ({
   const groupScrollContainerRef = useRef<HTMLDivElement | null>(null)
   const selectedGroupOptionRef = useRef<HTMLButtonElement | null>(null)
   const selectedModelOptionRef = useRef<HTMLDivElement | null>(null)
-
   const currentModel = useMemo(
     () => models.find((model) => model.value === selectedModel),
     [models, selectedModel]
@@ -605,7 +568,6 @@ export const ModelGroupSelector: React.FC<ModelGroupSelectorProps> = ({
     if (!query) {
       return models
     }
-
     return models.filter((model) => {
       const searchableText = [
         model.label,
@@ -615,11 +577,9 @@ export const ModelGroupSelector: React.FC<ModelGroupSelectorProps> = ({
       ]
         .join(' ')
         .toLowerCase()
-
       return searchableText.includes(query)
     })
   }, [models, searchQuery])
-
   const handleModelChange = useCallback(
     (value: string) => {
       onModelChange(value)
@@ -628,19 +588,16 @@ export const ModelGroupSelector: React.FC<ModelGroupSelectorProps> = ({
     },
     [onModelChange]
   )
-
   const handleGroupChange = useCallback(
     (value: string) => {
       onGroupChange(value)
     },
     [onGroupChange]
   )
-
   useEffect(() => {
     if (!open) {
       return
     }
-
     let secondFrameId = 0
     const firstFrameId = window.requestAnimationFrame(() => {
       secondFrameId = window.requestAnimationFrame(() => {
@@ -651,13 +608,11 @@ export const ModelGroupSelector: React.FC<ModelGroupSelectorProps> = ({
         scrollSelectedOptionIntoView(selectedModelOptionRef.current)
       })
     })
-
     return () => {
       window.cancelAnimationFrame(firstFrameId)
       window.cancelAnimationFrame(secondFrameId)
     }
   }, [open, selectedGroup, selectedModel])
-
   const renderTrigger = () => (
     <Button
       aria-expanded={open}
@@ -682,7 +637,6 @@ export const ModelGroupSelector: React.FC<ModelGroupSelectorProps> = ({
       <ChevronsUpDown className='text-muted-foreground ml-auto size-3.5 shrink-0 opacity-60' />
     </Button>
   )
-
   const renderGroupList = () => (
     <div
       className={cn(
@@ -702,7 +656,6 @@ export const ModelGroupSelector: React.FC<ModelGroupSelectorProps> = ({
       >
         {groups.map((group) => {
           const isSelected = selectedGroup === group.value
-
           return (
             <button
               className={cn(
@@ -732,7 +685,6 @@ export const ModelGroupSelector: React.FC<ModelGroupSelectorProps> = ({
       </div>
     </div>
   )
-
   const renderModelList = () => (
     <Command
       className={cn(
@@ -799,7 +751,6 @@ export const ModelGroupSelector: React.FC<ModelGroupSelectorProps> = ({
       </CommandList>
     </Command>
   )
-
   const renderContent = () => (
     <div
       className={
@@ -819,7 +770,6 @@ export const ModelGroupSelector: React.FC<ModelGroupSelectorProps> = ({
       </div>
     </div>
   )
-
   return isMobile ? (
     <Drawer open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>{renderTrigger()}</DrawerTrigger>

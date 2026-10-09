@@ -29,6 +29,7 @@ import type {
 /**
  * Create a new message version
  */
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export function createMessageVersion(content: string): MessageVersion {
   return {
     id: nanoid(),
@@ -109,6 +110,7 @@ export function createLoadingAssistantMessage(
 /**
  * Build message content with optional images
  */
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export function buildMessageContent(
   text: string,
   imageUrls: string[] = []
@@ -136,6 +138,7 @@ export function buildMessageContent(
 /**
  * Extract text content from message content
  */
+/** @public Kept intentionally: cross-module type contract; deleting it requires updating callers. */
 export function getTextContent(content: string | ContentPart[]): string {
   if (typeof content === 'string') {
     return content
