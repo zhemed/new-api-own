@@ -30,6 +30,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { getTpsTextClass } from '@/features/performance-metrics/lib/format'
 import { formatUseTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
@@ -203,7 +204,14 @@ export function StreamTpsCell(props: StreamTpsCellProps) {
           </TooltipProvider>
         )}
       </span>
-      <span className='text-muted-foreground/60 px-0.5 tabular-nums'>
+      <span
+        className={cn(
+          'px-0.5 tabular-nums',
+          props.tokensPerSecond != null
+            ? getTpsTextClass(props.tokensPerSecond)
+            : 'text-muted-foreground/60'
+        )}
+      >
         {tpsLabel}
       </span>
     </div>
