@@ -1599,3 +1599,37 @@ v0.0.11 升级真实触发了内存日志的固有代价：更新重启进程 �
 ### Next Steps
 
 - 待用户决定：是否在冻结期单线程清理剩余 398 条 exports/types；以及是否升级实例到 v0.0.15
+
+
+## Session 50: knip 398→0（AST 精删 + 官方 @public 申明）并发 v0.0.16；实例升级并四页冒烟通过
+<!-- trellis-session: v=2 fp=b6aebc9727bb491b -->
+
+**Date**: 2026-10-09
+**Task**: knip 398→0（AST 精删 + 官方 @public 申明）并发 v0.0.16；实例升级并四页冒烟通过
+**Branch**: `main`
+
+### Summary
+
+冻结期单线程清理完成：knip 从 398 条归零（exports 301→0、types 97→0、files 0→0）。手段：AST 精确删除（@babel/parser，仓库已装无需联网）删约 332 死符号 + 11 死重导出说明符，删 17 个确证不可达文件（13 brand-icons + 3 layout 组件 + layout/constants，逐个核对绝对路径与 import 路径）；66 条跨模块类型契约改用 knip 官方 @public 符号级标记申明，配置例外 0 条。重要纠偏：Lead 建议的 ignoreIssues 在 knip 6.27.0 不支持符号级（会退化成忽略整文件导出），成员实测后改用更强的官方机制。七条硬门全绿（knip exit 0 / knip --include files 0 / tsgo --force 0 / lint 0-0 / 247 pass / format / build / i18n）。发布 v0.0.16（镜像三方同摘要 sha256:8078e86cca8da），实例 v0.0.13→v0.0.16 并四页冒烟（/、/dashboard、/models、/usage-logs）全部无错误边界，环境变量与日志上限未变。
+
+### Main Changes
+
+- 把‘大清扫’的作业法沉淀下来：单线程、分批、--force、按错误签名比对、只回退单文件、AST 优先于行级
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c69171c` | chore(web): knip 归零 398→0（AST 精确删除 332 符号 + 17 个死文件 + 11 个死重导出说明符；66 条跨模块契约以 @public 符号级申明）[task:decide-final-after-v0015] |
+
+### Testing
+
+- [OK] [OK] 七条硬门 + 实例四页运行时冒烟；删掉的 13 个 brand-icon 抽查 0 引用
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 无；已知边界：@public 为声明级（同语句新增死导出不报）
