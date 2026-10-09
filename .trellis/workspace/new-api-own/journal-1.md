@@ -1327,3 +1327,37 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 用户实例可在面板点更新到 v0.0.11；其使用日志已有真实数据（24/12 t/s）→ 更新后应立刻显示红色
+
+
+## Session 42: 实例升级 v0.0.11；升级清空内存日志（预期），彩色 t/s 待新请求
+<!-- trellis-session: v=2 fp=0281d893e5647c18 -->
+
+**Date**: 2026-10-09
+**Task**: 实例升级 v0.0.11；升级清空内存日志（预期），彩色 t/s 待新请求
+**Branch**: `main`
+
+### Summary
+
+按用户授权用面板路径把实例从 v0.0.10 升到 v0.0.11（约 10 秒，容器未重建，四条 LOG_* 与 --log-opt 不变，主库 logs 仍 1 行）。验证时发现一个真实后果：更新重启进程 → 内存日志清空 → 旧的用量日志（含截图里的 24/12 t/s）消失，日志页仅剩一条登录记录，因此无法截取彩色 t/s。已如实说明这是内存模式的固有代价（发版说明中曾提醒），并指出下一条真实请求即可看到按阈值上色。可复核证据：实例版本、前端包 hash 变化、2 例单元测试；颜色类位于懒加载 chunk，未能从整包 grep 得到，故不以此为证据。
+
+### Main Changes
+
+- 记录真实后果：每次更新会清空内存日志（本次已触发一次），如需跨更新保留历史应改用落盘日志
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d9bad5e` | chore(task): archive 10-09-color-log-tps |
+
+### Testing
+
+- [OK] [OK] 版本 v0.0.10→v0.0.11；env/log-opt/主库 logs 未变；前端包 hash 变更
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 用户发一条真实请求后肉眼确认颜色；若要跨更新保留日志历史，可改 LOG_SQL_DSN 落盘（需用户决定）
