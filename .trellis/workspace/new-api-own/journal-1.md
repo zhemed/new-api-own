@@ -1463,3 +1463,37 @@ v0.0.11 升级真实触发了内存日志的固有代价：更新重启进程 �
 ### Next Steps
 
 - 无需后续动作；若日后想校准阈值，改 format.ts 两个常量即可（需用户点头）
+
+
+## Session 46: 手机端上色实为已生效（更正）；盘点 6 类未处理问题
+<!-- trellis-session: v=2 fp=8047720b79ff642f -->
+
+**Date**: 2026-10-09
+**Task**: 手机端上色实为已生效（更正）；盘点 6 类未处理问题
+**Branch**: `main`
+
+### Summary
+
+①更正：手机端卡片本就渲染同一个 StreamTpsCell，上一轮上色即已覆盖，我上次依据 tokensPerSecond 计算行误判为未上色；全仓复核确认 t/s 渲染点全部已上色（usage-logs 桌面+手机、模型侧 4 处）。②盘点本会话发现但未处理的问题并逐条给出状态/原因/建议：mock 区块无示例标注、20 条 lint 警告（分 5 类）、knip 基线红、MAINTENANCE:279 记录过期（multipart model 校验其实已补上）、6 条刻意不改的已知不一致、控制台汇总 KPI 未上色。本轮无代码改动、未发版。
+
+### Main Changes
+
+- 发现并验证 MAINTENANCE 已知不一致清单存在过期行（已修复项未移出）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c1b2b23` | chore(task): archive 10-09-check-log-tps-live |
+
+### Testing
+
+- [OK] [OK] 代码复核：valid_request.go multipart 分支含 model 必填校验 + 注释；t/s 渲染点枚举无遗漏
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 等用户选择要处理哪些（修复过期记录/清 lint 警告/mock 标注/汇总 KPI 上色）

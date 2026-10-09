@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 45
+- **Total Sessions**: 46
 - **Last Active**: 2026-10-09
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1465 | Active |
+| `journal-1.md` | ~1499 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 46 | 2026-10-09 | 手机端上色实为已生效（更正）；盘点 6 类未处理问题 | `c1b2b23` | `main` |
 | 45 | 2026-10-09 | 核查使用日志上色（通过）并确认维持 50/100 速度段 | `6287c58` | `main` |
 | 44 | 2026-10-09 | 核查使用日志上色：已生效；但 50/100 阈值几乎全绿，建议按真实分布校准 | `be63897` | `main` |
 | 43 | 2026-10-09 | 用户决定保持内存日志（接受更新清历史） | `a1e4bf3` | `main` |
