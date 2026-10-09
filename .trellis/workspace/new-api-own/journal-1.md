@@ -1531,3 +1531,37 @@ v0.0.11 升级真实触发了内存日志的固有代价：更新重启进程 �
 ### Next Steps
 
 - 待用户决定是否更新实例到 v0.0.12，以及是否清理 4 个死代码 mock 生成器
+
+
+## Session 48: 三项收尾并发 v0.0.13；实例一次升级到最新（KPI 上色实测生效）
+<!-- trellis-session: v=2 fp=7b0055085c3a9ed9 -->
+
+**Date**: 2026-10-09
+**Task**: 三项收尾并发 v0.0.13；实例一次升级到最新（KPI 上色实测生效）
+**Branch**: `main`
+
+### Summary
+
+用户三项全选：①清理 4 个死代码 mock 生成器 + 级联 8 符号（mock-stats 854→445 行、seed 63→43 行，knip 收敛 6 条），真实路径符号与两张已标注 mock 表保留；②最后 2 条 lint 警告以'保留实现+三条依据的就地 disable'收尾，lint 达 0 warnings/0 errors（不强行替换为语义不同的 structuredClone）；③按'只清一次日志'合并为一次升级：v0.0.11 → v0.0.13（面板路径约 10 秒、容器未重建、env 与 log-opt 未变），浏览器复核顶栏 v0.0.13、无报错、控制台 KPI 显示 243.1 t/s 为绿色（新上色实时生效）。过程留痕：清理脚本误吞真实符号 PROFILE_BY_NAME，被 typecheck 拦下并逐字节还原。发布 v0.0.13（镜像三方同摘要 sha256:291b8c3a94445、Release 成功、releases/latest=v0.0.13）。
+
+### Main Changes
+
+- 合并升级以只清一次内存日志；记录脚本删数组字面量的教训（须按各自收尾符判断）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `550965e` | chore(web): 清理 4 个死代码 mock 生成器与级联符号；收尾最后 2 条 lint 警告（带依据 disable）[task:decide-next-after-v0012] |
+
+### Testing
+
+- [OK] [OK] 终验全绿（lint 0/0、224 pass、typecheck/build/i18n/format/knip(files)）+ 真机 v0.0.13 + KPI 绿色实测
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 剩余不急项：knip 基线（398 条）、formatTokenVolume 死代码、2 条 disable 的彻底移除（需收窄类型契约）
