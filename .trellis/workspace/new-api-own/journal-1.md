@@ -1225,3 +1225,37 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 如需把配色扩展到控制台汇总 KPI 或接真实分布校准，等用户指示；发布后可在实例上肉眼验证
+
+
+## Session 39: 发 v0.0.10（TPS 上色）；偶发构建失败用重跑解决
+<!-- trellis-session: v=2 fp=65730b035767f4ec -->
+
+**Date**: 2026-10-09
+**Task**: 发 v0.0.10（TPS 上色）；偶发构建失败用重跑解决
+**Branch**: `main`
+
+### Summary
+
+发布 v0.0.10（TPS 数值按阈值上色）。首轮 CI 中 Release 成功、镜像 arm64 作业失败于 bun install --frozen-lockfile 的 react-icons 完整性校验；排查确认 bun.lock/package.json 自 v0.0.9 起逐字节未变、且同 run 的 amd64 成功，判定为 registry/CDN 偶发；用 gh run rerun --failed 重跑后三作业全绿，0.0.10/v0.0.10/latest 同一摘要，releases/latest=v0.0.10。经验：此类拉取类失败优先重跑，不要动 lockfile。
+
+### Main Changes
+
+- 记录可复用经验：镜像构建的 tarball integrity 失败且另一架构成功时，优先重跑失败 job
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1cd7307` | chore(release): v0.0.10 — TPS 数值按阈值上色（红<50 / 黄50-100 / 绿>=100） [task:eval-speed-color-thresholds] |
+
+### Testing
+
+- [OK] [OK] 三方镜像标签同一摘要；Release 三资产齐备；releases/latest=v0.0.10
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 用户实例可在面板点更新到 v0.0.10（前端随二进制内嵌，颜色随之生效）

@@ -119,3 +119,14 @@
 - 新增 `lib/__tests__/tps-color.test.ts`：边界（49.9/50/99.9/100/173）、无数据（0/-1/NaN/∞）、三色映射，共 3 例全过；
 - `bun test` **211 pass / 0 fail**；typecheck 0；build 0；i18n:check 0；format:check 0；knip(files) 0；
 - lint 报 2 个 error，位于 `web/src/hooks/use-system-config.ts`（**既有问题**、非本次改动，该文件未被修改）。
+
+## 发版 v0.0.10 与一次偶发构建失败（2026-10-09）
+
+- Release **成功**（v0.0.10 = Latest，三资产齐备），但**镜像构建 arm64 作业失败**：
+  `bun install --frozen-lockfile` → `error: Integrity check failed for tarball: react-icons`；
+- 排查：`web/bun.lock` 与 `web/package.json` 在 v0.0.9 → HEAD 之间**逐字节未变**
+  （react-icons 的 integrity 哈希相同）→ 与本次代码改动无关；
+- 同一次 run 里 **amd64 成功、arm64 失败** → 判定为 registry/CDN 侧偶发；
+- 处置：`gh run rerun <id> --failed`（不改代码、不动 tag）→ 三个作业全部成功 → `0.0.10`/`v0.0.10`/`latest` 同一摘要。
+
+**可复用经验**：镜像构建若报 tarball integrity / 拉取类错误且另一架构成功，优先**重跑失败 job**，不要急着改 lockfile 或锁版本。
