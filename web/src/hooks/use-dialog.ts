@@ -94,7 +94,7 @@ export function useDialog(
  * const [user, setUser, handlers] = useDialogState<User>()
  * setUser({ id: 1, name: 'John' })
  */
-export function useDialogState<T = unknown>(
+function useDialogState<T = unknown>(
   initialState: T | null = null
 ): readonly [
   T | null,

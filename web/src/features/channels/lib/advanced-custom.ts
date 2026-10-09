@@ -16,6 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { cloneJsonValue } from '@/lib/json-clone'
+
 import type {
   AdvancedCustomAuthType,
   AdvancedCustomConfig,
@@ -190,7 +192,7 @@ export type AdvancedCustomConverterDefaults = {
   auth?: AdvancedCustomRouteAuth
 }
 
-export const ADVANCED_CUSTOM_MODEL_REGEX_PREFIX = 're:'
+const ADVANCED_CUSTOM_MODEL_REGEX_PREFIX = 're:'
 
 export type AdvancedCustomModelRuleKind = 'exact' | 'regex'
 
@@ -337,17 +339,12 @@ export const ADVANCED_CUSTOM_TEMPLATE_OPTIONS: AdvancedCustomTemplateOption[] =
     },
   ]
 
-export function cloneAdvancedCustomConfig(
+function cloneAdvancedCustomConfig(
   config: AdvancedCustomConfig
 ): AdvancedCustomConfig {
-  // 该配置本就是 JSON 字段：JSON 往返会丢掉「值为 undefined 的可选字段」，与写回
-  // 后端的形状一致。AdvancedCustomConfig 的字段全部 optional，且未启用
-  // exactOptionalPropertyTypes ⇒ `{ incoming_path: undefined }` 合法，换成
-  // structuredClone 会保留该键，与 JSON 往返不再等价。
-  // 全仓唯一调用点是下方 getAdvancedCustomTemplateConfig，传入静态
-  // ADVANCED_CUSTOM_TEMPLATE_OPTIONS 配置（已核对只含字符串 / 数组 / 纯对象）。
-  // oxlint-disable-next-line unicorn/prefer-structured-clone -- JSON round-trip keeps the serialized shape (drops undefined-valued optional fields); structuredClone would preserve them
-  return JSON.parse(JSON.stringify(config)) as AdvancedCustomConfig
+  // `AdvancedCustomConfig` is a plain JSON shape, so cloning it means taking its
+  // JSON view — see `cloneJsonValue` for the exact contract.
+  return cloneJsonValue(config)
 }
 
 export function getAdvancedCustomTemplateConfig(
@@ -438,7 +435,7 @@ function getAdvancedCustomNativeAuth(
   return bearerHeaderAuth()
 }
 
-export function getAdvancedCustomIncomingPathOptions(
+function getAdvancedCustomIncomingPathOptions(
   converter: AdvancedCustomConverter
 ): AdvancedCustomIncomingPathOption[] {
   return ADVANCED_CUSTOM_INCOMING_PATH_OPTIONS.filter((option) =>

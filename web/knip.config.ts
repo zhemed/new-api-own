@@ -30,7 +30,16 @@ const config: KnipConfig = {
     // 移除该 ignore 后 `knip` 全量输出与保留时**逐节一致**（仅是提示 3→2），
     // 故按提示移除，避免留下无效配置。不要再加回来。
   ],
-  ignoreDependencies: ['tailwindcss', 'tw-animate-css'],
+  // 以下 5 个库**只被上面两棵被忽略的组件库树引用**；那两棵树对 knip 不可见，
+  // 于是依赖被报成 "Unused dependencies"。这不是死依赖，删除会连带清掉产品底座
+  // （shadcn 底座 + AI 组件库），属产品决策范围 → 逐条登记，不使用通配。
+  ignoreDependencies: [
+    'recharts', // src/components/ui/chart.tsx
+    'react-resizable-panels', // src/components/ui/resizable.tsx
+    'embla-carousel-react', // src/components/ui/carousel.tsx
+    'tokenlens', // src/components/ai-elements/context.tsx
+    '@xyflow/react', // src/components/ai-elements/{node,edge,panel,toolbar,controls}.tsx
+  ],
 }
 
 export default config
