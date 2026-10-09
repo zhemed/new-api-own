@@ -130,5 +130,13 @@ export function makeUniqueName(
 }
 
 export function cloneTemplate<T>(template: T): T {
+  // 这里要的是「JSON 往返」语义，不是通用深拷贝：T 无约束且本函数对外导出，
+  // 换成 structuredClone 后，含「值为 undefined 的键 / Date / NaN」的输入会得到不同
+  // 结果（JSON：丢键 / 转 ISO 串 / 转 null；structuredClone：保留 / Date / 原值）。
+  // 全仓唯一调用点是 index.tsx:216 传入的 RULE_TEMPLATES，已核对只含
+  // string / number / boolean / 字符串数组 / 纯对象，因此当前两者结果一致。
+  // 要安全替换需先把 T 收窄成 JSON-safe，而那要求先改
+  // types.ts 的 `param_override_template: Record<string, unknown>`（超出本次写范围）。
+  // oxlint-disable-next-line unicorn/prefer-structured-clone -- JSON round-trip is the intended semantics; T is unconstrained so structuredClone is not equivalent for Date/NaN/undefined-valued keys
   return JSON.parse(JSON.stringify(template))
 }
