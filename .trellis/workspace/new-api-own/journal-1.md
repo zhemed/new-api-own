@@ -1259,3 +1259,37 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 用户实例可在面板点更新到 v0.0.10（前端随二进制内嵌，颜色随之生效）
+
+
+## Session 40: 用面板更新器把实例升到 v0.0.10 并验证（含会话失效观察）
+<!-- trellis-session: v=2 fp=5217f55e8647e918 -->
+
+**Date**: 2026-10-09
+**Task**: 用面板更新器把实例升到 v0.0.10 并验证（含会话失效观察）
+**Branch**: `main`
+
+### Summary
+
+按用户授权用面板内更新路径（POST /api/status/update/apply）把其实例从 v0.0.9 升到 v0.0.10：约 10 秒完成（下载+校验+替换+syscall.Exec），前端包 hash 由 index.3be9e29776.js 变为 index.bed3a6a7c0.js，容器未重建、四条内存日志环境变量与主库 logs=1 行保持不变；浏览器复核顶栏 v0.0.10、无错误边界、模型列表正常。观察：因容器未设 SESSION_SECRET，重启换签名密钥导致已登录会话失效（送回登录页），属预期；想避免需自行设置固定 SESSION_SECRET。另 /api/perf-metrics/summary 现为 models=0（尚无真实中转请求），跑一条真实请求后 TPS 颜色即可见。
+
+### Main Changes
+
+- 端到端验证了自研更新器在真实实例上的完整性（版本切换 + 前端包更换 + 容器不重建 + 环境不变）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1f286dd` | chore: record journal |
+
+### Testing
+
+- [OK] [OK] 版本 v0.0.9→v0.0.10 约 10s；前端包 hash 变更；浏览器复核无报错
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 等实例产生真实请求后肉眼确认颜色；如需更新后不掉登录，由用户自行设置 SESSION_SECRET
