@@ -30,6 +30,7 @@ import {
   formatUptimePct,
   getSuccessRateDotClass,
   getSuccessRateTextClass,
+  getTpsTextClass,
 } from '@/features/performance-metrics/lib/format'
 import type { PerfModelSummary } from '@/features/performance-metrics/types'
 import { cn } from '@/lib/utils'
@@ -154,6 +155,7 @@ export function PerformanceOverview() {
               icon={Gauge}
               label={t('Throughput')}
               value={formatThroughput(summary.avgTps)}
+              valueClassName={getTpsTextClass(summary.avgTps)}
               tone='info'
             />
           </div>

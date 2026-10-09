@@ -28,7 +28,9 @@ export function getPreviewText(
     .replaceAll(/<[^>]*>/g, '') // Remove HTML tags
     .replaceAll(/[#*_]/g, '') // Remove Markdown formatting symbols
     .trim()
+  // `Math.max(0, …)` keeps `substring`'s negative-index clamping: this helper is
+  // exported, so `maxLength` is caller-supplied and may be negative.
   return plainText.length > maxLength
-    ? `${plainText.substring(0, maxLength)}...`
+    ? `${plainText.slice(0, Math.max(0, maxLength))}...`
     : plainText
 }

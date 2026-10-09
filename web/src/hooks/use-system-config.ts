@@ -120,13 +120,16 @@ function preloadImage(
   onError: () => void
 ): () => void {
   const img = new Image()
-  img.onload = onLoad
-  img.onerror = onError
+  // `addEventListener` instead of `img.onload = ...`: the listeners are removed
+  // by identity in the cleanup below, which is equivalent for this fresh,
+  // locally-owned Image instance.
+  img.addEventListener('load', onLoad)
+  img.addEventListener('error', onError)
   img.src = src
 
   return () => {
-    img.onload = null
-    img.onerror = null
+    img.removeEventListener('load', onLoad)
+    img.removeEventListener('error', onError)
   }
 }
 

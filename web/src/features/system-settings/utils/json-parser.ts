@@ -73,7 +73,9 @@ function getLineAndColumn(
   text: string,
   position: number
 ): { line: number; column: number } {
-  const lines = text.substring(0, position).split('\n')
+  // `position` comes from `/\d+/` + parseInt, so it is never negative and
+  // `slice(0, position)` is equivalent to `substring(0, position)` here.
+  const lines = text.slice(0, position).split('\n')
   return {
     line: lines.length,
     column: (lines.at(-1)?.length ?? 0) + 1,

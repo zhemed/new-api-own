@@ -691,7 +691,9 @@ export const PromptInput = ({
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.onloadend = () => resolve(reader.result as string)
-      reader.onerror = reject
+      // Same handler contract as `reader.onerror = reject`; the listener is
+      // only registered on this locally-owned FileReader.
+      reader.addEventListener('error', reject)
       reader.readAsDataURL(blob)
     })
   }
@@ -1161,11 +1163,16 @@ export const PromptInputSpeechButton = ({
         }
       }
 
-      speechRecognition.onerror = (event) => {
+      // Equivalent to `speechRecognition.onerror = ...`; the instance is created
+      // in this effect and has no other error handler.
+      speechRecognition.addEventListener('error', (event) => {
+        // `addEventListener` widens the event type to `Event`, so narrow it back
+        // to the same object the `onerror` handler received at runtime.
+        const { error } = event as SpeechRecognitionErrorEvent
         // eslint-disable-next-line no-console
-        console.error('Speech recognition error:', event.error)
+        console.error('Speech recognition error:', error)
         setIsListening(false)
-      }
+      })
 
       recognitionRef.current = speechRecognition
       // eslint-disable-next-line react-hooks/set-state-in-effect

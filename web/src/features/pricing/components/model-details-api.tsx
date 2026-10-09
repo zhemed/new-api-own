@@ -565,6 +565,7 @@ function SupportedParametersSection(props: { model: PricingModel }) {
   return (
     <section>
       <SectionTitle icon={Sigma}>{t('Supported parameters')}</SectionTitle>
+      <SampleDataNote />
       <StaticDataTable
         className={tableStyles.sectionContainer}
         headerRowClassName={tableStyles.mutedHeaderRow}
@@ -675,6 +676,7 @@ function RateLimitsSection(props: { model: PricingModel }) {
   return (
     <section>
       <SectionTitle icon={Gauge}>{t('Rate limits')}</SectionTitle>
+      <SampleDataNote />
       <StaticDataTable
         className={tableStyles.sectionContainer}
         headerRowClassName={tableStyles.mutedHeaderRow}
@@ -787,6 +789,29 @@ function SectionTitle(props: {
       <Icon className='text-muted-foreground/70 size-3.5' />
       {props.children}
     </h3>
+  )
+}
+
+/**
+ * Marks a block whose values are generated locally instead of measured.
+ *
+ * Only the parameter and rate-limit tables need this: both are built from
+ * `mock-stats` (shaped by the model name), while every other block in this tab
+ * reads real pricing data. Keep it off blocks backed by the API — a wrong badge
+ * is worse than no badge.
+ */
+function SampleDataNote() {
+  const { t } = useTranslation()
+  return (
+    <p
+      data-testid='sample-data-note'
+      className='text-muted-foreground mb-2 flex flex-wrap items-center gap-1.5 text-xs'
+    >
+      <Badge variant='secondary'>{t('Sample data')}</Badge>
+      <span>
+        {t('Not measured on this deployment — shown for reference only.')}
+      </span>
+    </p>
   )
 }
 

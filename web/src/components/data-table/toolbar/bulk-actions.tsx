@@ -84,8 +84,10 @@ export function DataTableBulkActions<TData>({
     const buttons = buttonsRef.current
     if (!buttons) return
 
-    const currentIndex = [...buttons].findIndex(
-      (button) => button === document.activeElement
+    // `indexOf` uses strict equality on DOM nodes (never NaN), so it matches the
+    // previous `findIndex((button) => button === document.activeElement)`.
+    const currentIndex = [...buttons].indexOf(
+      document.activeElement as HTMLButtonElement
     )
 
     switch (event.key) {
