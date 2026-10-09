@@ -96,3 +96,43 @@ export function getSuccessRateDotClass(rate: number): string {
 export function getSuccessRateColor(rate: number): string {
   return SUCCESS_RATE_HEX_COLOR[getSuccessRateLevel(rate)]
 }
+
+export type TpsLevel = 'slow' | 'medium' | 'fast' | 'unknown'
+
+/**
+ * Throughput grading thresholds in tokens/s, as half-open ranges with an
+ * inclusive lower bound:
+ * - slow:   [0, 50)
+ * - medium: [50, 100)  (50 itself counts as medium)
+ * - fast:   [100, +∞)  (100 itself counts as fast)
+ *
+ * The numbers are deliberately rough: sustained t/s depends heavily on model
+ * size, so tune these two constants (and re-check with real data from the
+ * `perf_metrics` table) instead of scattering thresholds around the UI.
+ */
+const TPS_MEDIUM_MIN = 50
+const TPS_FAST_MIN = 100
+
+/**
+ * Single source of truth for grading streaming throughput.
+ * Non-finite or non-positive values mean "no measurement yet", which is
+ * reported as `unknown` rather than the slowest grade.
+ */
+export function getTpsLevel(tps: number): TpsLevel {
+  if (!Number.isFinite(tps) || tps <= 0) return 'unknown'
+  if (tps >= TPS_FAST_MIN) return 'fast'
+  if (tps >= TPS_MEDIUM_MIN) return 'medium'
+  return 'slow'
+}
+
+const TPS_TEXT_CLASS: Record<TpsLevel, string> = {
+  fast: 'text-emerald-600 dark:text-emerald-400',
+  medium: 'text-amber-600 dark:text-amber-400',
+  slow: 'text-red-600 dark:text-red-400',
+  unknown: 'text-muted-foreground',
+}
+
+/** Text colour class for a throughput value; `unknown` stays neutral. */
+export function getTpsTextClass(tps: number): string {
+  return TPS_TEXT_CLASS[getTpsLevel(tps)]
+}

@@ -54,6 +54,7 @@ import {
   formatThroughput,
   formatUptimePct,
   getSuccessRateTextClass,
+  getTpsTextClass,
 } from '@/features/performance-metrics/lib/format'
 import { getLobeIcon } from '@/lib/lobe-icon'
 import { cn } from '@/lib/utils'
@@ -214,6 +215,7 @@ function OverviewSummaryGrid(props: { model: PricingModel }) {
         icon={Timer}
         label='TPS'
         value={formatThroughput(avgTps)}
+        valueClassName={getTpsTextClass(avgTps)}
       />
       <OverviewMetric
         icon={Timer}

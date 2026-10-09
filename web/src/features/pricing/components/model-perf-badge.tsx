@@ -20,6 +20,7 @@ import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { getSuccessRateDotClass } from '@/features/performance-metrics/lib/format'
+import { getTpsTextClass } from '@/features/performance-metrics/lib/format'
 import { cn } from '@/lib/utils'
 
 export type ModelPerfBadgeData = {
@@ -99,7 +100,9 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
           {t('Throughput short')}
         </div>
         <div className='text-muted-foreground/80 font-mono text-xs leading-4 whitespace-nowrap'>
-          {formatCompactThroughput(avg_tps)}
+          <span className={getTpsTextClass(avg_tps)}>
+            {formatCompactThroughput(avg_tps)}
+          </span>
         </div>
       </div>
       <div

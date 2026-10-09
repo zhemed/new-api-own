@@ -32,6 +32,7 @@ import {
   formatThroughput,
   formatUptimePct,
   getSuccessRateTextClass,
+  getTpsTextClass,
 } from '@/features/performance-metrics/lib/format'
 import type { PerformanceGroup } from '@/features/performance-metrics/types'
 import { cn } from '@/lib/utils'
@@ -226,6 +227,7 @@ export function ModelDetailsPerformance(props: { model: PricingModel }) {
           icon={Timer}
           label='TPS'
           value={formatThroughput(avgTps)}
+          valueClassName={getTpsTextClass(avgTps)}
           hint={t('Sustained tokens per second')}
         />
         <StatCard
@@ -273,7 +275,11 @@ export function ModelDetailsPerformance(props: { model: PricingModel }) {
               header: 'TPS',
               className: tableStyles.compactHeaderCellRight,
               cellClassName: tableStyles.compactNumericCell,
-              cell: (perf) => formatThroughput(perf.avg_tps),
+              cell: (perf) => (
+                <span className={getTpsTextClass(perf.avg_tps)}>
+                  {formatThroughput(perf.avg_tps)}
+                </span>
+              ),
             },
             {
               id: 'ttft',
