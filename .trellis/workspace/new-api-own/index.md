@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 43
+- **Total Sessions**: 44
 - **Last Active**: 2026-10-09
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1397 | Active |
+| `journal-1.md` | ~1431 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 44 | 2026-10-09 | 核查使用日志上色：已生效；但 50/100 阈值几乎全绿，建议按真实分布校准 | `be63897` | `main` |
 | 43 | 2026-10-09 | 用户决定保持内存日志（接受更新清历史） | `a1e4bf3` | `main` |
 | 42 | 2026-10-09 | 实例升级 v0.0.11；升级清空内存日志（预期），彩色 t/s 待新请求 | `d9bad5e` | `main` |
 | 41 | 2026-10-09 | 使用日志表 t/s 上色（补齐漏掉的渲染点）并发 v0.0.11；更正 lint 归因 | `c8c308a` | `main` |
