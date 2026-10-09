@@ -1293,3 +1293,37 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 等实例产生真实请求后肉眼确认颜色；如需更新后不掉登录，由用户自行设置 SESSION_SECRET
+
+
+## Session 41: 使用日志表 t/s 上色（补齐漏掉的渲染点）并发 v0.0.11；更正 lint 归因
+<!-- trellis-session: v=2 fp=9c3b33b4f3f1375e -->
+
+**Date**: 2026-10-09
+**Task**: 使用日志表 t/s 上色（补齐漏掉的渲染点）并发 v0.0.11；更正 lint 归因
+**Branch**: `main`
+
+### Summary
+
+用户截图指明目标是使用日志表「流 N t/s」列，上轮只覆盖了模型详情页/模型广场。本轮：StreamTpsCell 复用 getTpsTextClass 上色（无数据保留原灰色），新增 2 例回归测试；顺带修复上轮我在 model-perf-badge.tsx 造成的重复 import（no-duplicate-imports ×2，并更正我此前把它归因于既有文件的错误结论）——lint 现为 21 warnings / 0 errors。全量 213 pass/0 fail，typecheck/build/i18n/format/knip 全绿。发布 v0.0.11：镜像三方同摘要 sha256:abcb2404805da、Release 三资产齐备、releases/latest=v0.0.11。
+
+### Main Changes
+
+- 上色点增至 5 处且共用同一 helper（阈值 50/100、左闭右开、无数据中性）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c8c308a` | feat(web): 使用日志表 t/s 按阈值上色，并修复 model-perf-badge 重复 import [task:color-log-tps] |
+
+### Testing
+
+- [OK] [OK] 新增 2 例测试通过（20/75/150 → 红/黄/绿；null → 中性且文案为 —）；lint 0 error；全量 213 pass
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 用户实例可在面板点更新到 v0.0.11；其使用日志已有真实数据（24/12 t/s）→ 更新后应立刻显示红色

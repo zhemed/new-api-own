@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 40
+- **Total Sessions**: 41
 - **Last Active**: 2026-10-09
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1295 | Active |
+| `journal-1.md` | ~1329 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 41 | 2026-10-09 | 使用日志表 t/s 上色（补齐漏掉的渲染点）并发 v0.0.11；更正 lint 归因 | `c8c308a` | `main` |
 | 40 | 2026-10-09 | 用面板更新器把实例升到 v0.0.10 并验证（含会话失效观察） | `1f286dd` | `main` |
 | 39 | 2026-10-09 | 发 v0.0.10（TPS 上色）；偶发构建失败用重跑解决 | `1cd7307` | `main` |
 | 38 | 2026-10-09 | TPS 数值按阈值上色（红<50 / 黄50-100 / 绿≥100，无数据不上色） | `e59b721` | `main` |

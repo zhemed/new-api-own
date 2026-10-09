@@ -24,3 +24,32 @@
 - [ ] 不引入第二套阈值或配色
 - [ ] 测试覆盖边界；六条命令全绿
 - [ ] 发版并在实例上肉眼验证
+
+## 执行结果（2026-10-09）
+
+### 改动
+
+| 文件 | 内容 |
+|---|---|
+| `web/src/features/usage-logs/components/timing-metrics-cell.tsx` | `StreamTpsCell` 的 t/s 文本改为 `getTpsTextClass()` 上色；**无数据时保留原 `text-muted-foreground/60`**（不显示颜色）|
+| `web/src/features/pricing/components/model-perf-badge.tsx` | **修复 v0.0.10 引入的重复 import**（`no-duplicate-imports` ×2）——上一轮我误判为"既有文件问题"，实为我引入 |
+| `web/src/features/usage-logs/components/__tests__/stream-tps-cell.test.tsx`（新） | 2 例：20/75/150 分别红/黄/绿；`null` 保持中性灰且文案为 `—` |
+
+上色点合计 **5 处**，全部走同一个 `getTpsTextClass()`（阈值 50/100，左闭右开）：使用日志表「流」列、详情页性能表 TPS 列、
+详情页 TPS 概览卡与头部指标、模型广场卡片紧凑吞吐。
+
+### 门禁
+
+`bun test` **213 pass / 0 fail**；typecheck 0；**lint 21 warnings / 0 errors**（修复后）；
+build / i18n:check / format:check / knip(files) 全绿；`format` 后测试文件因版本变更按流程重读再改（FS_STALE_VERSION 流程）。
+
+### 发版
+
+**v0.0.11** 发布成功：镜像 `0.0.11`/`v0.0.11`/`latest` 同一摘要 `sha256:abcb2404805da`；
+Release 三资产齐备；`releases/latest = v0.0.11`。
+
+### 自我更正（留痕）
+
+- 上一轮我把 lint 的 2 个 error 归因于既有文件 `use-system-config.ts` —— **错误**，实际是我在 `model-perf-badge.tsx`
+  写了同一模块的两行 import；本轮已修并复核为 0 error。
+- 上一轮上色范围漏了用户真正指的**使用日志表**（截图列），已在本轮补齐。
