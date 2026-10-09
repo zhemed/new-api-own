@@ -49,3 +49,34 @@
 ### 三、本轮**无代码改动**
 
 手机端已上色（更正），其余为盘点；未发版、未改实例。
+
+## 四项处理结果（2026-10-09，v0.0.12 已发布）
+
+| 项 | 结果 |
+|---|---|
+| #6 控制台汇总 KPI 上色 | ✓ 两处各 +2 行，复用 `getTpsTextClass`（无需改组件 API，本就支持 `valueClassName`）|
+| #1a mock 区块标注 | ✓ 但**范围被核对纠正**：只有 `model-details-api` 的两张表（支持参数、速率限制）是 mock，已加 `Sample data` 标注；图表与 30 天可用率经核为**真实数据**（数据来自 `/api/perf-metrics`），未标注 |
+| #2 lint 警告 | ✓ 21 → **2**（18 条等价改写 + `footer.tsx` 带依据的就地 disable；2 条 `prefer-structured-clone` 因 `JSON.parse(JSON.stringify())` 与 `structuredClone` 非全输入等价而**主动跳过**，判断正确）|
+| #4 过期记录 | ✓ 删除 multipart 行并记入「已处理」；**另订正 3 处漂移**（DTO 两处行为不同 / ClickHouse 事实来源迁移到 `model.LogRowCap()` / knip ignore 现状），行号经 `sed -n` 逐条核验 |
+
+### 本轮最有价值的发现（Lead 前提被纠正两次）
+
+1. 我先前说"图表、可用率、API 区块都是 mock" → **错**：只有 API 区块的两张表是 mock，图表/可用率是真实数据；
+2. 附带发现 `buildLatencyTimeSeries` / `buildUptimeSeries` / `buildGroupPerformance` / `buildAppRankings`
+   四个 mock 生成器**全仓 0 调用（死代码）**——可清理，且有助于收敛 knip 基线。
+
+### 终验（Lead）
+
+无 Go 改动（0 个 `.go`）；`typecheck` 0；`lint` **2 warnings / 0 errors**；`bun test` **224 pass / 0 fail**（基线 213）；
+`build` / `i18n:check`（4181 键七语言）/ `format:check` / `knip --include files` 全 0；门禁两件套通过；
+TPS 阈值全仓仍只有 `performance-metrics/lib/format.ts` 一处来源；上色点 6 个文件覆盖全部 t/s 渲染处。
+
+### 发布
+
+**v0.0.12**：镜像 `0.0.12`/`latest` 同一摘要 `sha256:3a963ac94c520`；Release 成功；`releases/latest = v0.0.12`。
+
+### 仍未处理（供后续决定）
+
+- knip 全量基线红（含既有 `ApiTabIcon` 未使用导出）；
+- 2 条 `prefer-structured-clone` 警告（需先收窄类型契约）；
+- 4 个死代码 mock 生成器（可安全删除，需用户点头）。

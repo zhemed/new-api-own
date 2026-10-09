@@ -1497,3 +1497,37 @@ v0.0.11 升级真实触发了内存日志的固有代价：更新重启进程 �
 ### Next Steps
 
 - 等用户选择要处理哪些（修复过期记录/清 lint 警告/mock 标注/汇总 KPI 上色）
+
+
+## Session 47: 四项收尾（KPI 上色/mock 标注/lint 清理/文档订正）并发 v0.0.12
+<!-- trellis-session: v=2 fp=cc117fa197d20030 -->
+
+**Date**: 2026-10-09
+**Task**: 四项收尾（KPI 上色/mock 标注/lint 清理/文档订正）并发 v0.0.12
+**Branch**: `main`
+
+### Summary
+
+按用户多选执行四项：①控制台两处汇总 KPI 复用 getTpsTextClass 上色；②model-details-api 的两张真实 mock 表加 Sample data 标注（核对后纠正了 Lead 前提：图表与 30 天可用率是真实数据，未标注）；③前端 lint 21→2（2 条 prefer-structured-clone 因非全输入等价主动跳过）；④MAINTENANCE 删过期 multipart 行并订正 3 处漂移（DTO/ClickHouse/knip）。附带发现 4 个 mock 生成器为死代码（0 调用）。Lead 终验：无 Go 改动、lint 2 warnings/0 errors、224 pass/0 fail、build/i18n/format/knip 全 0、门禁通过、阈值单一来源、6 文件覆盖全部 t/s。发 v0.0.12（镜像三方同摘要 sha256:3a963ac94c520、Release 成功、releases/latest=v0.0.12）。
+
+### Main Changes
+
+- 两次更正自己的前提判断（上色范围、mock 面），并记下死代码发现供清理
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a2ad71b` | feat(web)+docs: KPI 上色、mock 区块加示例标注、lint 警告 21→2、已知不一致漂移订正 [task:mobile-tps-color-and-open-issues] |
+
+### Testing
+
+- [OK] [OK] 终验全绿 + v0.0.12 产物齐备；新增 11 个测试（KPI 8 + 标注 3）
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 待用户决定是否更新实例到 v0.0.12，以及是否清理 4 个死代码 mock 生成器

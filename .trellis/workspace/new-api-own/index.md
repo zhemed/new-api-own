@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 46
+- **Total Sessions**: 47
 - **Last Active**: 2026-10-09
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1499 | Active |
+| `journal-1.md` | ~1533 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 47 | 2026-10-09 | 四项收尾（KPI 上色/mock 标注/lint 清理/文档订正）并发 v0.0.12 | `a2ad71b` | `main` |
 | 46 | 2026-10-09 | 手机端上色实为已生效（更正）；盘点 6 类未处理问题 | `c1b2b23` | `main` |
 | 45 | 2026-10-09 | 核查使用日志上色（通过）并确认维持 50/100 速度段 | `6287c58` | `main` |
 | 44 | 2026-10-09 | 核查使用日志上色：已生效；但 50/100 阈值几乎全绿，建议按真实分布校准 | `be63897` | `main` |
