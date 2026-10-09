@@ -1361,3 +1361,37 @@ Verified across every release outlet: VERSION is still 0.0.2, the only remote ta
 ### Next Steps
 
 - 用户发一条真实请求后肉眼确认颜色；若要跨更新保留日志历史，可改 LOG_SQL_DSN 落盘（需用户决定）
+
+
+## Session 43: 用户决定保持内存日志（接受更新清历史）
+<!-- trellis-session: v=2 fp=35b1aaa80a09441c -->
+
+**Date**: 2026-10-09
+**Task**: 用户决定保持内存日志（接受更新清历史）
+**Branch**: `main`
+
+### Summary
+
+v0.0.11 升级真实触发了内存日志的固有代价：更新重启进程 → 用量日志历史清空（用户截图中的 24/12 t/s 记录消失）。向用户说明并给出两选项后，用户选择保持内存日志（省磁盘写入），接受每次更新/重启清空历史；本轮不对实例做任何改动，也未做文档改动（README 的部署命令已含内存模式与回落盘说明）。
+
+### Main Changes
+
+- 记录已知代价：内存日志模式下每次更新会清空用量历史（非缺陷，是模式取舍）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a1e4bf3` | chore(task): archive 10-09-upgrade-and-verify-tps-color |
+
+### Testing
+
+- [OK] [OK] 无需验证（无改动）；实例当前 v0.0.11、四条 env 与 --log-opt 未变
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 用户发一条真实请求后即可在使用日志表看到按阈值上色的 t/s
