@@ -1871,3 +1871,37 @@ v0.0.11 升级真实触发了内存日志的固有代价：更新重启进程 �
 ### Next Steps
 
 - 用户可在面板点更新验证自动刷新（下一版时）
+
+
+## Session 58: formatTokens 扩到 K/M/B/T 并合并重复实现，发 v0.0.24
+<!-- trellis-session: v=2 fp=f7fc1fc989de827b -->
+
+**Date**: 2026-10-18
+**Task**: formatTokens 扩到 K/M/B/T 并合并重复实现，发 v0.0.24
+**Branch**: `main`
+
+### Summary
+
+用户担心 1.68M 之后单位卡在 M。调查确认 formatTokens 只到 M（≥1e9 显示 1000.00M，1e12 显示 1234567.89M），且 rankings 侧有同名重复实现。实现：改为 TOKEN_UNITS 表驱动档位 K/M/B/T，含进位处理（999_999→1.0M、999_999_999→1.00B、999_999_999_999→1.00T），非有限值返回 '-'、负值保留符号；删除 rankings 重复实现（全仓仅剩 1 处）并改 3 个调用方 import；新增 15 边界测试，test 300→315，七条门全绿。发 v0.0.24（latest=v0.0.24、三资产齐）。调用方显示变化：rankings 0→'-'、<1000 去千分位、小数位固定，消耗分布不受影响。
+
+### Main Changes
+
+- 把单位档位做成表驱动 + 进位升档，避免再出现'单位卡死'这类问题；同名重复实现合并为单一来源
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9812a81` | fix(web): formatTokens 扩到 K/M/B/T 并合并重复实现（999_999_999 → 1.00B，不再显示 1000.00M）[task:investigate-token-format-units] |
+
+### Testing
+
+- [OK] [OK] 315 pass / knip exit 0；边界实测 999_999_999→1.00B、1e12→1.00T
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 待用户在实例上验证显示（可选升级到 v0.0.24）
