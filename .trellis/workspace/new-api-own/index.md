@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 59
+- **Total Sessions**: 60
 - **Last Active**: 2026-10-18
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1941 | Active |
+| `journal-1.md` | ~1975 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 60 | 2026-10-18 | 按用户要求升级实例到 v0.0.25（含本月/上月范围与末标签对齐） | `bce2e2d` | `main` |
 | 59 | 2026-10-18 | 自然月快捷范围（本月/上月）+ 轴末标签对齐，发 v0.0.25 | `4e7b3b3` | `main` |
 | 58 | 2026-10-18 | formatTokens 扩到 K/M/B/T 并合并重复实现，发 v0.0.24 | `9812a81` | `main` |
 | 57 | 2026-10-18 | 按用户要求把实例升级到 v0.0.23（单次登录、会话不堆积） | `3e136e6` | `main` |

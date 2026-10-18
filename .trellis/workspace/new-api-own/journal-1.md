@@ -1939,3 +1939,37 @@ v0.0.11 升级真实触发了内存日志的固有代价：更新重启进程 �
 ### Next Steps
 
 - 待用户决定是否升级实例到 v0.0.25
+
+
+## Session 60: 按用户要求升级实例到 v0.0.25（含本月/上月范围与末标签对齐）
+<!-- trellis-session: v=2 fp=76524aa660244a48 -->
+
+**Date**: 2026-10-18
+**Task**: 按用户要求升级实例到 v0.0.25（含本月/上月范围与末标签对齐）
+**Branch**: `main`
+
+### Summary
+
+用户明确要求升级。执行：单次登录复用 token → POST /api/status/update/apply → 约 10 秒 v0.0.23→v0.0.25。复核：四条 LOG_* 与 --log-opt 未变、容器 running 未重建、前端包 index.4ce8275950.js、会话数仍 7（未堆积）、releases/latest=v0.0.25。
+
+### Main Changes
+
+- 无代码改动（仅实例升级）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `bce2e2d` | chore(task): archive 10-18-natural-month-presets |
+
+### Testing
+
+- [OK] [OK] 版本 v0.0.25 / env 与日志上限未变 / 会话稳定
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 用户在筛选里点「本月」验证从 1 号起、末标签为当天
