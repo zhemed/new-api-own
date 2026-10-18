@@ -21,10 +21,11 @@ import { PieChart } from 'lucide-react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { formatTokens } from '@/lib/format'
 import { useChartTheme } from '@/lib/use-chart-theme'
 import { VCHART_OPTION } from '@/lib/vchart'
 
-import { formatShare, formatTokens } from '../lib/format'
+import { formatShare } from '../lib/format'
 import type { RankingPeriod, VendorRanking, VendorShareSeries } from '../types'
 import { VendorLink } from './entity-links'
 

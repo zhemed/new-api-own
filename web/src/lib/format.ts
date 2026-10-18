@@ -187,14 +187,42 @@ export function formatLogQuota(quota: number): string {
   })
 }
 
+/** Token magnitudes, largest first, with the digits each one keeps. */
+const TOKEN_UNITS = [
+  { size: 1_000_000_000_000, suffix: 'T', digits: 2 },
+  { size: 1_000_000_000, suffix: 'B', digits: 2 },
+  { size: 1_000_000, suffix: 'M', digits: 2 },
+  { size: 1_000, suffix: 'K', digits: 1 },
+] as const
+
 /**
- * Format tokens count with K/M suffixes
+ * Format a token count with a K/M/B/T suffix.
+ *
+ * `0` and non-finite inputs render as `-` so callers can decide what "no
+ * tokens" should look like. Rounding carries into the next unit: 999_999 is
+ * `1.0M`, not `1000.0K`, and 999_999_999 is `1.00B`, not `1000.00M`.
  */
 export function formatTokens(tokens: number): string {
-  if (tokens === 0) return '-'
-  if (tokens < 1000) return tokens.toString()
-  if (tokens < 1000000) return `${(tokens / 1000).toFixed(1)}K`
-  return `${(tokens / 1000000).toFixed(2)}M`
+  if (tokens === 0 || !Number.isFinite(tokens)) return '-'
+
+  const abs = Math.abs(tokens)
+  if (abs < 1_000) return tokens.toString()
+
+  let unitIndex = TOKEN_UNITS.findIndex((unit) => abs >= unit.size)
+  if (unitIndex < 0) unitIndex = TOKEN_UNITS.length - 1
+
+  const digits = TOKEN_UNITS[unitIndex].digits
+  let rounded = Number((tokens / TOKEN_UNITS[unitIndex].size).toFixed(digits))
+
+  // Rounding can reach the next magnitude (999.999999 -> "1000.00"). Promote a
+  // unit and keep the same decimals, so 999_999 is `1.0M` and 999_999_999 is
+  // `1.00B` instead of `1000.0K` / `1000.00M`.
+  while (Math.abs(rounded) >= 1_000 && unitIndex > 0) {
+    unitIndex -= 1
+    rounded = Number((tokens / TOKEN_UNITS[unitIndex].size).toFixed(digits))
+  }
+
+  return `${rounded.toFixed(digits)}${TOKEN_UNITS[unitIndex].suffix}`
 }
 
 /**

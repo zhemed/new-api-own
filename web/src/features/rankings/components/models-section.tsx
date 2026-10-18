@@ -21,10 +21,10 @@ import { BarChart3, Trophy } from 'lucide-react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { formatTokens } from '@/lib/format'
 import { useChartTheme } from '@/lib/use-chart-theme'
 import { VCHART_OPTION } from '@/lib/vchart'
 
-import { formatTokens } from '../lib/format'
 import type { ModelHistorySeries, ModelRanking, RankingPeriod } from '../types'
 import { ModelLeaderboard } from './model-leaderboard'
 
