@@ -632,8 +632,12 @@ export function processChartData(
           content: [
             {
               key: (datum: Record<string, unknown>) => datum?.Model,
+              // Raw number on purpose: vchart feeds this into `updateContent`,
+              // which formats it. Returning a formatted string here makes
+              // `Number('1.68M')` NaN, so every row renders as 0 while the
+              // total (read from `datum.TimeSum`) stays correct.
               value: (datum: Record<string, unknown>) =>
-                formatTokenValue(Number(datum?.rawTokens) || 0),
+                Number(datum?.rawTokens) || 0,
             },
           ],
           updateContent: makeTooltipDimensionUpdateContent(),
@@ -673,8 +677,12 @@ export function processChartData(
           content: [
             {
               key: (datum: Record<string, unknown>) => datum?.Model,
+              // Raw number on purpose: vchart feeds this into `updateContent`,
+              // which formats it. Returning a formatted string here makes
+              // `Number('1.68M')` NaN, so every row renders as 0 while the
+              // total (read from `datum.TimeSum`) stays correct.
               value: (datum: Record<string, unknown>) =>
-                formatTokenValue(Number(datum?.rawTokens) || 0),
+                Number(datum?.rawTokens) || 0,
             },
           ],
           updateContent: makeTooltipDimensionUpdateContent({
