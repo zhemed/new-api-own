@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 55
+- **Total Sessions**: 56
 - **Last Active**: 2026-10-18
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1805 | Active |
+| `journal-1.md` | ~1839 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 56 | 2026-10-18 | 面板内更新后自动刷新（轮询+超时+按版本一次性守卫），发 v0.0.23 | `9491228` | `main` |
 | 55 | 2026-10-18 | tooltip 分项 0 已修复并获用户验收 | `8d44aee` | `main` |
 | 54 | 2026-10-18 | 修完 tooltip 分项 0（dimension.content 必须返回原始数字）；并清理我造成的 50 个测试会话 | `f199bf3` | `main` |
 | 53 | 2026-10-18 | 评估并实现：消耗分布改按 Token 统计（标题不动），发 v0.0.21 并真机截图验收 | `4bb49e7` | `main` |

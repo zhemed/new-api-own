@@ -56,3 +56,35 @@ if (result.ok) {
 
 - 低：改动只在前端更新组件内；刷新发生在服务已恢复之后；
 - 需注意：若更新后版本号未变（同版本重装），第 3 步的"version 变化"判据不成立 → 可用"服务恢复 + 连续两次成功"作为替代判据，或直接以"状态接口恢复"为准。
+
+## 实现结果（2026-10-18，v0.0.23）
+
+### 改动
+
+- **新增** `maintenance/restart-watcher.ts`（纯逻辑、依赖可注入）：
+  `waitForRestartedService`（轮询）、`watchForRestartAndReload`（轮询→一次性 reload）、
+  `shouldWatchAfterApply`（只认 `ok`）、`hasReloadedFor`/`markReloadedFor`（sessionStorage 按**版本**守卫）、`readFreshStatus`（`?_ts=` + `disableDuplicate` 绕缓存/去重）；
+- `update-checker-section.tsx`：`ok` → 关弹窗 → **`restarting` 态**（按钮禁用 + 常驻提示）→ 轮询 → 成功 reload / 超时转 `timed-out`（"请手动刷新" + 按钮恢复）；
+- 删除失真文案 `Update started…then reload this page.`，新增 2 条 i18n（7 语言）。
+
+### 参数与判据
+
+| 项 | 值 |
+|---|---|
+| 首次延迟 / 退避 / 上限 | 2s / ×2 / 15s |
+| 总超时 | 90s |
+| 成功① | 200 且 `version` 变化 → 立即 reload |
+| 成功②（兜底） | 同版本**连续 2 次** 200 → reload |
+| 超时 | 不刷新 + 手动刷新提示 |
+| 触发 | **仅 `result.ok === true`**；9 种失败 reason 一律不 watch |
+
+### 测试与门
+
+新增 **11** 个测试（全部假时钟/注入依赖）：版本变化→reload 恰一次；超时→零次；重复触发不二次刷新；
+后续版本仍可刷新；单次成功不判恢复；9 种失败 reason 全不 watch；组件级失败路径 `postUpdateWatch` 从未被调用。
+`bun test` 289 → **300**；七条门全绿（knip exit 0）；无后端改动。
+
+### 验证方式
+
+实例当前 v0.0.22，仓库已发 v0.0.23 —— **让用户在面板点一次「更新」即可端到端验证**：
+点击后应看到常驻"重启中"提示，随后页面**自动刷新**（通常 2–15s）；若 90s 未成功则停在"请手动刷新"。

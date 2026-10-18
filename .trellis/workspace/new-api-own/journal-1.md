@@ -1803,3 +1803,37 @@ v0.0.11 升级真实触发了内存日志的固有代价：更新重启进程 �
 ### Next Steps
 
 - 无
+
+
+## Session 56: 面板内更新后自动刷新（轮询+超时+按版本一次性守卫），发 v0.0.23
+<!-- trellis-session: v=2 fp=81ec1d8923a25125 -->
+
+**Date**: 2026-10-18
+**Task**: 面板内更新后自动刷新（轮询+超时+按版本一次性守卫），发 v0.0.23
+**Branch**: `main`
+
+### Summary
+
+用户指出面板更新成功后没有自动刷新。调查确认：update-checker-section 在 applyUpdate().ok 后只关弹窗+toast（文案却写着 then reload this page），全仓无相关 reload。实现：新增 restart-watcher.ts（轮询 /api/status，2s×2 退避上限 15s、总超时 90s；成功①版本变化立即 reload，成功②同版本连续 2 次 200 兜底；仅 ok 才 watch，9 种失败 reason 不刷新；sessionStorage 按版本一次性守卫避免重复刷新且不锁死未来版本；探针 ?_ts= + disableDuplicate 绕缓存与去重）；组件改为 restarting 常驻态，超时转'请手动刷新'；删除失真文案并补 2 条 i18n。新增 11 测试（假时钟），test 289→300，七条门全绿，无后端改动。发 v0.0.23（latest=v0.0.23，三资产齐）。验证方式：让用户在面板点一次更新，观察是否自动刷新。
+
+### Main Changes
+
+- 把'更新成功后的收尾'补成可验证的流程：常驻态 + 轮询判据 + 超时兜底 + 一次性守卫（键按版本）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9491228` | feat(web): 面板内更新成功后自动刷新（轮询 /api/status 直到重启完成，含超时兜底与按版本的一次性守卫）[task:investigate-update-autorefresh] |
+
+### Testing
+
+- [OK] [OK] 300 pass / knip exit 0 / 无 Go 改动；11 个假时钟测试覆盖 reload 恰一次、超时不刷、失败不刷、后续版本可刷
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 用户在面板点更新做端到端验证（自动刷新通常 2-15s）
