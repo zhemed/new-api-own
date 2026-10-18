@@ -16,7 +16,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import type { DashboardChartPreferences, DashboardFilters } from './types'
+import type {
+  DashboardChartPreferences,
+  DashboardFilters,
+  DashboardRangePresetKind,
+} from './types'
 
 export const TIME_GRANULARITY_STORAGE_KEY = 'data_export_default_time'
 export const DASHBOARD_CHART_PREFERENCES_STORAGE_KEY =
@@ -51,7 +55,7 @@ export const TIME_RANGE_BY_GRANULARITY = {
  * "this month" cannot be expressed as a day count (28–31 days, month length
  * varies). Kept as a discriminant so every consumer resolves it the same way.
  */
-export type DashboardRangePresetKind = 'days' | 'month-to-date' | 'last-month'
+export type { DashboardRangePresetKind }
 
 export interface DashboardRangePreset {
   label: string

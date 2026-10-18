@@ -195,11 +195,20 @@ export type ConsumptionDistributionChartType = 'bar' | 'area'
 
 export type ModelAnalyticsChartTab = 'trend' | 'proportion' | 'top'
 
+/** How a preferred default range resolves to dates. */
+export type DashboardRangePresetKind = 'days' | 'month-to-date' | 'last-month'
+
 export interface DashboardChartPreferences {
   consumptionDistributionChart: ConsumptionDistributionChartType
   modelAnalyticsChart: ModelAnalyticsChartTab
+  /** Rolling-window length; still the only field older builds understand. */
   defaultTimeRangeDays: number
   defaultTimeGranularity: TimeGranularity
+  /**
+   * Optional so preferences saved before natural months existed keep working:
+   * a missing value means `'days'` with `defaultTimeRangeDays`.
+   */
+  defaultRangeKind?: DashboardRangePresetKind
 }
 
 // User analytics selections are held by the dashboard parent so they survive

@@ -60,6 +60,16 @@ function isTimeRangePresetDays(value: unknown): value is number {
   return TIME_RANGE_PRESETS.some((preset) => preset.days === value)
 }
 
+const RANGE_PRESET_KINDS = new Set<DashboardRangePresetKind>([
+  'days',
+  'month-to-date',
+  'last-month',
+])
+
+function isRangePresetKind(value: unknown): value is DashboardRangePresetKind {
+  return RANGE_PRESET_KINDS.has(value as DashboardRangePresetKind)
+}
+
 /**
  * Map a stored range length onto a currently offered preset.
  *
@@ -202,6 +212,10 @@ export function getSavedChartPreferences(): DashboardChartPreferences {
       defaultTimeGranularity: isTimeGranularity(parsed.defaultTimeGranularity)
         ? parsed.defaultTimeGranularity
         : fallbackPreferences.defaultTimeGranularity,
+      // Missing on payloads saved before natural months existed: read as days.
+      defaultRangeKind: isRangePresetKind(parsed.defaultRangeKind)
+        ? parsed.defaultRangeKind
+        : 'days',
     }
   } catch {
     return fallbackPreferences
@@ -212,9 +226,15 @@ export function saveChartPreferences(
   preferences: DashboardChartPreferences
 ): void {
   if (typeof window === 'undefined') return
+  const stored: DashboardChartPreferences = {
+    ...preferences,
+    defaultRangeKind: isRangePresetKind(preferences.defaultRangeKind)
+      ? preferences.defaultRangeKind
+      : 'days',
+  }
   localStorage.setItem(
     DASHBOARD_CHART_PREFERENCES_STORAGE_KEY,
-    JSON.stringify(preferences)
+    JSON.stringify(stored)
   )
 }
 
@@ -226,14 +246,26 @@ export function getDefaultDays(granularity?: TimeGranularity): number {
 }
 
 export function buildDefaultDashboardFilters(
-  preferences: DashboardChartPreferences = getSavedChartPreferences()
+  preferences: DashboardChartPreferences = getSavedChartPreferences(),
+  /** Injectable clock so callers/tests can pin "now". */
+  now: Date = new Date()
 ): DashboardFilters {
-  const { start, end } = getCalendarDateRange(preferences.defaultTimeRangeDays)
+  // One resolver for every surface: a natural-month preference opens on the
+  // 1st of that month, a day preference stays a rolling calendar window.
+  const range = resolveRangePreset(
+    {
+      kind: isRangePresetKind(preferences.defaultRangeKind)
+        ? preferences.defaultRangeKind
+        : 'days',
+      days: preferences.defaultTimeRangeDays,
+    },
+    now
+  )
   return {
     ...EMPTY_DASHBOARD_FILTERS,
-    start_timestamp: start,
-    end_timestamp: end,
-    time_granularity: granularityForRangeDays(preferences.defaultTimeRangeDays),
+    start_timestamp: range.start,
+    end_timestamp: range.end,
+    time_granularity: granularityForRangeDays(range.days),
   }
 }
 
