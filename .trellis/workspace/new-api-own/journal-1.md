@@ -1769,3 +1769,37 @@ v0.0.11 升级真实触发了内存日志的固有代价：更新重启进程 �
 ### Next Steps
 
 - 用户悬停确认 tooltip 分项；如需我自动截图，可另想办法绕开 headless 登录问题
+
+
+## Session 55: tooltip 分项 0 已修复并获用户验收
+<!-- trellis-session: v=2 fp=f791591a48072ca7 -->
+
+**Date**: 2026-10-18
+**Task**: tooltip 分项 0 已修复并获用户验收
+**Branch**: `main`
+
+### Summary
+
+用户截图确认：消耗分布 tooltip 总计 1.16M 与 deepseek-flash 1.16M 一致，验收成功。dimension.content 返回原始数字的修复在真实浏览器生效（此前 headless 无法登录故未自动截图）。会话数量保持在 3 条（已改为不重复登录）。
+
+### Main Changes
+
+- 无代码改动
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8d44aee` | chore(task): archive 10-18-consumption-tooltip-zero |
+
+### Testing
+
+- [OK] [OK] 用户真机验收通过（截图：总计=分项=1.16M）
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 无
