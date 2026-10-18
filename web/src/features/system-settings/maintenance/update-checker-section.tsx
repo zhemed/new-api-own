@@ -28,12 +28,22 @@ import { getBuildRevision } from '@/lib/build-metadata'
 import { formatTimestamp } from '@/lib/format'
 
 import { SettingsSection } from '../components/settings-section'
+import {
+  readFreshStatus,
+  shouldWatchAfterApply,
+  watchForRestartAndReload,
+} from './restart-watcher'
 import { applyUpdate } from './update-api'
 import { useUpdateStatus } from './use-update-status'
 
 type UpdateCheckerSectionProps = {
   currentVersion?: string | null
   startTime?: number | null
+  /**
+   * Test seam: the real watcher polls for up to 90s, which no test should wait
+   * for. Production always uses the default.
+   */
+  postUpdateWatch?: typeof watchForRestartAndReload
 }
 
 /**
@@ -52,6 +62,7 @@ type UpdateCheckerSectionProps = {
 export function UpdateCheckerSection({
   currentVersion,
   startTime,
+  postUpdateWatch,
 }: UpdateCheckerSectionProps) {
   const { t } = useTranslation()
   const isAdmin = useIsAdmin()
@@ -59,6 +70,11 @@ export function UpdateCheckerSection({
     useUpdateStatus(currentVersion)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [applying, setApplying] = useState(false)
+  // `restarting` keeps a persistent hint on screen (a toast would vanish before
+  // the restart even starts); `timed-out` hands the reload back to the operator.
+  const [phase, setPhase] = useState<'idle' | 'restarting' | 'timed-out'>(
+    'idle'
+  )
 
   const uptime = startTime ? formatTimestamp(startTime) : t('Unknown')
   const version = currentVersion || t('Unknown')
@@ -89,12 +105,20 @@ export function UpdateCheckerSection({
     try {
       const result = await applyUpdate()
       if (result.ok) {
+        // Belt and braces: only a confirmed success may ever reload the page.
+        if (!shouldWatchAfterApply(result)) return
         setConfirmOpen(false)
-        toast.success(
-          t(
-            'Update started. The service will restart shortly, then reload this page.'
-          )
-        )
+        setPhase('restarting')
+        const outcome = await (postUpdateWatch ?? watchForRestartAndReload)({
+          previousVersion: currentVersion ?? '',
+          readStatus: readFreshStatus,
+          sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+          now: () => Date.now(),
+          reload: () => window.location.reload(),
+        })
+        if (outcome.status === 'timeout') {
+          setPhase('timed-out')
+        }
         return
       }
 
@@ -195,9 +219,11 @@ export function UpdateCheckerSection({
                   variant='destructive'
                   data-testid='apply-update'
                   onClick={() => setConfirmOpen(true)}
-                  disabled={applying}
+                  disabled={applying || phase === 'restarting'}
                 >
-                  {applying ? t('Updating...') : t('Update now')}
+                  {applying || phase === 'restarting'
+                    ? t('Updating...')
+                    : t('Update now')}
                 </Button>
               )}
             </div>
@@ -209,6 +235,20 @@ export function UpdateCheckerSection({
                 {t(
                   'In-panel updates are turned off by the administrator. Use the image upgrade steps in the README instead.'
                 )}
+              </p>
+            )}
+            {phase !== 'idle' && (
+              <p
+                data-testid='update-restart-note'
+                className='text-muted-foreground text-xs'
+              >
+                {phase === 'restarting'
+                  ? t(
+                      'Update started. The service is restarting; this page reloads automatically as soon as the new version answers.'
+                    )
+                  : t(
+                      'The update may already be finished. Reload this page manually to check the new version.'
+                    )}
               </p>
             )}
             <p

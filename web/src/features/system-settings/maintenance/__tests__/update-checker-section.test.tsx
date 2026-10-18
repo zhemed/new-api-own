@@ -138,6 +138,10 @@ function stubApplyUpdate(handler: () => unknown): void {
 type RenderInput = {
   /** Payload for `GET /api/status/update`; `null` = the endpoint fails. */
   status?: Record<string, unknown> | null
+  /** Replaces the 90s restart watcher so the test stays instantaneous. */
+  postUpdateWatch?: (deps: {
+    previousVersion: string
+  }) => Promise<{ status: 'timeout' }>
 }
 
 async function renderUpdateChecker(input: RenderInput = {}) {
@@ -151,7 +155,15 @@ async function renderUpdateChecker(input: RenderInput = {}) {
   await act(async () => {
     root.render(
       <I18nextProvider i18n={i18n}>
-        <UpdateCheckerSection currentVersion='0.0.6' startTime={null} />
+        <UpdateCheckerSection
+          currentVersion='0.0.6'
+          startTime={null}
+          postUpdateWatch={
+            input.postUpdateWatch as unknown as
+              | typeof import('../restart-watcher').watchForRestartAndReload
+              | undefined
+          }
+        />
       </I18nextProvider>
     )
     // Drain the mount-time status request so the panel has settled.
@@ -311,7 +323,13 @@ describe('update checker apply flow', () => {
     stubApplyUpdate(() => ({
       data: { success: true, data: { applied: true, version: '0.0.7' } },
     }))
-    const container = await renderUpdateChecker()
+    const watched: string[] = []
+    const container = await renderUpdateChecker({
+      postUpdateWatch: async (deps) => {
+        watched.push(deps.previousVersion)
+        return { status: 'timeout' }
+      },
+    })
 
     await clickButton(applyButton(container))
     await clickButton(confirmButton())
@@ -320,11 +338,38 @@ describe('update checker apply flow', () => {
       method: 'POST',
       url: '/api/status/update/apply',
     })
+    // the watch starts from the version the page was running
+    assert.deepEqual(watched, ['0.0.6'])
+    // a timeout hands the reload back to the operator instead of reloading
     assert.equal(
-      latestToastTitle(),
+      container.querySelector('[data-testid="update-restart-note"]')
+        ?.textContent,
       en[
-        'Update started. The service will restart shortly, then reload this page.'
+        'The update may already be finished. Reload this page manually to check the new version.'
       ]
+    )
+  })
+
+  test('a failed apply never starts the restart watch', async () => {
+    signInAsAdmin()
+    stubApplyUpdate(() => ({
+      data: { success: false, code: 'not_newer', message: 'same build' },
+    }))
+    const watched: string[] = []
+    const container = await renderUpdateChecker({
+      postUpdateWatch: async (deps) => {
+        watched.push(deps.previousVersion)
+        return { status: 'timeout' }
+      },
+    })
+
+    await clickButton(applyButton(container))
+    await clickButton(confirmButton())
+
+    assert.deepEqual(watched, [])
+    assert.equal(
+      container.querySelector('[data-testid="update-restart-note"]'),
+      null
     )
   })
 
