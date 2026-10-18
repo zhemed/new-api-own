@@ -107,3 +107,37 @@
 ### Next Steps
 
 - 待用户决定是否升级实例到 v0.0.27；升级脚本顺带在调完接口后 logout 撤销会话（会话卫生）
+
+
+## Session 64: 按用户要求升级实例到 v0.0.27，并 logout 撤销本次会话
+<!-- trellis-session: v=2 fp=bb69a0a4cde49256 -->
+
+**Date**: 2026-10-18
+**Task**: 按用户要求升级实例到 v0.0.27，并 logout 撤销本次会话
+**Branch**: `main`
+
+### Summary
+
+用户明确要求升级。执行：单次登录 → POST /api/status/update/apply → 约 10 秒 v0.0.26→v0.0.27（env 与 --log-opt 未变、容器 running 未重建、前端包 index.a20a140f8e.js、releases/latest=v0.0.27）。调完接口后 POST /api/user/auth/logout 返回 200，本次会话被撤销。注意：user_sessions 表行数仍会 +1（logout 保留历史行），判断是否堆积应看 status='active' 的计数而非总行数。
+
+### Main Changes
+
+- 无代码改动（实例升级）；会话卫生做法落地：每轮登录用完即 logout
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `85e494b` | chore(task): archive 10-18-evaluate-pref-range-cleanup |
+
+### Testing
+
+- [OK] [OK] v0.0.27 / env 与日志上限未变 / logout HTTP 200
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 用户在偏好设置确认默认范围只有上月/本月，并保存一次完成旧值迁移
