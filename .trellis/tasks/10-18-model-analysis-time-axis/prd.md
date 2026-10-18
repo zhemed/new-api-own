@@ -31,3 +31,33 @@
 - [ ] 轴起点/终点符合目标行为；刻度规则化（不随数据空缺变形）
 - [ ] 29→30 天：选项、默认值、文案、i18n 全一致
 - [ ] 六条命令全绿；发版并在实例上肉眼验证
+
+## 执行结果（2026-10-18，v0.0.17 + v0.0.18）
+
+### 诊断（Lead 定位，成员确认无修正）
+
+1. **范围是滚动窗口** ✗：`dashboard/lib/filters.ts:146` 调 `getRollingDateRange()`，实现为 `now - days*24h`
+   （源码注释原文："1 day means the last 24 hours, not yesterday 00:00"）。同源消费点：`models-filter-dialog`×2、`user-charts`。
+2. **x 轴两头被数据拽** ✗：`charts.ts:278 fillTimePoints()` 以 `max(data.created_at)` 为终点、往前补 `MAX_TREND_POINTS` 个桶，
+   标签由 `formatChartTime()` 生成 → 轴首=最早数据、轴末=最后一条数据（17:00），而非"范围起点 00:00 / 当前时刻"。
+3. 附带发现（已一并修正）：聚合键用**标签字符串**，week 粒度下同周不同天会落进不同桶 → 改数值桶键。
+
+### 改动
+
+- `lib/time.ts`：新增 **`getCalendarDateRange(days, from)`**（起点=范围第一天**本地 00:00**，`setDate` 日历算术；终点=now），删除 `getRollingDateRange`（全仓 0 残留）；
+- 4 个消费点全部切换（filters、filter-dialog×2、user-charts）；
+- `charts.ts`：新增 `ChartTimeRange`/`toBucketStart`/`buildTimeBuckets`；`processChartData(..., range?)` → **轴首=范围起点桶、末=含 now 的桶**，缺失桶补 0；无 range 保留旧行为；`MAX_CHART_AXIS_BUCKETS=1000` 防病态；
+- `constants.ts`：`TIME_RANGE_PRESETS` **29 → 30 天**；i18n 7 语言同步（旧键移除）；
+- `filters.ts`：**存量偏好迁移** `migrateLegacyTimeRangeDays`（29→30，先迁移再校验）——避免老用户设置被静默重置为 1 天；
+- 新增测试 **21 个**（范围 5 + 轴 11 + 迁移 5），`bun test` 247 → **268 pass**。
+
+### 真机验证（v0.0.18）
+
+实例 v0.0.16 → **v0.0.18**（面板路径，容器未重建，四条 `LOG_*` 未变）。
+截图 `.verify-scratch/v0018-chart-axis.png`：模型调用分析页 x 轴为 **`10-18 00:00 … 10-18 13:00`**，
+即「00:00 → 当前时刻」✓；`bw` 无头浏览器时区为 **UTC**（当时 13:31 UTC），故末刻显示 13:00 正确；
+用户本机（CST）会显示 00:00 → 21:00。
+
+### 遗留（可选后续）
+
+`user charts`（用户分析）的 x 轴仍是"数据桶构成"，未按范围铺满（本次只统一了其查询区间）。

@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 50
-- **Last Active**: 2026-10-09
+- **Total Sessions**: 51
+- **Last Active**: 2026-10-18
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1635 | Active |
+| `journal-1.md` | ~1669 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 51 | 2026-10-18 | 修复模型分析时间轴（日历制 00:00→now）与默认范围 29→30 天；发 v0.0.17/v0.0.18 并真机验证 | `0c28694` | `main` |
 | 50 | 2026-10-09 | knip 398→0（AST 精删 + 官方 @public 申明）并发 v0.0.16；实例升级并四页冒烟通过 | `c69171c` | `main` |
 | 49 | 2026-10-09 | 剩余三项：依赖/抑制/死代码全清，knip 四类归零；398 条 exports/types 停手留痕 | `b33c1fa` | `main` |
 | 48 | 2026-10-09 | 三项收尾并发 v0.0.13；实例一次升级到最新（KPI 上色实测生效） | `550965e` | `main` |

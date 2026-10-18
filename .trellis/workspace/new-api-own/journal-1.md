@@ -1633,3 +1633,37 @@ v0.0.11 升级真实触发了内存日志的固有代价：更新重启进程 �
 ### Next Steps
 
 - 无；已知边界：@public 为声明级（同语句新增死导出不报）
+
+
+## Session 51: 修复模型分析时间轴（日历制 00:00→now）与默认范围 29→30 天；发 v0.0.17/v0.0.18 并真机验证
+<!-- trellis-session: v=2 fp=8951f7d09d15f61f -->
+
+**Date**: 2026-10-18
+**Task**: 修复模型分析时间轴（日历制 00:00→now）与默认范围 29→30 天；发 v0.0.17/v0.0.18 并真机验证
+**Branch**: `main`
+
+### Summary
+
+用户报：①图表时间跨度不对（应 00:00→当前时刻）②默认范围 29 天改 30 天。Lead 只读定位两条根因：范围用 getRollingDateRange（now-N*24h 滚动窗口）、x 轴由 fillTimePoints 以最后一条数据为终点向前补桶（两头被数据拽）。修复：新增 getCalendarDateRange（范围第一天本地 00:00→now）并删除滚动 helper、4 个消费点统一切换；新增 toBucketStart/buildTimeBuckets，轴首=范围起点桶、末=含 now 的桶、缺失桶补 0；附带把聚合键从标签字符串改为数值桶键（修 week 粒度错位）；29→30 天（7 语言，旧键移除）；另加存量偏好迁移 migrateLegacyTimeRangeDays(29→30)，避免老用户设置被重置为 1 天。新增 21 个测试，bun test 247→268。发布 v0.0.17 与 v0.0.18（latest 镜像 cf924ac1e83f3 / 0c28694 tag）；实例升到 v0.0.18，截图验证轴为 10-18 00:00→13:00（bw 时区为 UTC，21:31 CST=13:31 UTC），即 00:00→当前时刻正确。遗留：user charts 轴未按范围铺满。
+
+### Main Changes
+
+- 把'轴范围应按查询范围铺满、而非以数据首尾为准'与'范围改日历制'沉淀为诊断结论；存量枚举值变更需迁移旧保存值
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0c28694` | fix(web): 兼容存量偏好——旧的 29 天默认范围迁移为 30 天 [task:model-analysis-time-axis] |
+
+### Testing
+
+- [OK] [OK] 七条门全绿（typecheck/lint/268 pass/format/build/knip exit 0/i18n）；真机截图轴 00:00→13:00(UTC)=00:00→now
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 可选：user charts x 轴同样按范围铺满
