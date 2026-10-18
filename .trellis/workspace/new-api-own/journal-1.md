@@ -1667,3 +1667,37 @@ v0.0.11 升级真实触发了内存日志的固有代价：更新重启进程 �
 ### Next Steps
 
 - 可选：user charts x 轴同样按范围铺满
+
+
+## Session 52: 重评估轴刻度：粒度按范围自动推导 + 标签≤10；修 v0.0.19 标签消失回归，发 v0.0.19/v0.0.20 并真机截图验证
+<!-- trellis-session: v=2 fp=62fd0e01105dbda0 -->
+
+**Date**: 2026-10-18
+**Task**: 重评估轴刻度：粒度按范围自动推导 + 标签≤10；修 v0.0.19 标签消失回归，发 v0.0.19/v0.0.20 并真机截图验证
+**Branch**: `main`
+
+### Summary
+
+用户反馈改后刻度密密麻麻（30 天×hour=720 桶）。查 git 历史得旧版规则：MAX_CHART_TREND_POINTS=7（最多 7 点，但轴不到当前时刻）；真因是范围↔粒度错配（默认偏好独立保存 granularity=hour，granularityForRangeDays 只在快捷范围生效）。用户选方案 A：粒度统一按范围推导（≤1→hour、≤31→day、>31→week，默认偏好/查询/快捷范围/自定义区间/用户图表共用）+ 轴标签≤10 等距抽稀 + 移除 3 处失效粒度选择器与系统设置死控件（后端键保留）。v0.0.19 上线后截图发现 x 轴标签全部消失：vchart band 轴 formatMethod 第三参是 formatter 而非索引 → index%stride 得 NaN → 全部标签被清空；改用官方 label.dataFilter + autoHide(greedy)，彻底移除 formatMethod（fail-open），加'标签永不为空'不变量测试。v0.0.20 真机截图验证：轴 00:00→14:00(UTC=now)、8 个等距标签、无报错。另记录两条教训：canvas 图表必须截图终验；tag push 可能不触发 workflow，需核对 run 并 workflow_dispatch 兜底。
+
+### Main Changes
+
+- 把'刻度疏朗性'与'跨度正确性'分开考虑：桶粒度由范围推导、标签数量单独封顶；并记录 fail-open 的防护设计
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3f43c47` | fix(web): 修复 x 轴标签消失（vchart formatMethod 第三参是 formatter 而非索引）；改用 label.dataFilter + autoHide [task:reevaluate-axis-ticks] |
+
+### Testing
+
+- [OK] [OK] 七条门 283 pass / knip exit 0；真机 v0.0.20 截图：轴 00:00→now、标签 8 个等距
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 可选：用户图表（user charts）x 轴是否同样铺满（本次已统一其查询区间与粒度）

@@ -41,3 +41,31 @@
 主因是**范围↔粒度错配**，其次是**轴标签无数量上限**。修复方向应同时：
 ① 让"范围→桶粒度"对**所有入口**（默认偏好/快捷范围/自定义）统一配对；
 ② 给轴标签加**数量上限并等距抽稀**（如 ≤10），保证任何范围都疏朗且跨度正确。
+
+## 执行结果（2026-10-18，v0.0.19 → v0.0.20）
+
+### 用户选定方案 A 的实现
+
+- **粒度统一由范围推导**（`filters.ts` 导出 `granularityForRangeDays`：≤1→hour、≤31→day、>31→week），
+  共用点：默认偏好初始化、查询 `time_granularity`、快捷范围、自定义区间（`rangeDaysOf`）、用户图表；
+- **移除 3 处已失效的粒度选择器** + 系统设置里第三个死控件（`DataExportDefaultTime`，后端键保留、值原样回写）；
+- **轴标签 ≤10 且等距**；清理 5 个 0 引用 i18n 键 × 7 语言；测试 268 → **283**。
+
+### 过程中的两次真实事故（如实记录）
+
+1. **v0.0.19 出现"x 轴标签全部消失"** ✗：成员用 `label.formatMethod(value, datum, index)` 按 `index % stride` 抽稀，
+   但 vchart 源码（`base-axis.js`）实际调用 `formatFunc(datum.rawValue, datum, formatter)` —— **第三个位置参数是 formatter，不是索引** ✗
+   → `undefined % stride` = NaN → 恒 false → 每个标签都被格式化成空串。
+   **修复**：改用官方 `label.dataFilter` 做等距抽稀 + `autoHide(greedy, 24px)` 兜底，**完全移除 formatMethod**
+   → 结构上不可能清空标签，失败方向是"变密"而非"消失"（fail-open）；并加"标签永不被清空"的不变量测试。
+2. **tag push 未被 GitHub 触发** ✗（v0.0.19 首次推送后无任何 run）→ 用 `workflow_dispatch` 手动补跑成功。
+
+### 真机验证（v0.0.20）
+
+`/dashboard/models`：x 轴 = **`10-18 00:00 … 14:00`**（bw 时区 UTC，当时 14:06）→ **起点 00:00、终点当前时刻** ✓；
+**可见标签 8 个、等距（每 2 小时）** ✓；无报错、版本 v0.0.20 ✓。截图 `.verify-scratch/v0020-axis-labels.png`。
+
+### 两条教训（建议进 spec）
+
+1. **canvas 渲染的图表必须用截图做终验** ✗ —— 单测能证明 spec 字段，但证明不了"画出来是什么样"；
+2. **tag push 不等于 workflow 一定触发** → 推送后必须核对 run 是否存在，缺失则 `workflow_dispatch` 兜底。
