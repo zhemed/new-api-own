@@ -1837,3 +1837,37 @@ v0.0.11 升级真实触发了内存日志的固有代价：更新重启进程 �
 ### Next Steps
 
 - 用户在面板点更新做端到端验证（自动刷新通常 2-15s）
+
+
+## Session 57: 按用户要求把实例升级到 v0.0.23（单次登录、会话不堆积）
+<!-- trellis-session: v=2 fp=b78af79164fb7918 -->
+
+**Date**: 2026-10-18
+**Task**: 按用户要求把实例升级到 v0.0.23（单次登录、会话不堆积）
+**Branch**: `main`
+
+### Summary
+
+用户委托 Lead 直接升级。执行：单次登录复用 token → POST /api/status/update/apply → 约 10 秒 v0.0.22→v0.0.23。复核：四条 LOG_* 与 --log-opt 未变、容器未重建（running）、前端包变为 index.361f4814d8.js、会话数仍 5（未堆积，遵守上一轮的改进）。说明：API 路径不触发新加的 UI 自动刷新逻辑，用户下次在面板点更新即可端到端验证。
+
+### Main Changes
+
+- 无代码改动（仅实例升级）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3e136e6` | chore(task): archive 10-18-update-auto-reload |
+
+### Testing
+
+- [OK] [OK] 版本 v0.0.23 / env 与日志上限未变 / 会话数稳定
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 用户可在面板点更新验证自动刷新（下一版时）
