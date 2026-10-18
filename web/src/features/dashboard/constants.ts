@@ -24,6 +24,13 @@ export const DASHBOARD_CHART_PREFERENCES_STORAGE_KEY =
 export const DEFAULT_TIME_GRANULARITY = 'hour' as const
 export const MAX_CHART_TREND_POINTS = 7
 
+/**
+ * Safety cap for the range-driven chart axis. The widest combination the UI
+ * offers is 30 days at hour granularity (720 buckets), so this only exists to
+ * keep a pathological range from producing thousands of points.
+ */
+export const MAX_CHART_AXIS_BUCKETS = 1000
+
 export const DEFAULT_DASHBOARD_CHART_PREFERENCES: DashboardChartPreferences = {
   consumptionDistributionChart: 'bar',
   modelAnalyticsChart: 'trend',
@@ -47,7 +54,7 @@ export const TIME_RANGE_PRESETS = [
   { label: '1 Day', days: 1 },
   { label: '7 Days', days: 7 },
   { label: '14 Days', days: 14 },
-  { label: '29 Days', days: 29 },
+  { label: '30 Days', days: 30 },
 ] as const
 
 export const CONSUMPTION_DISTRIBUTION_CHART_OPTIONS = [

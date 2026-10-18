@@ -29,6 +29,7 @@ import {
   DEFAULT_TIME_GRANULARITY,
 } from '@/features/dashboard/constants'
 import { processChartData } from '@/features/dashboard/lib'
+import type { ChartTimeRange } from '@/features/dashboard/lib/charts'
 import type {
   ConsumptionDistributionChartType,
   QuotaDataItem,
@@ -46,6 +47,8 @@ interface ConsumptionDistributionChartProps {
   loading?: boolean
   timeGranularity?: TimeGranularity
   defaultChartType?: ConsumptionDistributionChartType
+  /** Selected range; the axis spans it even where there is no data. */
+  range?: ChartTimeRange
 }
 
 const CHART_TYPE_ICONS: Record<
@@ -104,9 +107,10 @@ export function ConsumptionDistributionChart(
         props.loading ? [] : props.data,
         timeGranularity,
         t,
-        chartRadius
+        chartRadius,
+        props.range
       ),
-    [props.data, props.loading, timeGranularity, t, chartRadius]
+    [props.data, props.loading, timeGranularity, t, chartRadius, props.range]
   )
   const spec = chartType === 'bar' ? chartData.spec_line : chartData.spec_area
   const specType = typeof spec?.type === 'string' ? spec.type : chartType

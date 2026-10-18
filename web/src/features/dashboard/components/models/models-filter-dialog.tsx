@@ -46,7 +46,7 @@ import type {
   DashboardChartPreferences,
   DashboardFilters,
 } from '@/features/dashboard/types'
-import { getRollingDateRange, type TimeGranularity } from '@/lib/time'
+import { getCalendarDateRange, type TimeGranularity } from '@/lib/time'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -134,7 +134,7 @@ export function ModelsFilter(props: ModelsFilterProps) {
 
   const handleReset = () => {
     const days = props.preferences.defaultTimeRangeDays
-    const { start, end } = getRollingDateRange(days)
+    const { start, end } = getCalendarDateRange(days)
     setFilters({
       ...buildDefaultDashboardFilters(props.preferences),
       start_timestamp: start,
@@ -156,7 +156,7 @@ export function ModelsFilter(props: ModelsFilterProps) {
   }
 
   const handleQuickRange = (days: number) => {
-    const { start, end } = getRollingDateRange(days)
+    const { start, end } = getCalendarDateRange(days)
 
     setFilters((prev) => ({
       ...prev,

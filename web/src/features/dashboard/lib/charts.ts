@@ -18,7 +18,10 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { dataScheme as vchartDefaultDataScheme } from '@visactor/vchart/esm/theme/color-scheme/builtin/default'
 
-import { MAX_CHART_TREND_POINTS } from '@/features/dashboard/constants'
+import {
+  MAX_CHART_AXIS_BUCKETS,
+  MAX_CHART_TREND_POINTS,
+} from '@/features/dashboard/constants'
 import type {
   QuotaDataItem,
   ProcessedChartData,
@@ -67,11 +70,61 @@ function renderQuotaCompat(rawQuota: number, digits = 4): string {
 /**
  * Process and aggregate chart data
  */
+/** Inclusive Unix-second range the chart axis must cover. */
+export interface ChartTimeRange {
+  start_timestamp: number
+  end_timestamp: number
+}
+
+/**
+ * Align a timestamp (ms) down to the start of its bucket in local time.
+ * Weeks start on Monday so a given day always lands in the same bucket.
+ */
+export function toBucketStart(
+  ms: number,
+  granularity: TimeGranularity
+): number {
+  const d = new Date(ms)
+  if (granularity === 'hour') {
+    d.setMinutes(0, 0, 0)
+    return d.getTime()
+  }
+  d.setHours(0, 0, 0, 0)
+  if (granularity === 'day') return d.getTime()
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7))
+  return d.getTime()
+}
+
+/**
+ * Every bucket start between the range start and the bucket holding `now`,
+ * inclusive, capped so a wide range never produces thousands of points.
+ */
+export function buildTimeBuckets(
+  range: ChartTimeRange,
+  granularity: TimeGranularity
+): number[] {
+  const last = toBucketStart(range.end_timestamp * 1000, granularity)
+  const cursor = new Date(
+    toBucketStart(range.start_timestamp * 1000, granularity)
+  )
+  const buckets: number[] = []
+
+  while (cursor.getTime() <= last && buckets.length < MAX_CHART_AXIS_BUCKETS) {
+    buckets.push(cursor.getTime())
+    if (granularity === 'hour') cursor.setHours(cursor.getHours() + 1)
+    else if (granularity === 'day') cursor.setDate(cursor.getDate() + 1)
+    else cursor.setDate(cursor.getDate() + 7)
+  }
+
+  return buckets
+}
+
 export function processChartData(
   data: QuotaDataItem[],
   timeGranularity: TimeGranularity = 'day',
   t?: TFunction,
-  chartCornerRadius?: number
+  chartCornerRadius?: number,
+  range?: ChartTimeRange
 ): ProcessedChartData {
   const tt: TFunction = t ?? ((x) => x)
   const otherLabel = tt('Other')
@@ -216,8 +269,9 @@ export function processChartData(
   const quotaPerUnit = config.quotaPerUnit
 
   // Aggregate all metrics by time and model
+  // Keyed by bucket start (ms) so labels never drive aggregation.
   const timeModelMap = new Map<
-    string,
+    number,
     Map<string, { quota: number; count: number; tokens: number }>
   >()
   const modelTotalsMap = new Map<
@@ -227,7 +281,7 @@ export function processChartData(
 
   data.forEach((item) => {
     const timestamp = Number(item.created_at)
-    const timeKey = formatChartTime(timestamp, timeGranularity)
+    const timeKey = toBucketStart(timestamp * 1000, timeGranularity)
     const model = item.model_name || 'Unknown'
     const quota = Number(item.quota) || 0
     const count = Number(item.count) || 0
@@ -260,7 +314,7 @@ export function processChartData(
   })
 
   const allModels = [...modelTotalsMap.keys()]
-  const sortedTimes = [...timeModelMap.keys()].sort()
+  const sortedTimes = [...timeModelMap.keys()].sort((a, b) => a - b)
   const sortedModels = [...allModels].sort()
   const modelColorDomain = [...new Set([...sortedModels, otherLabel])]
   const modelColorRange = getDashboardChartColors(modelColorDomain.length)
@@ -273,30 +327,30 @@ export function processChartData(
     range: modelColorRange,
   }
 
-  // Pad time points if too few (default 7 points)
-  const MAX_TREND_POINTS = MAX_CHART_TREND_POINTS
-  const fillTimePoints = (times: string[]) => {
-    if (times.length >= MAX_TREND_POINTS) return times
-    const lastTime = Math.max(
-      ...data.map((item) => Number(item.created_at) || 0)
-    )
-    let intervalSec: number
-    if (timeGranularity === 'week') {
-      intervalSec = 604800
-    } else if (timeGranularity === 'day') {
-      intervalSec = 86400
-    } else {
-      intervalSec = 3600
-    }
-    const padded = Array.from({ length: MAX_TREND_POINTS }, (_, i) =>
-      formatChartTime(
-        lastTime - (MAX_TREND_POINTS - 1 - i) * intervalSec,
-        timeGranularity
-      )
-    )
-    return padded
-  }
-  const chartTimes = fillTimePoints(sortedTimes)
+  // The axis always covers the whole selected range: first bucket = range
+  // start, last bucket = the one containing now. Missing buckets render as 0.
+  const axisBuckets = range
+    ? buildTimeBuckets(range, timeGranularity)
+    : (() => {
+        // No range given: keep the previous behaviour of topping the axis up
+        // to MAX_TREND_POINTS ending at the newest data point.
+        if (sortedTimes.length >= MAX_CHART_TREND_POINTS) return sortedTimes
+        let step = 0
+        if (timeGranularity === 'week') step = 7
+        else if (timeGranularity === 'day') step = 1
+        const last = sortedTimes.at(-1) ?? Date.now()
+        const cursor = new Date(last)
+        const padded: number[] = []
+        for (let i = MAX_CHART_TREND_POINTS - 1; i >= 0; i--) {
+          const d = new Date(cursor)
+          if (step === 0) d.setHours(d.getHours() - i)
+          else d.setDate(d.getDate() - i * step)
+          padded.push(d.getTime())
+        }
+        return padded
+      })()
+  const labelOf = (bucketMs: number) =>
+    formatChartTime(Math.floor(bucketMs / 1000), timeGranularity)
 
   const totalTimes = [...modelTotalsMap.values()].reduce(
     (sum, x) => sum + (Number(x.count) || 0),
@@ -324,7 +378,7 @@ export function processChartData(
     TimeSum: number
   }> = []
 
-  chartTimes.forEach((time) => {
+  axisBuckets.forEach((time) => {
     let timeData = sortedModels.map((model) => {
       const stats = timeModelMap.get(time)?.get(model)
       const rawQuota = Number(stats?.quota) || 0
@@ -332,7 +386,7 @@ export function processChartData(
       // Match legacy frontend getQuotaWithUnit(..., 4)
       const usage = usd ? Number(usd.toFixed(4)) : 0
       return {
-        Time: time,
+        Time: labelOf(time),
         Model: model,
         rawQuota,
         Usage: usage,
@@ -360,7 +414,7 @@ export function processChartData(
   )
 
   const areaValues: typeof lineValues = []
-  chartTimes.forEach((time) => {
+  axisBuckets.forEach((time) => {
     const buckets = new Map<string, { rawQuota: number; usage: number }>()
     const modelMap = timeModelMap.get(time)
     let timeSum = 0
@@ -379,7 +433,7 @@ export function processChartData(
     })
     for (const [model, vals] of buckets) {
       areaValues.push({
-        Time: time,
+        Time: labelOf(time),
         Model: model,
         rawQuota: vals.rawQuota,
         Usage: vals.usage,
@@ -409,11 +463,11 @@ export function processChartData(
     Model: string
     Count: number
   }> = []
-  chartTimes.forEach((time) => {
+  axisBuckets.forEach((time) => {
     const timeData = topTrendModels.map((model) => {
       const stats = timeModelMap.get(time)?.get(model)
       return {
-        Time: time,
+        Time: labelOf(time),
         Model: model,
         Count: Number(stats?.count) || 0,
       }
@@ -424,7 +478,7 @@ export function processChartData(
         return sum + (Number(stats?.count) || 0)
       }, 0)
       timeData.push({
-        Time: time,
+        Time: labelOf(time),
         Model: otherLabel,
         Count: otherCount,
       })

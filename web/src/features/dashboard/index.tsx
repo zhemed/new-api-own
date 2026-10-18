@@ -31,6 +31,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import type { ChartTimeRange } from '@/features/dashboard/lib/charts'
 import { ROLE } from '@/lib/roles'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
@@ -218,6 +219,17 @@ export function Dashboard() {
   )
   const [flowSensitiveVisible, setFlowSensitiveVisible] = useState(true)
 
+  // The chart axis must cover the selected range (start of the first day → now),
+  // not just the span between the first and last data points.
+  const modelChartRange = useMemo<ChartTimeRange | undefined>(() => {
+    const { start_timestamp: start, end_timestamp: end } = modelFilters
+    if (!start || !end) return undefined
+    return {
+      start_timestamp: Math.floor(start.getTime() / 1000),
+      end_timestamp: Math.floor(end.getTime() / 1000),
+    }
+  }, [modelFilters])
+
   const handleFilterChange = useCallback((filters: DashboardFilters) => {
     setModelFilters(filters)
   }, [])
@@ -373,6 +385,7 @@ export function Dashboard() {
                     timeGranularity={
                       modelFilters.time_granularity || DEFAULT_TIME_GRANULARITY
                     }
+                    range={modelChartRange}
                   />
                 </Suspense>
               </FadeIn>
@@ -385,6 +398,7 @@ export function Dashboard() {
                     timeGranularity={
                       modelFilters.time_granularity || DEFAULT_TIME_GRANULARITY
                     }
+                    range={modelChartRange}
                   />
                 </Suspense>
               </FadeIn>

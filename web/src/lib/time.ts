@@ -44,15 +44,23 @@ function toStartOfDay(tsSec: number): number {
 }
 
 /**
- * Calculate a rolling date range ending at the current moment.
- * Example: 1 day means the last 24 hours, not yesterday 00:00 to today 23:59.
+ * Calculate a calendar date range covering `days` whole local days and ending now.
+ *
+ * The start is the local midnight of the first day in the range, so "1 day"
+ * means today 00:00 → now and "30 days" means 00:00 of the day 29 days ago →
+ * now (30 calendar days in total). Day arithmetic goes through `setDate` so
+ * month and year boundaries, and DST shifts, stay correct.
  */
-export function getRollingDateRange(
+export function getCalendarDateRange(
   days: number,
   fromDate: Date = new Date()
 ): { start: Date; end: Date } {
   const end = new Date(fromDate)
-  const start = new Date(end.getTime() - days * 24 * 60 * 60 * 1000)
+  const spanDays = Number.isFinite(days) ? Math.max(1, Math.floor(days)) : 1
+
+  const start = new Date(end)
+  start.setHours(0, 0, 0, 0)
+  start.setDate(start.getDate() - (spanDays - 1))
 
   return { start, end }
 }
