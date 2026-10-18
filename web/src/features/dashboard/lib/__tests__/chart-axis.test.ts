@@ -173,7 +173,9 @@ describe('processChartData axis', () => {
 describe('time range presets', () => {
   test('the long preset is 30 days, not 29', () => {
     const longest = TIME_RANGE_PRESETS.at(-1)
-    assert.deepEqual(longest, { label: '30 Days', days: 30 })
+    assert.equal(longest?.kind, 'days')
+    assert.equal(longest?.days, 30)
+    assert.equal(longest?.label, '30 Days')
     assert.deepEqual(
       TIME_RANGE_PRESETS.map((preset) => preset.days),
       [1, 7, 14, 30]
@@ -296,6 +298,7 @@ describe('axis label thinning', () => {
       Array.from({ length: 30 }, (_, i) => `d${i}`)
     ) as string[]
 
+    // every third bucket, plus the axis end (d29) replacing d27 to stay at 10
     assert.deepEqual(visible, [
       'd0',
       'd3',
@@ -306,7 +309,7 @@ describe('axis label thinning', () => {
       'd18',
       'd21',
       'd24',
-      'd27',
+      'd29',
     ])
   })
 

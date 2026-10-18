@@ -25,6 +25,7 @@ export {
   buildDefaultDashboardFilters,
   granularityForRangeDays,
   rangeDaysOf,
+  resolveRangePreset,
 } from './filters'
 export { processChartData, processUserChartData } from './charts'
 export {

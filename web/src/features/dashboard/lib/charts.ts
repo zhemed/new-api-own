@@ -118,8 +118,25 @@ export function timeAxisLabelConfig(
     autoHide: true,
     autoHideMethod: 'greedy',
     autoHideSeparation: 24,
-    dataFilter: (data: unknown[]) =>
-      stride <= 1 ? data : data.filter((_, index) => index % stride === 0),
+    dataFilter: (data: unknown[]) => {
+      if (stride <= 1 || data.length <= 1) return data
+      // Keep every `stride`-th bucket *and* the axis end, so the last label is
+      // always the newest bucket ("today") instead of stopping one grid step
+      // short of it. The end is appended in place of its predecessor to stay
+      // within MAX_AXIS_LABELS.
+      const lastIndex = data.length - 1
+      const indexes: number[] = []
+      for (let index = 0; index < data.length; index += stride) {
+        indexes.push(index)
+      }
+      if (indexes.at(-1) !== lastIndex) {
+        indexes.push(lastIndex)
+        if (indexes.length > MAX_AXIS_LABELS) {
+          indexes.splice(indexes.length - 2, 1)
+        }
+      }
+      return indexes.map((index) => data[index])
+    },
   }
 }
 

@@ -26,12 +26,17 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { TIME_RANGE_PRESETS } from '@/features/dashboard/constants'
+import {
+  NATURAL_MONTH_PRESETS,
+  TIME_RANGE_PRESETS,
+  type DashboardRangePreset,
+} from '@/features/dashboard/constants'
 import {
   buildDefaultDashboardFilters,
   cleanFilters,
   granularityForRangeDays,
   rangeDaysOf,
+  resolveRangePreset,
 } from '@/features/dashboard/lib'
 import type {
   DashboardChartPreferences,
@@ -149,8 +154,8 @@ export function ModelsFilter(props: ModelsFilterProps) {
     }
   }
 
-  const handleQuickRange = (days: number) => {
-    const { start, end } = getCalendarDateRange(days)
+  const handleQuickRange = (preset: DashboardRangePreset) => {
+    const { start, end, days } = resolveRangePreset(preset)
 
     setFilters((prev) => ({
       ...prev,
@@ -158,7 +163,7 @@ export function ModelsFilter(props: ModelsFilterProps) {
       end_timestamp: end,
       time_granularity: granularityForRangeDays(days),
     }))
-    setSelectedRange(days)
+    setSelectedRange(preset.kind === 'days' ? (preset.days ?? null) : null)
   }
 
   return (
@@ -201,13 +206,13 @@ export function ModelsFilter(props: ModelsFilterProps) {
               {t('Quick Range')}
             </Label>
             <div className='grid grid-cols-2 gap-2 sm:flex'>
-              {TIME_RANGE_PRESETS.map((range) => (
+              {[...TIME_RANGE_PRESETS].map((range) => (
                 <Button
-                  key={range.days}
+                  key={range.label}
                   type='button'
                   size='sm'
                   variant={selectedRange === range.days ? 'default' : 'outline'}
-                  onClick={() => handleQuickRange(range.days)}
+                  onClick={() => handleQuickRange(range)}
                   className={cn(
                     'flex-1',
                     selectedRange === range.days &&
@@ -215,6 +220,22 @@ export function ModelsFilter(props: ModelsFilterProps) {
                   )}
                 >
                   {t(range.label)}
+                </Button>
+              ))}
+            </div>
+            {/* Natural months: "this month" is 28–31 days, so it cannot be a
+                day-count preset — it resolves through the same helper above. */}
+            <div className='grid grid-cols-2 gap-2 sm:flex'>
+              {NATURAL_MONTH_PRESETS.map((preset) => (
+                <Button
+                  key={preset.label}
+                  type='button'
+                  size='sm'
+                  variant='outline'
+                  onClick={() => handleQuickRange(preset)}
+                  className='flex-1'
+                >
+                  {t(preset.label)}
                 </Button>
               ))}
             </div>

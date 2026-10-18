@@ -44,12 +44,39 @@ export const TIME_RANGE_BY_GRANULARITY = {
   week: 30,
 } as const
 
-export const TIME_RANGE_PRESETS = [
-  { label: '1 Day', days: 1 },
-  { label: '7 Days', days: 7 },
-  { label: '14 Days', days: 14 },
-  { label: '30 Days', days: 30 },
-] as const
+/**
+ * How a range preset resolves to actual dates.
+ *
+ * `days` is the classic rolling window; the natural-month kinds exist because
+ * "this month" cannot be expressed as a day count (28–31 days, month length
+ * varies). Kept as a discriminant so every consumer resolves it the same way.
+ */
+export type DashboardRangePresetKind = 'days' | 'month-to-date' | 'last-month'
+
+export interface DashboardRangePreset {
+  label: string
+  kind: DashboardRangePresetKind
+  /** Only meaningful when `kind === 'days'`. */
+  days?: number
+}
+
+/** Rolling windows, safe to store in preferences as a plain day count. */
+export const TIME_RANGE_PRESETS: readonly DashboardRangePreset[] = [
+  { label: '1 Day', kind: 'days', days: 1 },
+  { label: '7 Days', kind: 'days', days: 7 },
+  { label: '14 Days', kind: 'days', days: 14 },
+  { label: '30 Days', kind: 'days', days: 30 },
+]
+
+/**
+ * Natural-month shortcuts. Offered in the filter dialog only: preferences keep
+ * storing `defaultTimeRangeDays` (a number), so an existing saved value — and
+ * the 29 → 30 migration — keeps working untouched.
+ */
+export const NATURAL_MONTH_PRESETS: readonly DashboardRangePreset[] = [
+  { label: 'This Month', kind: 'month-to-date' },
+  { label: 'Last Month', kind: 'last-month' },
+]
 
 export const CONSUMPTION_DISTRIBUTION_CHART_OPTIONS = [
   { value: 'bar', labelKey: 'Bar Chart' },

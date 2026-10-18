@@ -24,6 +24,7 @@ import {
   TIME_GRANULARITY_STORAGE_KEY,
   TIME_RANGE_PRESETS,
   TIME_RANGE_BY_GRANULARITY,
+  type DashboardRangePresetKind,
 } from '@/features/dashboard/constants'
 import type {
   ConsumptionDistributionChartType,
@@ -95,6 +96,62 @@ export function cleanFilters<T extends Record<string, unknown>>(
  * anything longer per week. Every entry point (default preferences, quick
  * ranges, custom ranges, the query's `time_granularity`) must use this.
  */
+/** A resolved date range plus the calendar days it spans. */
+export interface ResolvedRange {
+  start: Date
+  end: Date
+  /** Inclusive calendar-day span, used to pick the bucket granularity. */
+  days: number
+}
+
+function startOfMonth(now: Date, offsetMonths = 0): Date {
+  return new Date(
+    now.getFullYear(),
+    now.getMonth() + offsetMonths,
+    1,
+    0,
+    0,
+    0,
+    0
+  )
+}
+
+function daysInMonth(now: Date, offsetMonths = 0): number {
+  return new Date(
+    now.getFullYear(),
+    now.getMonth() + offsetMonths + 1,
+    0
+  ).getDate()
+}
+
+/**
+ * Resolve a range preset to dates. The only place presets become a range, so
+ * rolling windows and natural months can never disagree between surfaces.
+ */
+export function resolveRangePreset(
+  preset: { kind: DashboardRangePresetKind; days?: number },
+  now: Date = new Date()
+): ResolvedRange {
+  if (preset.kind === 'month-to-date') {
+    return {
+      start: startOfMonth(now),
+      end: new Date(now),
+      days: now.getDate(),
+    }
+  }
+
+  if (preset.kind === 'last-month') {
+    const start = startOfMonth(now, -1)
+    // Last instant of the previous month, i.e. one millisecond before this one.
+    const end = new Date(startOfMonth(now).getTime() - 1)
+    return { start, end, days: daysInMonth(now, -1) }
+  }
+
+  const days = preset.days ?? 1
+  const { start, end } = getCalendarDateRange(days, now)
+  return { start, end, days }
+}
+
 export function granularityForRangeDays(days: number): TimeGranularity {
   if (!Number.isFinite(days)) return 'day'
   if (days <= 1) return 'hour'
