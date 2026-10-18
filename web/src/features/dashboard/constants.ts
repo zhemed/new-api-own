@@ -78,8 +78,8 @@ export const TIME_RANGE_PRESETS: readonly DashboardRangePreset[] = [
  * the 29 → 30 migration — keeps working untouched.
  */
 export const NATURAL_MONTH_PRESETS: readonly DashboardRangePreset[] = [
-  { label: 'This Month', kind: 'month-to-date' },
   { label: 'Last Month', kind: 'last-month' },
+  { label: 'This Month', kind: 'month-to-date' },
 ]
 
 export const CONSUMPTION_DISTRIBUTION_CHART_OPTIONS = [

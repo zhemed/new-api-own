@@ -35,7 +35,6 @@ import {
   CONSUMPTION_DISTRIBUTION_CHART_OPTIONS,
   MODEL_ANALYTICS_CHART_OPTIONS,
   NATURAL_MONTH_PRESETS,
-  TIME_RANGE_PRESETS,
 } from '@/features/dashboard/constants'
 import type {
   ConsumptionDistributionChartType,
@@ -62,35 +61,27 @@ export function ModelsChartPreferences(props: ModelsChartPreferencesProps) {
   }
 
   const handleSave = () => {
-    props.onPreferencesChange(draft)
+    // Persist what the operator actually sees selected (never the legacy
+    // `days` shape), which is how the old default migrates on explicit save.
+    props.onPreferencesChange({
+      ...draft,
+      defaultRangeKind: selectedRangeValue as DashboardRangePresetKind,
+    })
     setOpen(false)
   }
 
-  // A single <Select> has to carry both shapes, so the value is either
-  // `days:<n>` or the natural-month kind.
+  // Only natural months are offered here. A preference saved as a rolling day
+  // window is *shown* as "This Month" without touching storage: the stored
+  // value keeps driving the charts until the operator saves this dialog.
   const selectedRangeValue =
-    draft.defaultRangeKind && draft.defaultRangeKind !== 'days'
-      ? draft.defaultRangeKind
-      : `days:${draft.defaultTimeRangeDays}`
+    draft.defaultRangeKind === 'last-month' ? 'last-month' : 'month-to-date'
 
-  const dayRangeOptions = TIME_RANGE_PRESETS.map((preset) => ({
-    value: `days:${preset.days}`,
-    label: t(preset.label),
-  }))
   const monthRangeOptions = NATURAL_MONTH_PRESETS.map((preset) => ({
     value: preset.kind,
     label: t(preset.label),
   }))
 
   const applyRangeValue = (value: string) => {
-    if (value.startsWith('days:')) {
-      setDraft((prev) => ({
-        ...prev,
-        defaultTimeRangeDays: Number(value.slice('days:'.length)),
-        defaultRangeKind: 'days',
-      }))
-      return
-    }
     setDraft((prev) => ({
       ...prev,
       defaultRangeKind: value as DashboardRangePresetKind,
@@ -122,7 +113,7 @@ export function ModelsChartPreferences(props: ModelsChartPreferencesProps) {
       <div className='grid gap-1.5'>
         <Label htmlFor='default-time-range'>{t('Default range')}</Label>
         <Select
-          items={[...dayRangeOptions, ...monthRangeOptions]}
+          items={monthRangeOptions}
           value={selectedRangeValue}
           onValueChange={(value) => {
             if (value) applyRangeValue(value)
@@ -132,15 +123,6 @@ export function ModelsChartPreferences(props: ModelsChartPreferencesProps) {
             <SelectValue placeholder={t('Select default range')} />
           </SelectTrigger>
           <SelectContent alignItemWithTrigger={false}>
-            <SelectGroup>
-              {dayRangeOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-            {/* Natural months: "this month" is 28–31 days, so it cannot be
-                expressed as a rolling day count. */}
             <SelectGroup>
               {monthRangeOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>

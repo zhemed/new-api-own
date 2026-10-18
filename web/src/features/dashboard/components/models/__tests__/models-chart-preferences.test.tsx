@@ -96,7 +96,10 @@ function findButton(label: string): HTMLButtonElement {
   throw new Error(`button not found: ${label}`)
 }
 
-async function openPreferences(): Promise<HTMLElement> {
+async function openPreferences(
+  onPreferencesChange?: (preferences: { defaultRangeKind?: string }) => void,
+  defaultRangeKind?: 'days' | 'month-to-date' | 'last-month'
+): Promise<HTMLElement> {
   const container = document.createElement('div')
   document.body.append(container)
   const root = createRoot(container)
@@ -111,8 +114,13 @@ async function openPreferences(): Promise<HTMLElement> {
             modelAnalyticsChart: 'trend',
             defaultTimeRangeDays: 30,
             defaultTimeGranularity: 'day',
+            ...(defaultRangeKind ? { defaultRangeKind } : {}),
           }}
-          onPreferencesChange={() => {}}
+          onPreferencesChange={(next) => {
+            onPreferencesChange?.(
+              next as unknown as { defaultRangeKind?: string }
+            )
+          }}
         />
       </I18nextProvider>
     )
@@ -138,54 +146,57 @@ async function openRangeSelect(): Promise<void> {
 }
 
 describe('models chart preferences', () => {
-  test('the default range offers natural months next to day windows', async () => {
+  test('the default range offers only the two natural months, last one first', async () => {
     await openPreferences()
     await openRangeSelect()
 
-    const text = document.body.textContent ?? ''
-    for (const label of [
-      '1 Day',
-      '7 Days',
-      '14 Days',
-      '30 Days',
-      en['This Month'],
-      en['Last Month'],
-    ]) {
-      assert.equal(text.includes(label), true, `missing range option: ${label}`)
+    // Read the option list itself: the trigger already shows one of the
+    // labels, which would make a body-wide indexOf comparison lie.
+    const options = [...document.querySelectorAll('[role="option"]')].map(
+      (option) => (option.textContent ?? '').trim()
+    )
+
+    assert.deepEqual(options, [en['Last Month'], en['This Month']])
+    // day windows are gone from the preferences dropdown
+    for (const label of ['1 Day', '7 Days', '14 Days', '30 Days']) {
+      assert.equal(
+        options.some((option) => option.includes(label)),
+        false,
+        `unexpected option: ${label}`
+      )
     }
   })
 
-  test('a natural-month preference is shown as the selected range', async () => {
-    const container = document.createElement('div')
-    document.body.append(container)
-    const root = createRoot(container)
-    roots.push(root)
-
-    await act(async () => {
-      root.render(
-        <I18nextProvider i18n={i18n}>
-          <ModelsChartPreferences
-            preferences={{
-              consumptionDistributionChart: 'bar',
-              modelAnalyticsChart: 'trend',
-              defaultTimeRangeDays: 30,
-              defaultTimeGranularity: 'day',
-              defaultRangeKind: 'last-month',
-            }}
-            onPreferencesChange={() => {}}
-          />
-        </I18nextProvider>
-      )
-      for (let tick = 0; tick < 8; tick++) await Promise.resolve()
-    })
-
-    await act(async () => {
-      findButton(en['Preferences']).click()
-      for (let tick = 0; tick < 8; tick++) await Promise.resolve()
-    })
+  test('a legacy day default is displayed as This Month without being saved', async () => {
+    const saved: Array<{ defaultRangeKind?: string }> = []
+    await openPreferences((preferences) => saved.push(preferences))
+    await openRangeSelect()
 
     const trigger = document.querySelector('#default-time-range')
-    assert.notEqual(trigger, null)
+    assert.equal(
+      (trigger?.textContent ?? '').includes(en['This Month']),
+      true,
+      `trigger shows "${trigger?.textContent}"`
+    )
+    // merely opening the dialog must not persist anything
+    assert.deepEqual(saved, [])
+
+    await act(async () => {
+      findButton(en['Save Preferences']).click()
+      for (let tick = 0; tick < 8; tick++) await Promise.resolve()
+    })
+
+    assert.equal(saved.length, 1)
+    assert.equal(
+      (saved[0] as { defaultRangeKind?: string }).defaultRangeKind,
+      'month-to-date'
+    )
+  })
+
+  test('a natural-month preference is shown as the selected range', async () => {
+    await openPreferences(undefined, 'last-month')
+
+    const trigger = document.querySelector('#default-time-range')
     assert.equal(
       (trigger?.textContent ?? '').includes(en['Last Month']),
       true,
