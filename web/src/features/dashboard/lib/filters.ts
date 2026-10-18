@@ -59,6 +59,18 @@ function isTimeRangePresetDays(value: unknown): value is number {
   return TIME_RANGE_PRESETS.some((preset) => preset.days === value)
 }
 
+/**
+ * Map a stored range length onto a currently offered preset.
+ *
+ * The longest preset used to be 29 days and is now 30, so preferences saved
+ * before that change must keep working instead of silently falling back to the
+ * default. Only that exact legacy value is translated — anything else is left
+ * for `isTimeRangePresetDays` to accept or reject.
+ */
+export function migrateLegacyTimeRangeDays(value: unknown): unknown {
+  return value === 29 ? 30 : value
+}
+
 export function cleanFilters<T extends Record<string, unknown>>(
   filters: T
 ): Partial<T> {
@@ -104,6 +116,9 @@ export function getSavedChartPreferences(): DashboardChartPreferences {
     if (!raw) return fallbackPreferences
 
     const parsed = JSON.parse(raw) as Partial<DashboardChartPreferences>
+    // `29` was the long preset before it became `30`; migrate it before the
+    // preset check so an existing preference is not reset to the default.
+    const migratedDays = migrateLegacyTimeRangeDays(parsed.defaultTimeRangeDays)
     return {
       consumptionDistributionChart: isConsumptionDistributionChartType(
         parsed.consumptionDistributionChart
@@ -113,8 +128,8 @@ export function getSavedChartPreferences(): DashboardChartPreferences {
       modelAnalyticsChart: isModelAnalyticsChartTab(parsed.modelAnalyticsChart)
         ? parsed.modelAnalyticsChart
         : fallbackPreferences.modelAnalyticsChart,
-      defaultTimeRangeDays: isTimeRangePresetDays(parsed.defaultTimeRangeDays)
-        ? parsed.defaultTimeRangeDays
+      defaultTimeRangeDays: isTimeRangePresetDays(migratedDays)
+        ? migratedDays
         : fallbackPreferences.defaultTimeRangeDays,
       defaultTimeGranularity: isTimeGranularity(parsed.defaultTimeGranularity)
         ? parsed.defaultTimeGranularity

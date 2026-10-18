@@ -62,3 +62,22 @@ Lead 的两条根因**均确认**，无修正：
 - 只改：`dashboard/**`、`lib/time.ts`、`i18n/locales/*.json`（+ 2 个新测试目录）。
 - **user charts 的 x 轴仍未按范围铺满**（`processUserChartData` 没有 `fillTimePoints`，
   其轴本就由数据桶构成）；本次只统一了它的**查询区间**。如需同样铺满，可作为后续小任务。
+
+## 七、补充：29→30 的存量偏好迁移
+
+**问题**：`getSavedChartPreferences()` 用 `isTimeRangePresetDays()` 校验存档值，预设 29→30 后
+用户**已存的 29 变成非法值 → 静默回退默认 1 天**（用户截图正是选了 29 天）。
+
+**做法**：
+- 新增 `migrateLegacyTimeRangeDays(value)`（`lib/filters.ts`），**只**把 `29` 归一成 `30`，
+  其余值原样返回交给 `isTimeRangePresetDays` 判定（不猜测其它值）；函数注释写明"29 已改为 30，兼容旧存量"。
+- 在 `getSavedChartPreferences()` 的解析里先迁移再校验。
+- **未做**回写（Lead 列为可选）：getter 会在渲染期间被调用，此时写 localStorage 属于
+  "渲染期副作用"，收益（存档值从 29 变 30）不抵风险；下次用户点选/保存设置时会自然写成 30。
+
+**测试**（`lib/__tests__/chart-preferences-migration.test.ts`，5 个，happy-dom localStorage）：
+①存 29 → 读 30；②存 30 → 30；③存 5 → 回退默认；④未存 → 默认；
+⑤`migrateLegacyTimeRangeDays` 只转 29（30/7/undefined/'29' 均原样）。
+
+**门**：typecheck 0 ｜ lint 0/0 ｜ `bun test` **268 pass / 0 fail**（263→+5）｜ format:check 0 ｜
+knip **exit 0** ｜ i18n:check 0 ｜ build exit 0。
