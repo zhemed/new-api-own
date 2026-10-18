@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 58
+- **Total Sessions**: 59
 - **Last Active**: 2026-10-18
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1907 | Active |
+| `journal-1.md` | ~1941 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 59 | 2026-10-18 | 自然月快捷范围（本月/上月）+ 轴末标签对齐，发 v0.0.25 | `4e7b3b3` | `main` |
 | 58 | 2026-10-18 | formatTokens 扩到 K/M/B/T 并合并重复实现，发 v0.0.24 | `9812a81` | `main` |
 | 57 | 2026-10-18 | 按用户要求把实例升级到 v0.0.23（单次登录、会话不堆积） | `3e136e6` | `main` |
 | 56 | 2026-10-18 | 面板内更新后自动刷新（轮询+超时+按版本一次性守卫），发 v0.0.23 | `9491228` | `main` |
