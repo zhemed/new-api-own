@@ -1701,3 +1701,37 @@ v0.0.11 升级真实触发了内存日志的固有代价：更新重启进程 �
 ### Next Steps
 
 - 可选：用户图表（user charts）x 轴是否同样铺满（本次已统一其查询区间与粒度）
+
+
+## Session 53: 评估并实现：消耗分布改按 Token 统计（标题不动），发 v0.0.21 并真机截图验收
+<!-- trellis-session: v=2 fp=9210c5f978c4d6b4 -->
+
+**Date**: 2026-10-18
+**Task**: 评估并实现：消耗分布改按 Token 统计（标题不动），发 v0.0.21 并真机截图验收
+**Branch**: `main`
+
+### Summary
+
+用户希望把模型分析「消耗分布」从金额换成 Token 统计。只读评估确认：后端 /api/data 早已聚合 token_used（model/usedata.go sum(token_used)），前端类型也有该字段，实测 30 天 token 合计 1,682,465 → 纯前端改动。用户进一步裁定'标题不动，只换数值口径'。实现（仅 charts.ts）：bar/area 的 Usage 取 token_used、Top-Model 改按 token 排名、新增 formatTokenValue（1.68M/1.0K/42/0）用于 y 轴/tooltip/总计、移除 quotaPerUnit 换算、token 缺失回落 0；标题/视图切换/饼图/趋势/排行/用户图表均未动；新增 3 测试，test 283→286。发 v0.0.21（Release 三资产齐、latest=v0.0.21），实例升级并截图验收：标题仍「消耗分布」、总计 526.9K、y 轴 0/200.0K/400.0K/600.0K、全图无 $、x 轴 00:00→now。
+
+### Main Changes
+
+- 确认了「口径替换可纯前端完成」：数据面已备 token_used，只有展示层换算与排名需要改
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4bb49e7` | feat(web): 消耗分布改为按 Token 统计（标题不动；轴/tooltip/总计不再出现金额）[task:evaluate-token-distribution] |
+
+### Testing
+
+- [OK] [OK] 七条门 286 pass / knip exit 0；真机截图：标题不变、总计 526.9K、轴无 $
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 无；如需保留费用口径可再加一个切换（用户本次未选）
