@@ -1735,3 +1735,37 @@ v0.0.11 升级真实触发了内存日志的固有代价：更新重启进程 �
 ### Next Steps
 
 - 无；如需保留费用口径可再加一个切换（用户本次未选）
+
+
+## Session 54: 修完 tooltip 分项 0（dimension.content 必须返回原始数字）；并清理我造成的 50 个测试会话
+<!-- trellis-session: v=2 fp=1b3f2c39689461cd -->
+
+**Date**: 2026-10-18
+**Task**: 修完 tooltip 分项 0（dimension.content 必须返回原始数字）；并清理我造成的 50 个测试会话
+**Branch**: `main`
+
+### Summary
+
+用户报消耗分布 tooltip 总计 1.16M 但模型行为 0。成员按 vchart 真实链路先写红灯复现测试，定位根因：dimension.content[].value 必须返回原始数字，上一轮误写成格式化字符串 '1.68M' → 下游 Number() 得 NaN → 0；总计读独立字段 TimeSum 故正确；bar/area 两套 spec 均错。修复为 Number(rawTokens)||0 并加注释防再犯，mark.content 保持字符串；新增 3 测试，test 286→289，七条门全绿；发 v0.0.22 并已更新到用户实例。另查明并修正我自己造成的严重副作用：为调接口反复 curl 登录，使 user_sessions 累积 50 条 active 会话占满并发额度（409 AUTH_SESSION_LIMIT，连带阻止用户新设备登录）；经用户同意备份 DB 后就地清空（50→0），登录恢复 200，用户浏览器需重新登录一次；后续改为复用单一 token 不再重复登录。真机 tooltip 截图未完成（headless 浏览器登录表单不落会话），请用户真实浏览器悬停确认。
+
+### Main Changes
+
+- 记录两条硬约束：vchart dimension.content 只能返回原始值（格式化交给 updateContent）；接口联调不得每轮重复登录，避免占用用户会话额度
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f199bf3` | fix(web): 消耗分布 tooltip 分项为 0——dimension.content 必须返回原始数字而非格式化字符串 [task:fix-tooltip-model-zero] |
+
+### Testing
+
+- [OK] [OK] 红灯复现→修复→289 pass、knip exit 0；登录 409 已恢复 200（50→0 会话）
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 用户悬停确认 tooltip 分项；如需我自动截图，可另想办法绕开 headless 登录问题

@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 53
+- **Total Sessions**: 54
 - **Last Active**: 2026-10-18
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1737 | Active |
+| `journal-1.md` | ~1771 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 54 | 2026-10-18 | 修完 tooltip 分项 0（dimension.content 必须返回原始数字）；并清理我造成的 50 个测试会话 | `f199bf3` | `main` |
 | 53 | 2026-10-18 | 评估并实现：消耗分布改按 Token 统计（标题不动），发 v0.0.21 并真机截图验收 | `4bb49e7` | `main` |
 | 52 | 2026-10-18 | 重评估轴刻度：粒度按范围自动推导 + 标签≤10；修 v0.0.19 标签消失回归，发 v0.0.19/v0.0.20 并真机截图验证 | `3f43c47` | `main` |
 | 51 | 2026-10-18 | 修复模型分析时间轴（日历制 00:00→now）与默认范围 29→30 天；发 v0.0.17/v0.0.18 并真机验证 | `0c28694` | `main` |
