@@ -26,27 +26,18 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  TIME_GRANULARITY_OPTIONS,
-  TIME_RANGE_PRESETS,
-} from '@/features/dashboard/constants'
+import { TIME_RANGE_PRESETS } from '@/features/dashboard/constants'
 import {
   buildDefaultDashboardFilters,
   cleanFilters,
+  granularityForRangeDays,
+  rangeDaysOf,
 } from '@/features/dashboard/lib'
 import type {
   DashboardChartPreferences,
   DashboardFilters,
 } from '@/features/dashboard/types'
-import { getCalendarDateRange, type TimeGranularity } from '@/lib/time'
+import { getCalendarDateRange } from '@/lib/time'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -64,12 +55,6 @@ interface ModelsFilterProps {
 // Quick-range presets imply a sensible granularity (matching the app's
 // range<->granularity pairing), so picking "7 Days" requests daily buckets
 // instead of leaving the granularity on its previous value (e.g. hourly).
-function granularityForRangeDays(days: number): TimeGranularity {
-  if (days <= 1) return 'hour'
-  if (days >= 29) return 'week'
-  return 'day'
-}
-
 // Highlights the matching quick-range button when the applied range spans an
 // exact preset; custom ranges leave every quick button unselected.
 function detectQuickRangeDays(
@@ -149,7 +134,16 @@ export function ModelsFilter(props: ModelsFilterProps) {
     field: keyof DashboardFilters,
     value: Date | string | undefined
   ) => {
-    setFilters((prev) => ({ ...prev, [field]: value }))
+    setFilters((prev) => {
+      const next = { ...prev, [field]: value }
+      if (field === 'start_timestamp' || field === 'end_timestamp') {
+        const days = rangeDaysOf(next.start_timestamp, next.end_timestamp)
+        if (days !== undefined) {
+          next.time_granularity = granularityForRangeDays(days)
+        }
+      }
+      return next
+    })
     if (field === 'start_timestamp' || field === 'end_timestamp') {
       setSelectedRange(null)
     }
@@ -254,33 +248,6 @@ export function ModelsFilter(props: ModelsFilterProps) {
           </div>
 
           <SectionDivider label={t('Chart Settings')} />
-
-          <div className='grid gap-2'>
-            <Label htmlFor='time_granularity'>{t('Time Granularity')}</Label>
-            <Select
-              items={TIME_GRANULARITY_OPTIONS.map((option) => ({
-                value: option.value,
-                label: t(option.label),
-              }))}
-              value={filters.time_granularity}
-              onValueChange={(value) =>
-                handleChange('time_granularity', value as TimeGranularity)
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t('Select time granularity')} />
-              </SelectTrigger>
-              <SelectContent alignItemWithTrigger={false}>
-                <SelectGroup>
-                  {TIME_GRANULARITY_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {t(option.label)}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
 
           {/* Admin-only fields */}
           {isAdmin && (

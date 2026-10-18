@@ -44,12 +44,6 @@ export const TIME_RANGE_BY_GRANULARITY = {
   week: 30,
 } as const
 
-export const TIME_GRANULARITY_OPTIONS = [
-  { label: 'Hour', value: 'hour' },
-  { label: 'Day', value: 'day' },
-  { label: 'Week', value: 'week' },
-] as const
-
 export const TIME_RANGE_PRESETS = [
   { label: '1 Day', days: 1 },
   { label: '7 Days', days: 7 },

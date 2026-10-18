@@ -27,20 +27,16 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useTheme } from '@/context/theme-provider'
 import { getUserQuotaDataByUsers } from '@/features/dashboard/api'
+import { TIME_RANGE_PRESETS } from '@/features/dashboard/constants'
 import {
-  TIME_GRANULARITY_OPTIONS,
-  TIME_RANGE_PRESETS,
-} from '@/features/dashboard/constants'
-import {
-  getDefaultDays,
-  saveGranularity,
+  granularityForRangeDays,
   processUserChartData,
 } from '@/features/dashboard/lib'
 import type {
   ProcessedUserChartData,
   UserChartsFilters,
 } from '@/features/dashboard/types'
-import { getCalendarDateRange, type TimeGranularity } from '@/lib/time'
+import { getCalendarDateRange } from '@/lib/time'
 import { VCHART_OPTION } from '@/lib/vchart'
 
 let themeManagerPromise: Promise<
@@ -81,7 +77,8 @@ export function UserCharts(props: UserChartsProps) {
 
   // The selection is owned by the dashboard parent so it persists across
   // sub-section switches; the rolling window is derived from the chosen range.
-  const timeGranularity = props.filters.timeGranularity
+  // Derived from the range so the tabs and the query can never disagree.
+  const timeGranularity = granularityForRangeDays(props.filters.selectedRange)
   const selectedRange = props.filters.selectedRange
   const topUserLimit = props.filters.topUserLimit
   const onFiltersChange = props.onFiltersChange
@@ -96,18 +93,10 @@ export function UserCharts(props: UserChartsProps) {
 
   const handleRangeChange = useCallback(
     (days: number) => {
-      onFiltersChange({ ...props.filters, selectedRange: days })
-    },
-    [onFiltersChange, props.filters]
-  )
-
-  const handleGranularityChange = useCallback(
-    (g: TimeGranularity) => {
-      saveGranularity(g)
       onFiltersChange({
         ...props.filters,
-        timeGranularity: g,
-        selectedRange: getDefaultDays(g),
+        selectedRange: days,
+        timeGranularity: granularityForRangeDays(days),
       })
     },
     [onFiltersChange, props.filters]
@@ -170,26 +159,6 @@ export function UserCharts(props: UserChartsProps) {
                 className='px-2.5 text-xs'
               >
                 {t(preset.label)}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-
-        <Tabs
-          value={timeGranularity}
-          onValueChange={(value) =>
-            handleGranularityChange(value as TimeGranularity)
-          }
-          className='shrink-0'
-        >
-          <TabsList>
-            {TIME_GRANULARITY_OPTIONS.map((opt) => (
-              <TabsTrigger
-                key={opt.value}
-                value={opt.value}
-                className='px-2.5 text-xs'
-              >
-                {t(opt.label)}
               </TabsTrigger>
             ))}
           </TabsList>

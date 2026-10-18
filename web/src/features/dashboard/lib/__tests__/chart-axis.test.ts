@@ -23,6 +23,9 @@ const { buildTimeBuckets, toBucketStart, processChartData } =
   await import('../charts')
 const { TIME_RANGE_PRESETS, TIME_RANGE_BY_GRANULARITY } =
   await import('../../constants')
+const { granularityForRangeDays, rangeDaysOf } = await import('../filters')
+const { axisLabelStride, MAX_AXIS_LABELS, timeAxisLabelConfig } =
+  await import('../charts')
 
 function local(y: number, m: number, d: number, h = 0, min = 0) {
   return new Date(y, m - 1, d, h, min, 0, 0)
@@ -181,5 +184,123 @@ describe('time range presets', () => {
     const widest = Math.max(...Object.values(TIME_RANGE_BY_GRANULARITY))
     const hourBuckets = widest * 24
     assert.equal(hourBuckets < 1000, true)
+  })
+})
+
+describe('granularity is derived from the range', () => {
+  const cases: Array<[number, string]> = [
+    [1, 'hour'],
+    [2, 'day'],
+    [7, 'day'],
+    [14, 'day'],
+    [30, 'day'],
+    [31, 'day'],
+    [60, 'week'],
+  ]
+
+  for (const [days, expected] of cases) {
+    test(`${days} days buckets per ${expected}`, () => {
+      assert.equal(granularityForRangeDays(days), expected)
+    })
+  }
+
+  test('an unknown span falls back to day buckets', () => {
+    assert.equal(granularityForRangeDays(Number.NaN), 'day')
+  })
+})
+
+describe('bucket counts follow the range', () => {
+  test('one day at hour granularity yields 24 buckets', () => {
+    const start = local(2026, 1, 15)
+    const now = local(2026, 1, 15, 23, 30)
+    const buckets = buildTimeBuckets(
+      { start_timestamp: SEC(start), end_timestamp: SEC(now) },
+      granularityForRangeDays(1)
+    )
+
+    assert.equal(buckets.length, 24)
+  })
+
+  test('seven days at day granularity yields 7 buckets', () => {
+    const start = local(2026, 1, 9)
+    const now = local(2026, 1, 15, 13, 45)
+    const buckets = buildTimeBuckets(
+      { start_timestamp: SEC(start), end_timestamp: SEC(now) },
+      granularityForRangeDays(7)
+    )
+
+    assert.equal(buckets.length, 7)
+  })
+
+  test('rangeDaysOf counts inclusive calendar days', () => {
+    assert.equal(
+      rangeDaysOf(local(2025, 12, 17), local(2026, 1, 15, 13, 45)),
+      30
+    )
+    assert.equal(rangeDaysOf(local(2026, 1, 15), local(2026, 1, 15, 9)), 1)
+    assert.equal(rangeDaysOf(undefined, local(2026, 1, 15)), undefined)
+  })
+})
+
+describe('axis label thinning', () => {
+  test('keeps the visible labels at or below the cap', () => {
+    for (const count of [7, 24, 30, 31]) {
+      const stride = axisLabelStride(count)
+      const visible = Math.ceil(count / stride)
+      assert.equal(
+        visible <= MAX_AXIS_LABELS,
+        true,
+        `${count} buckets produced ${visible} labels`
+      )
+    }
+    assert.equal(axisLabelStride(30), 3)
+    assert.equal(axisLabelStride(24), 3)
+    assert.equal(axisLabelStride(7), 1)
+  })
+
+  test('renders every third label and blanks the rest', () => {
+    const config = timeAxisLabelConfig(30) as {
+      formatMethod: (value: unknown, datum: unknown, index: number) => unknown
+      autoHide: boolean
+    }
+
+    assert.equal(config.autoHide, true)
+    assert.equal(config.formatMethod('01-15', undefined, 0), '01-15')
+    assert.equal(config.formatMethod('01-16', undefined, 3), '01-16')
+    assert.equal(config.formatMethod('01-17', undefined, 1), '')
+    assert.equal(config.formatMethod('01-18', undefined, 2), '')
+  })
+
+  test('the chart spec carries the thinned time axis', () => {
+    const range = {
+      start_timestamp: SEC(local(2026, 1, 15)),
+      end_timestamp: SEC(local(2026, 1, 15, 23, 30)),
+    }
+    const processed = processChartData(
+      [
+        {
+          created_at: SEC(local(2026, 1, 15, 10)),
+          model_name: 'gpt-5',
+          quota: 1000,
+          count: 3,
+          token_used: 20,
+        },
+      ],
+      'hour',
+      undefined,
+      undefined,
+      range
+    )
+    const axes = processed.spec_model_line.axes as Array<{
+      orient: string
+      label?: { formatMethod: (v: unknown, d: unknown, i: number) => unknown }
+    }>
+
+    assert.equal(axes[0].orient, 'bottom')
+    assert.equal(
+      axes[0].label?.formatMethod('01-15 08:00', undefined, 0),
+      '01-15 08:00'
+    )
+    assert.equal(axes[0].label?.formatMethod('01-15 09:00', undefined, 1), '')
   })
 })

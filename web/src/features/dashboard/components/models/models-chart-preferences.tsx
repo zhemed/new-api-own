@@ -34,7 +34,6 @@ import {
 import {
   CONSUMPTION_DISTRIBUTION_CHART_OPTIONS,
   MODEL_ANALYTICS_CHART_OPTIONS,
-  TIME_GRANULARITY_OPTIONS,
   TIME_RANGE_PRESETS,
 } from '@/features/dashboard/constants'
 import type {
@@ -42,7 +41,6 @@ import type {
   DashboardChartPreferences,
   ModelAnalyticsChartTab,
 } from '@/features/dashboard/types'
-import type { TimeGranularity } from '@/lib/time'
 
 interface ModelsChartPreferencesProps {
   preferences: DashboardChartPreferences
@@ -110,37 +108,6 @@ export function ModelsChartPreferences(props: ModelsChartPreferencesProps) {
             <SelectGroup>
               {TIME_RANGE_PRESETS.map((option) => (
                 <SelectItem key={option.days} value={String(option.days)}>
-                  {t(option.label)}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </div>
-      <div className='grid gap-1.5'>
-        <Label htmlFor='default-time-granularity'>
-          {t('Default time granularity')}
-        </Label>
-        <Select
-          items={TIME_GRANULARITY_OPTIONS.map((option) => ({
-            value: option.value,
-            label: t(option.label),
-          }))}
-          value={draft.defaultTimeGranularity}
-          onValueChange={(value) =>
-            setDraft((prev) => ({
-              ...prev,
-              defaultTimeGranularity: value as TimeGranularity,
-            }))
-          }
-        >
-          <SelectTrigger id='default-time-granularity'>
-            <SelectValue placeholder={t('Select time granularity')} />
-          </SelectTrigger>
-          <SelectContent alignItemWithTrigger={false}>
-            <SelectGroup>
-              {TIME_GRANULARITY_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
                   {t(option.label)}
                 </SelectItem>
               ))}

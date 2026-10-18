@@ -44,7 +44,7 @@ import {
   buildDefaultDashboardFilters,
   getDefaultDays,
   getSavedChartPreferences,
-  getSavedGranularity,
+  granularityForRangeDays,
   saveChartPreferences,
 } from './lib'
 import {
@@ -209,10 +209,10 @@ export function Dashboard() {
   )
   const [userChartsFilters, setUserChartsFilters] = useState<UserChartsFilters>(
     () => {
-      const granularity = getSavedGranularity()
+      const selectedRange = getDefaultDays()
       return {
-        timeGranularity: granularity,
-        selectedRange: getDefaultDays(granularity),
+        timeGranularity: granularityForRangeDays(selectedRange),
+        selectedRange,
         topUserLimit: 10,
       }
     }

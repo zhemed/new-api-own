@@ -19,12 +19,12 @@ For commercial licensing, please contact support@quantumnous.com
 export {
   cleanFilters,
   buildQueryParams,
-  getSavedGranularity,
-  saveGranularity,
   getDefaultDays,
   getSavedChartPreferences,
   saveChartPreferences,
   buildDefaultDashboardFilters,
+  granularityForRangeDays,
+  rangeDaysOf,
 } from './filters'
 export { processChartData, processUserChartData } from './charts'
 export {

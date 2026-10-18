@@ -76,6 +76,50 @@ export interface ChartTimeRange {
   end_timestamp: number
 }
 
+/** Upper bound on the number of visible labels on a time axis. */
+export const MAX_AXIS_LABELS = 10
+
+/**
+ * Every how many buckets one visible label is drawn. `ceil` keeps the visible
+ * count at or below the cap (30 buckets -> 10 labels, 24 -> 8, 7 -> 7).
+ */
+export function axisLabelStride(
+  bucketCount: number,
+  maxLabels: number = MAX_AXIS_LABELS
+): number {
+  if (!Number.isFinite(bucketCount) || bucketCount <= maxLabels) return 1
+  return Math.ceil(bucketCount / maxLabels)
+}
+
+/**
+ * Bottom band axis for the categorical `Time` field.
+ *
+ * The data keeps every bucket; only the labels are thinned on a fixed stride,
+ * so ticks stay evenly spaced instead of following the data's density.
+ * `autoHide`/`autoHideMethod: 'parity'` are vchart's own overlap guards
+ * (`@visactor/vchart@2.1.4`, `AxisLabelOverlap` in vrender-components)
+ * and act as a second line of defence on narrow screens.
+ */
+export function timeAxisLabelConfig(
+  bucketCount: number
+): Record<string, unknown> {
+  const stride = axisLabelStride(bucketCount)
+  return {
+    autoHide: true,
+    autoHideMethod: 'parity',
+    formatMethod: (value: unknown, _datum: unknown, index: number) =>
+      index % stride === 0 ? value : '',
+  }
+}
+
+function timeAxisOf(bucketCount: number) {
+  return {
+    orient: 'bottom' as const,
+    type: 'band' as const,
+    label: timeAxisLabelConfig(bucketCount),
+  }
+}
+
 /**
  * Align a timestamp (ms) down to the start of its bucket in local time.
  * Weeks start on Monday so a given day always lands in the same bucket.
@@ -551,6 +595,10 @@ export function processChartData(
       xField: 'Time',
       yField: 'Usage',
       seriesField: 'Model',
+      axes: [
+        timeAxisOf(axisBuckets.length),
+        { orient: 'left', type: 'linear' },
+      ],
       stack: true,
       legends: { visible: true, selectMode: 'single' },
       color: modelColor,
@@ -589,6 +637,10 @@ export function processChartData(
       xField: 'Time',
       yField: 'Usage',
       seriesField: 'Model',
+      axes: [
+        timeAxisOf(axisBuckets.length),
+        { orient: 'left', type: 'linear' },
+      ],
       stack: false,
       legends: { visible: true, selectMode: 'single' },
       color: modelColor,
@@ -637,6 +689,10 @@ export function processChartData(
       xField: 'Time',
       yField: 'Count',
       seriesField: 'Model',
+      axes: [
+        timeAxisOf(axisBuckets.length),
+        { orient: 'left', type: 'linear' },
+      ],
       stack: false,
       legends: { visible: true, selectMode: 'single' },
       color: modelColor,
@@ -941,7 +997,11 @@ export function processUserChartData(
       },
       legends: { visible: true, selectMode: 'single' },
       axes: [
-        { orient: 'bottom', type: 'band' },
+        {
+          orient: 'bottom',
+          type: 'band',
+          label: timeAxisLabelConfig(sortedTimePoints.length),
+        },
         {
           orient: 'left',
           type: 'linear',

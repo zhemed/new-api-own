@@ -32,14 +32,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 
 import {
@@ -63,12 +55,6 @@ type DataDashboardFormValues = z.infer<typeof dataDashboardSchema>
 type DashboardSectionProps = {
   defaultValues: DataDashboardFormValues
 }
-
-const granularityOptions = [
-  { label: 'Hour', value: 'hour' },
-  { label: 'Day', value: 'day' },
-  { label: 'Week', value: 'week' },
-]
 
 export function DashboardSection({ defaultValues }: DashboardSectionProps) {
   const { t } = useTranslation()
@@ -141,46 +127,6 @@ export function DashboardSection({ defaultValues }: DashboardSectionProps) {
                   </FormControl>
                   <FormDescription>
                     {t('Keep this above 1 minute to avoid heavy database load')}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name='DataExportDefaultTime'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('Default time granularity')}</FormLabel>
-                  <Select
-                    items={granularityOptions.map((option) => ({
-                      value: option.value,
-                      label: t(option.label),
-                    }))}
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    disabled={!isEnabled}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('Select granularity')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent alignItemWithTrigger={false}>
-                      <SelectGroup>
-                        {granularityOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {t(option.label)}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    {t(
-                      'UI granularity only &mdash; data is still aggregated hourly'
-                    )}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

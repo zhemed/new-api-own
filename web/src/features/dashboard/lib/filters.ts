@@ -87,20 +87,31 @@ export function cleanFilters<T extends Record<string, unknown>>(
   return cleaned
 }
 
-export function getSavedGranularity(
-  override?: TimeGranularity
-): TimeGranularity {
-  if (override) return override
-  return getSavedChartPreferences().defaultTimeGranularity
+/**
+ * The only place that decides a chart's bucket granularity.
+ *
+ * Granularity is a function of the selected range, never an independent
+ * setting: up to one day is bucketed per hour, up to 31 days per day, and
+ * anything longer per week. Every entry point (default preferences, quick
+ * ranges, custom ranges, the query's `time_granularity`) must use this.
+ */
+export function granularityForRangeDays(days: number): TimeGranularity {
+  if (!Number.isFinite(days)) return 'day'
+  if (days <= 1) return 'hour'
+  if (days <= 31) return 'day'
+  return 'week'
 }
 
-export function saveGranularity(granularity: TimeGranularity): void {
-  if (typeof window === 'undefined') return
-  saveChartPreferences({
-    ...getSavedChartPreferences(),
-    defaultTimeGranularity: granularity,
-  })
-  localStorage.setItem(TIME_GRANULARITY_STORAGE_KEY, granularity)
+/** Inclusive calendar-day span of a filter range, floored to at least one. */
+export function rangeDaysOf(start?: Date, end?: Date): number | undefined {
+  if (!start || !end) return undefined
+  const startDay = new Date(start)
+  startDay.setHours(0, 0, 0, 0)
+  const endDay = new Date(end)
+  endDay.setHours(0, 0, 0, 0)
+  const days =
+    Math.round((endDay.getTime() - startDay.getTime()) / 86_400_000) + 1
+  return Number.isFinite(days) && days > 0 ? days : undefined
 }
 
 export function getSavedChartPreferences(): DashboardChartPreferences {
@@ -151,8 +162,10 @@ export function saveChartPreferences(
 }
 
 export function getDefaultDays(granularity?: TimeGranularity): number {
-  if (!granularity) return getSavedChartPreferences().defaultTimeRangeDays
-  return TIME_RANGE_BY_GRANULARITY[getSavedGranularity(granularity)]
+  // Granularity is derived from the range, so the only direction left is
+  // granularity -> its paired range length (used by the flow charts).
+  if (granularity) return TIME_RANGE_BY_GRANULARITY[granularity]
+  return getSavedChartPreferences().defaultTimeRangeDays
 }
 
 export function buildDefaultDashboardFilters(
@@ -163,7 +176,7 @@ export function buildDefaultDashboardFilters(
     ...EMPTY_DASHBOARD_FILTERS,
     start_timestamp: start,
     end_timestamp: end,
-    time_granularity: preferences.defaultTimeGranularity,
+    time_granularity: granularityForRangeDays(preferences.defaultTimeRangeDays),
   }
 }
 
@@ -178,7 +191,9 @@ export function buildQueryParams(
 } {
   return {
     ...timeRange,
-    default_time: getSavedGranularity(filters?.time_granularity),
+    default_time:
+      filters?.time_granularity ??
+      granularityForRangeDays(getSavedChartPreferences().defaultTimeRangeDays),
     ...(filters?.username && { username: filters.username }),
   }
 }
