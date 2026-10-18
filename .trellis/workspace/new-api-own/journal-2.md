@@ -39,3 +39,37 @@
 ### Next Steps
 
 - 待用户决定是否升级实例到 v0.0.26 并在偏好里选「本月」
+
+
+## Session 62: 按用户要求升级实例到 v0.0.26；并记下会话卫生做法
+<!-- trellis-session: v=2 fp=0d02b28d0341d52d -->
+
+**Date**: 2026-10-18
+**Task**: 按用户要求升级实例到 v0.0.26；并记下会话卫生做法
+**Branch**: `main`
+
+### Summary
+
+用户明确要求升级。执行：单次登录复用 token → POST /api/status/update/apply → 约 10 秒 v0.0.25→v0.0.26。复核：env 与 --log-opt 未变、容器 running 未重建、前端包 index.839a7ff985.js、releases/latest=v0.0.26、会话数 9（本轮 +1）。记录运维改进：以后每轮调完接口用 POST /api/auth/logout 撤销会话，避免 user_sessions 累积触碰上限；不把 token 落盘（凭据不持久化）。用户下一步在偏好设置把默认范围改为「本月」。
+
+### Main Changes
+
+- 无代码改动（仅实例升级）；补充会话卫生做法
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f908d69` | chore(task): archive 10-18-investigate-default-range-month |
+
+### Testing
+
+- [OK] [OK] 版本 v0.0.26 / env 与日志上限未变 / 会话数可控
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 用户在偏好设置选「本月」并保存，验证图表从 1 号起

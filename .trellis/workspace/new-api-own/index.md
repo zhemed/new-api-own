@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 61
+- **Total Sessions**: 62
 - **Last Active**: 2026-10-18
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~41 | Active |
+| `journal-2.md` | ~75 | Active |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 62 | 2026-10-18 | 按用户要求升级实例到 v0.0.26；并记下会话卫生做法 | `f908d69` | `main` |
 | 61 | 2026-10-18 | 默认范围支持本月/上月（加法式 kind），发 v0.0.26 | `66e00ee` | `main` |
 | 60 | 2026-10-18 | 按用户要求升级实例到 v0.0.25（含本月/上月范围与末标签对齐） | `bce2e2d` | `main` |
 | 59 | 2026-10-18 | 自然月快捷范围（本月/上月）+ 轴末标签对齐，发 v0.0.25 | `4e7b3b3` | `main` |
