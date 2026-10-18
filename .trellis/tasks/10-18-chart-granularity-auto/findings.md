@@ -85,3 +85,79 @@ format:check exit 0 ｜ build exit 0 ｜ **knip exit 0** ｜ i18n:check exit 0�
   `Choose the default charts, range, and time granularity for model analytics.` —— 已上报，未删。
 - **门**：typecheck 0 ｜ lint 0/0 ｜ `bun test` **282 pass / 0 fail**（基线持平）｜ format:check 0 ｜
   build 0 ｜ knip **exit 0** ｜ i18n:check 0。
+
+## 八、线上回归修复（x 轴标签全部消失）
+
+### 根因（vchart 源码实证）
+`node_modules/@visactor/vchart/esm/component/axis/base-axis.js`：
+
+```js
+protected _getLabelFormatMethod() {
+  const { formatMethod, formatter } = this._spec.label;
+  const { formatFunc } = getFormatFunction(formatMethod, formatter);
+  return formatFunc ? (value, datum, index) => formatFunc(datum.rawValue, datum, formatter) : null;
+}
+```
+
+vchart 调用 **`formatFunc(datum.rawValue, datum, formatter)`** —— 第三个位置参数是 **formatter**，
+**不是索引**。我上一版写的是 `formatMethod: (value, _datum, index) => index % stride === 0 ? value : ''`，
+于是 `index` 实际拿到 `undefined`（或 formatter）→ `undefined % 3 = NaN` → `NaN === 0` 为 false
+→ **每个标签都被格式化成空串** ✗。与 Lead 的判断一致。
+
+### 修复：改用官方 `dataFilter`（不手算索引）
+
+类型依据（`vchart/esm/component/axis/interface/spec.d.ts` / `vrender-components`）：
+
+```ts
+export interface ILabel extends IAxisItem<ITextMarkSpec> {
+  formatMethod?: IFormatMethod<[text: string | string[], datum?: Datum]>;   // 只有 (text, datum)
+  dataFilter?: (data: AxisItem[], layer: number, context: { vchart: IVChart }) => AxisItem[];
+}
+```
+
+接线依据（`base-axis.js` `_getAxisAttributes`）：
+
+```js
+const labelSpec = pickWithout(spec.label, ['style', 'formatMethod', 'state']);
+axisAttrs.label = labelSpec;                       // autoHide / autoHideMethod / autoHideSeparation 原样透传
+if (isFunction(spec.label.dataFilter)) {
+  axisAttrs.label.dataFilter = (data, layer) => spec.label.dataFilter(data, layer, { vchart: ... });
+}
+```
+
+新实现 `timeAxisLabelConfig(count)`：
+
+```ts
+{
+  autoHide: true,
+  autoHideMethod: 'greedy',
+  autoHideSeparation: 24,
+  dataFilter: (data) => stride <= 1 ? data : data.filter((_, index) => index % stride === 0),
+}
+```
+
+- **没有任何 `formatMethod`** → 结构上不可能把标签变空；
+- `dataFilter` 只**删标签项**，index 0 永远保留 → 至少一个真实标签；
+- **失败模式是 fail-open**：万一渲染器不认 `dataFilter`，结果是"标签变密"（回到旧观感），
+  **绝不会变成"没有标签"** ✓。
+
+### 各范围的天数与标签数（现在）
+| 范围 | 粒度 | 数据桶 | 轴标签项 | 预判渲染 |
+|---|---|---|---|---|
+| 1 天 | hour | 24 | `0,3,6,9,12,15,18,21` → **8 个** | 每 3 小时一个标签，`00:00 … 21:00`，轴末端到 now |
+| 7 天 | day | 7 | stride 1 → **7 个** | 每天一个，全部显示 |
+| 30 天 | day | 30 | `0,3,…,27` → **10 个** | 每 3 天一个，`12-17 … 02-14` 区间等距 |
+外加 `autoHide(autoHideMethod: 'greedy', autoHideSeparation: 24)` 在窄屏再兜一层。
+
+### 防回归测试（替换了上一版断言错误行为的用例）
+- **不变量**：对 1/7/24/30/31 桶，`timeAxisLabelConfig(n).formatMethod === undefined`
+  （标签不会被格式化函数清空）；
+- `dataFilter` 输出 **≥ min(2, n)** 个、**≤ MAX_AXIS_LABELS**、首项必为第 0 个、**全部非空字符串**；
+- 30 桶等距：正好 `d0,d3,…,d27`；
+- **spec 级**：`processChartData(...).spec_model_line.axes[0].label` 无 `formatMethod`、有 `dataFilter`，且 24 桶 → ≤10 项、首项非空。
+
+### 门
+typecheck 0 ｜ lint 0/0 ｜ `bun test` **283 pass / 0 fail**（282→+1）｜ format:check 0 ｜ build 0 ｜ knip **exit 0** ｜ i18n:check 0。
+
+### 仍建议 Lead 用真实实例截图复核
+本机无 `canvas` 包（装它需要联网），无法做真正的无头渲染；上述结论来自 vchart 源码调用链 + 契约测试。

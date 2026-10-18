@@ -94,11 +94,20 @@ export function axisLabelStride(
 /**
  * Bottom band axis for the categorical `Time` field.
  *
- * The data keeps every bucket; only the labels are thinned on a fixed stride,
- * so ticks stay evenly spaced instead of following the data's density.
- * `autoHide`/`autoHideMethod: 'parity'` are vchart's own overlap guards
- * (`@visactor/vchart@2.1.4`, `AxisLabelOverlap` in vrender-components)
- * and act as a second line of defence on narrow screens.
+ * vchart turns every category into a label, so a 30-day range would print 30
+ * ticks. Labels are thinned on a fixed stride through the official
+ * `label.dataFilter` hook (`IAxisItem.dataFilter?: (data, layer, context) =>
+ * AxisItem[]`, wired in `base-axis.js`'s `_getAxisAttributes`), which keeps the
+ * data buckets and only drops label items — index 0 always survives.
+ *
+ * Deliberately NOT using `formatMethod` here: vchart calls it as
+ * `formatFunc(datum.rawValue, datum, formatter)` (`_getLabelFormatMethod`), so
+ * a third positional argument is the formatter, not the index. Reading an index
+ * from it yields `NaN` and blanks every label.
+ *
+ * `autoHide`/`autoHideMethod`/`autoHideSeparation` are spread through to the
+ * vrender axis as-is (`pickWithout(spec.label, ['style','formatMethod','state'])`)
+ * and act as a second, width-aware guard on narrow screens.
  */
 export function timeAxisLabelConfig(
   bucketCount: number
@@ -106,9 +115,10 @@ export function timeAxisLabelConfig(
   const stride = axisLabelStride(bucketCount)
   return {
     autoHide: true,
-    autoHideMethod: 'parity',
-    formatMethod: (value: unknown, _datum: unknown, index: number) =>
-      index % stride === 0 ? value : '',
+    autoHideMethod: 'greedy',
+    autoHideSeparation: 24,
+    dataFilter: (data: unknown[]) =>
+      stride <= 1 ? data : data.filter((_, index) => index % stride === 0),
   }
 }
 

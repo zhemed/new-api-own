@@ -258,17 +258,56 @@ describe('axis label thinning', () => {
     assert.equal(axisLabelStride(7), 1)
   })
 
-  test('renders every third label and blanks the rest', () => {
-    const config = timeAxisLabelConfig(30) as {
-      formatMethod: (value: unknown, datum: unknown, index: number) => unknown
-      autoHide: boolean
-    }
+  test('never blanks labels: thinning goes through dataFilter, not formatMethod', () => {
+    for (const count of [1, 7, 24, 30, 31]) {
+      const config = timeAxisLabelConfig(count) as {
+        formatMethod?: unknown
+        dataFilter: (data: unknown[]) => unknown[]
+      }
 
-    assert.equal(config.autoHide, true)
-    assert.equal(config.formatMethod('01-15', undefined, 0), '01-15')
-    assert.equal(config.formatMethod('01-16', undefined, 3), '01-16')
-    assert.equal(config.formatMethod('01-17', undefined, 1), '')
-    assert.equal(config.formatMethod('01-18', undefined, 2), '')
+      // A formatMethod would receive (value, datum, formatter) from vchart, so
+      // index-based logic there silently blanks every label. Guard the contract.
+      assert.equal(config.formatMethod, undefined)
+
+      const items = Array.from({ length: count }, (_, i) => `label-${i}`)
+      const visible = config.dataFilter(items)
+      // a single bucket legitimately keeps its only label; anything wider must
+      // still show more than one, otherwise the axis reads as empty
+      assert.equal(
+        visible.length >= Math.min(2, count),
+        true,
+        `${count} buckets rendered only ${visible.length} labels`
+      )
+      assert.equal(visible.length <= MAX_AXIS_LABELS, true)
+      assert.equal(visible[0], 'label-0')
+      // every surviving item is a real label, never an empty string
+      assert.equal(
+        visible.every((label) => typeof label === 'string' && label !== ''),
+        true
+      )
+    }
+  })
+
+  test('keeps labels evenly spaced', () => {
+    const config = timeAxisLabelConfig(30) as {
+      dataFilter: (data: unknown[]) => unknown[]
+    }
+    const visible = config.dataFilter(
+      Array.from({ length: 30 }, (_, i) => `d${i}`)
+    ) as string[]
+
+    assert.deepEqual(visible, [
+      'd0',
+      'd3',
+      'd6',
+      'd9',
+      'd12',
+      'd15',
+      'd18',
+      'd21',
+      'd24',
+      'd27',
+    ])
   })
 
   test('the chart spec carries the thinned time axis', () => {
@@ -293,14 +332,19 @@ describe('axis label thinning', () => {
     )
     const axes = processed.spec_model_line.axes as Array<{
       orient: string
-      label?: { formatMethod: (v: unknown, d: unknown, i: number) => unknown }
+      label?: {
+        formatMethod?: unknown
+        dataFilter?: (data: unknown[]) => unknown[]
+      }
     }>
 
     assert.equal(axes[0].orient, 'bottom')
-    assert.equal(
-      axes[0].label?.formatMethod('01-15 08:00', undefined, 0),
-      '01-15 08:00'
-    )
-    assert.equal(axes[0].label?.formatMethod('01-15 09:00', undefined, 1), '')
+    // the axis must never blank labels via formatMethod (vchart passes the
+    // formatter, not the index, as the third argument)
+    assert.equal(axes[0].label?.formatMethod, undefined)
+    const labels = Array.from({ length: 24 }, (_, i) => `01-15 ${i}:00`)
+    const visible = axes[0].label?.dataFilter?.(labels) ?? []
+    assert.equal(visible.length <= MAX_AXIS_LABELS, true)
+    assert.equal(visible[0], '01-15 0:00')
   })
 })
