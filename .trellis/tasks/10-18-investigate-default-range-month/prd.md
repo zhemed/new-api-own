@@ -43,3 +43,17 @@
 - 偏好设置的「默认范围」下拉改为**两组选项**（天数 + 本月/上月），保存时写 kind（天数档写 kind='days' + days）；
 - `buildDefaultDashboardFilters()` 统一走 `resolveRangePreset`（自然月 → 1 号 00:00 → 现在 / 上月整月），粒度按跨度推导；
 - 测试：旧数据 `{days:30}` 行为不变；`{kind:'month-to-date'}` → 本月 1 号 → now；29→30 迁移仍通过；保存/读取往返一致。
+
+## 实现结果（2026-10-18，v0.0.26）
+
+用户选"修：默认范围支持本月/上月"：
+
+- `types.ts`：`DashboardChartPreferences` 保留 `defaultTimeRangeDays: number`，**新增可选 `defaultRangeKind`**（`days | month-to-date | last-month`，缺省 `days`）；
+- `filters.ts`：`isRangePresetKind` 校验（非法/缺失 → days）；天数仍走 `isTimeRangePresetDays` + **29→30 迁移**；
+  `saveChartPreferences` 归一化写显式 kind；`buildDefaultDashboardFilters(prefs, now?)` 统一走 `resolveRangePreset`，粒度按**实际跨度**推导；
+- 偏好设置下拉改为**单控件两分组**（`days:<n>` / `<kind>`）：天数 1/7/14/30 + 本月/上月，**无需新增 i18n**；
+- 新增 **10** 个测试（旧数据不变、本月含跨年、上月整月、往返一致、非法回落、29→30 迁移仍生效、下拉含本月/上月、触发器显示 Last Month）；`bun test` 327 → **337**；七条门全绿。
+
+### 用户最终怎么用
+
+偏好设置 → 默认范围 → 选「**本月**」→ 保存 → 之后每次打开图表都从 **本月 1 号 00:00 → 现在**（今天 18 号就显示 18 天，不再凑 30 天）。
