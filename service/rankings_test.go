@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/QuantumNous/new-api/model"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -93,12 +95,40 @@ func TestPreviousRankingTimeRangeYearIsPreviousCalendarYear(t *testing.T) {
 	)
 }
 
-// The year buckets stay weekly (a calendar year must not explode into days).
-func TestYearBucketsStayWeekly(t *testing.T) {
+// The year buckets are monthly: roughly a dozen points instead of 365 daily
+// ones, and clearly fewer than the weekly grid it replaced.
+func TestYearBucketsAreMonthly(t *testing.T) {
 	config, err := rankingConfig("year")
 	require.NoError(t, err)
 
-	assert.Equal(t, int64(7*24*3600), config.bucketSize)
+	assert.Equal(t, int64(30*24*3600), config.bucketSize)
+
+	// A full calendar year must land in the 12–13 bucket range.
+	const yearSeconds = 365 * 24 * 3600
+	buckets := (yearSeconds + int(config.bucketSize) - 1) / int(config.bucketSize)
+	assert.GreaterOrEqual(t, buckets, 12)
+	assert.LessOrEqual(t, buckets, 13)
+}
+
+// Buckets are epoch-aligned, so a calendar range must not open on a label from
+// before the range.
+func TestClampRankingBucketsToRangeStartsAtTheRangeStart(t *testing.T) {
+	rangeStart := time.Date(2026, time.January, 1, 0, 0, 0, 0, time.Local).Unix()
+	epochAligned := time.Date(2025, time.December, 22, 0, 0, 0, 0, time.Local).Unix()
+	secondBucket := epochAligned + 30*24*3600
+
+	buckets := clampRankingBucketsToRange(
+		[]model.RankingQuotaBucket{
+			{Bucket: epochAligned, ModelName: "gpt", Tokens: 10},
+			{Bucket: secondBucket, ModelName: "gpt", Tokens: 20},
+		},
+		rangeStart,
+	)
+
+	require.Len(t, buckets, 2)
+	assert.Equal(t, rangeStart, buckets[0].Bucket)
+	assert.Equal(t, secondBucket, buckets[1].Bucket, "later buckets stay untouched")
+	assert.Equal(t, int64(10), buckets[0].Tokens)
 }
 
 // The other periods keep their rolling-window behaviour.

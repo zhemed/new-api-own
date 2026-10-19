@@ -27,6 +27,7 @@ import { formatTokens } from '@/lib/format'
 import { useChartTheme } from '@/lib/use-chart-theme'
 import { VCHART_OPTION } from '@/lib/vchart'
 
+import { rankingLabelFilter } from '../lib/axis-labels'
 import { rankingChartType } from '../lib/chart-preference'
 import { formatRankingBucketLabel } from '../lib/format'
 import type { ModelHistorySeries, ModelRanking, RankingPeriod } from '../types'
@@ -92,6 +93,12 @@ export function ModelsSection(props: ModelsSectionProps) {
     [props.rows]
   )
 
+  // Distinct buckets drive the axis label thinning (stacked points repeat ts).
+  const bucketCount = useMemo(
+    () => new Set(orderedPoints.map((point) => point.ts)).size,
+    [orderedPoints]
+  )
+
   const spec = useMemo(() => {
     if (orderedPoints.length === 0) return null
     // Follow the dashboard preference: an area preference renders a stacked
@@ -112,8 +119,11 @@ export function ModelsSection(props: ModelsSectionProps) {
           orient: 'bottom',
           label: {
             style: { fill: chartTextColor, fontSize: 10 },
+            // Deterministic cap: at most MAX_AXIS_LABELS labels, first and
+            // last bucket always labelled. autoHide stays as a narrow-screen
+            // second line of defence.
+            dataFilter: rankingLabelFilter(bucketCount),
             autoHide: true,
-            autoLimit: true,
           },
           tick: { visible: false },
         },
@@ -181,7 +191,7 @@ export function ModelsSection(props: ModelsSectionProps) {
       },
       animationAppear: { duration: 500 },
     }
-  }, [chartGridColor, chartTextColor, orderedPoints, t])
+  }, [bucketCount, chartGridColor, chartTextColor, orderedPoints, t])
 
   return (
     <section className='bg-card overflow-hidden rounded-lg border'>

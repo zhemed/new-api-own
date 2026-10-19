@@ -26,6 +26,7 @@ import { formatTokens } from '@/lib/format'
 import { useChartTheme } from '@/lib/use-chart-theme'
 import { VCHART_OPTION } from '@/lib/vchart'
 
+import { rankingLabelFilter } from '../lib/axis-labels'
 import { formatRankingBucketLabel, formatShare } from '../lib/format'
 import type { RankingPeriod, VendorRanking, VendorShareSeries } from '../types'
 import { VendorLink } from './entity-links'
@@ -140,6 +141,12 @@ export function MarketShareSection(props: MarketShareSectionProps) {
       }))
   }, [props.history, i18n.resolvedLanguage, i18n.language, props.period])
 
+  // Distinct buckets drive the axis label thinning (stacked points repeat ts).
+  const bucketCount = useMemo(
+    () => new Set(orderedPoints.map((point) => point.ts)).size,
+    [orderedPoints]
+  )
+
   const spec = useMemo(() => {
     if (orderedPoints.length === 0) return null
     return {
@@ -157,8 +164,11 @@ export function MarketShareSection(props: MarketShareSectionProps) {
           orient: 'bottom',
           label: {
             style: { fill: chartTextColor, fontSize: 10 },
+            // Deterministic cap: at most MAX_AXIS_LABELS labels, first and
+            // last bucket always labelled. autoHide stays as a narrow-screen
+            // second line of defence.
+            dataFilter: rankingLabelFilter(bucketCount),
             autoHide: true,
-            autoLimit: true,
           },
           tick: { visible: false },
         },
@@ -216,7 +226,7 @@ export function MarketShareSection(props: MarketShareSectionProps) {
       },
       animationAppear: { duration: 500 },
     }
-  }, [chartGridColor, chartTextColor, colourMap, orderedPoints])
+  }, [bucketCount, chartGridColor, chartTextColor, colourMap, orderedPoints])
 
   const visible = props.rows.slice(0, MAX_VENDORS_IN_LIST)
   const half = Math.ceil(visible.length / 2)

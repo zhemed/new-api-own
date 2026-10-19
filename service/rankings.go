@@ -110,8 +110,7 @@ type rankingPeriodConfig struct {
 	// calendarMonth makes the range the current calendar month instead of a
 	// rolling `duration` window (see rankingTimeRange).
 	calendarMonth bool
-	// calendarYear does the same for the current calendar year. The bucket size
-	// stays weekly so a year never explodes into hundreds of daily points.
+	// calendarYear does the same for the current calendar year.
 	calendarYear bool
 }
 
@@ -178,7 +177,7 @@ func rankingConfig(period string) (rankingPeriodConfig, error) {
 	case "month":
 		return rankingPeriodConfig{id: "month", duration: 30 * 24 * time.Hour, bucketSize: 24 * 3600, labelLayout: "Jan 2", hasPrevious: true, calendarMonth: true}, nil
 	case "year":
-		return rankingPeriodConfig{id: "year", duration: 365 * 24 * time.Hour, bucketSize: 7 * 24 * 3600, labelLayout: "Jan 2", hasPrevious: true, calendarYear: true}, nil
+		return rankingPeriodConfig{id: "year", duration: 365 * 24 * time.Hour, bucketSize: 30 * 24 * 3600, labelLayout: "Jan 2", hasPrevious: true, calendarYear: true}, nil
 	default:
 		return rankingPeriodConfig{}, fmt.Errorf("invalid ranking period: %s", period)
 	}
@@ -194,6 +193,7 @@ func buildRankingsSnapshot(config rankingPeriodConfig, now time.Time) (*Rankings
 	if err != nil {
 		return nil, err
 	}
+	currentBuckets = clampRankingBucketsToRange(currentBuckets, startTime)
 
 	var previousTotals []model.RankingQuotaTotal
 	if config.hasPrevious {
@@ -552,6 +552,26 @@ func sortedRankingBuckets(bucketSet map[int64]struct{}) []int64 {
 	sort.Slice(buckets, func(i, j int) bool {
 		return buckets[i] < buckets[j]
 	})
+	return buckets
+}
+
+// clampRankingBucketsToRange pulls the first bucket of a calendar range back to
+// the range start.
+//
+// Buckets are aligned to the epoch (`FLOOR(created_at / size) * size`), so the
+// bucket that contains the first day of a calendar month/year can start before
+// it — a "this year" axis would then open on a December label. Every row inside
+// that bucket is still within the range (the query filters by created_at), so
+// relabelling the bucket to the range start is lossless.
+func clampRankingBucketsToRange(
+	buckets []model.RankingQuotaBucket,
+	startTime int64,
+) []model.RankingQuotaBucket {
+	for idx := range buckets {
+		if buckets[idx].Bucket < startTime {
+			buckets[idx].Bucket = startTime
+		}
+	}
 	return buckets
 }
 
