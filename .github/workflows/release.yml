@@ -207,19 +207,13 @@ jobs:
             LATEST_FLAG="--latest"
           fi
 
-          BODY="$(printf '%s\n' \
-            'Docker image (multi-arch, cosign-signed) — the only supported deployment:' \
-            '' \
-            '```' \
-            "docker pull ghcr.io/zhemed/new-api-own:${VERSION}" \
-            "docker pull ghcr.io/zhemed/new-api-own:${TAG}" \
-            '```' \
-            '' \
-            'Upgrade: `docker pull` -> `docker rm -f new-api` -> `docker run` (see README, section 升级 / 回滚).' \
-            'Restarting a container is *not* an upgrade: the running container is pinned to its image ID.' \
-            '' \
-            'Attached Linux binaries (for the in-panel updater, not a deployment method):' \
-            '`new-api-linux-amd64`, `new-api-linux-arm64`, `SHA256SUMS`.')"
+          # Release notes ARE the annotated tag's own message body — our tags
+          # carry the changelog. Fall back to the commit subject when the tag has
+          # no annotation body (lightweight/empty tag) so the body is never blank.
+          BODY="$(git tag -l --format='%(contents:body)' "$TAG")"
+          if [ -z "$(printf '%s' "$BODY" | tr -d '[:space:]')" ]; then
+            BODY="$(git log -1 --pretty=%s "$TAG")"
+          fi
 
           # Idempotent: re-running on the same tag refreshes the notes and replaces
           # the assets instead of failing with "release already exists".
