@@ -175,3 +175,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 下次升级按新的会话卫生流程执行；如需彻底避免换密钥可另行设置 SESSION_SECRET（需用户自行操作）
+
+
+## Session 66: 修复立即升级弹窗提前关闭（重启中在弹窗内显示进度），发 v0.0.28
+<!-- trellis-session: v=2 fp=025f4409fe6a9683 -->
+
+**Date**: 2026-10-19
+**Task**: 修复立即升级弹窗提前关闭（重启中在弹窗内显示进度），发 v0.0.28
+**Branch**: `main`
+
+### Summary
+
+用户先报'卡住'，随后更正为：能升级、但确认弹窗一点就关、进度不可见、随后页面突然刷新。定位：update-checker-section 的 ok 分支立刻 setConfirmOpen(false) 再把 phase 设为 restarting，进度渲染在页面里而弹窗已关。修复：ok 后不关弹窗，改为弹窗三态（idle/restarting/timed-out），restarting 时弹窗内显示进度、两按钮禁用并拒绝 Esc/遮罩关闭；超时态提示手动刷新且 Close 不刷新；成功由 watcher reload、弹窗随页面消失；页面常驻提示只保留超时一种。新增 4 个 i18n 键 7 语言、组件测试 +2，test 339→341，七条门全绿。发 v0.0.28（latest=v0.0.28、三资产齐）。真机需在下一版本发布时验证。
+
+### Main Changes
+
+- 把'进度可见性'放回用户看得见的位置（弹窗内），并顺手补上'重启中不可关闭'的约束
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8759472` | fix(web): 立即升级的确认弹窗不再提前关闭——重启中在弹窗内显示进度并禁用按钮，超时改为手动刷新提示 [task:fix-apply-update-hang] |
+
+### Testing
+
+- [OK] [OK] 341 pass / knip exit 0；成功不关弹窗、超时关闭不刷新、失败不 watch 均有断言
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 待用户决定是否升级到 v0.0.28（下一个版本发布时可端到端看到新弹窗行为）
