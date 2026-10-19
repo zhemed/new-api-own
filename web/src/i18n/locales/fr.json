@@ -1242,7 +1242,7 @@
     "Daily": "Quotidien",
     "Daily Check-in": "Connexion quotidienne",
     "Daily token usage by model across the past few weeks": "Utilisation quotidienne de tokens par modèle sur les dernières semaines",
-    "Daily token usage by model across the past month": "Utilisation quotidienne des tokens par modèle au cours du dernier mois",
+    "Daily token usage by model across this month": "Utilisation quotidienne de tokens par modèle sur ce mois-ci",
     "Daily token usage by model over the past month": "Utilisation quotidienne de tokens par modèle sur le dernier mois",
     "Daily uptime over the last 30 days": "Disponibilité quotidienne sur les 30 derniers jours",
     "Daily uptime; {{incidents}} incidents totalling {{minutes}} minutes": "Disponibilité quotidienne ; {{incidents}} incidents totalisant {{minutes}} minutes",

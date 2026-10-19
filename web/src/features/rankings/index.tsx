@@ -23,6 +23,7 @@ import { useTranslation } from 'react-i18next'
 import { PublicLayout } from '@/components/layout'
 import { PageTransition } from '@/components/page-transition'
 import { Skeleton } from '@/components/ui/skeleton'
+import { getSavedChartPreferences } from '@/features/dashboard/lib'
 
 import {
   MarketShareSection,
@@ -31,9 +32,15 @@ import {
   RankingsHero,
 } from './components'
 import { useRankings } from './hooks/use-rankings'
+import { defaultRankingPeriod } from './lib/chart-preference'
 import type { RankingPeriod } from './types'
 
 const VALID_PERIODS = new Set<RankingPeriod>(['today', 'week', 'month', 'year'])
+
+/** Period from the dashboard preference when the URL does not name one. */
+function preferredRankingPeriod(): RankingPeriod {
+  return defaultRankingPeriod(getSavedChartPreferences().defaultRangeKind)
+}
 
 export function Rankings() {
   const { t } = useTranslation()
@@ -44,7 +51,7 @@ export function Rankings() {
     search.period as RankingPeriod
   )
     ? (search.period as RankingPeriod)
-    : 'week'
+    : preferredRankingPeriod()
 
   const rankingsQuery = useRankings(period)
   const snapshot = rankingsQuery.data?.data

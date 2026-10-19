@@ -25,7 +25,7 @@ import { formatTokens } from '@/lib/format'
 import { useChartTheme } from '@/lib/use-chart-theme'
 import { VCHART_OPTION } from '@/lib/vchart'
 
-import { formatShare } from '../lib/format'
+import { formatRankingBucketLabel, formatShare } from '../lib/format'
 import type { RankingPeriod, VendorRanking, VendorShareSeries } from '../types'
 import { VendorLink } from './entity-links'
 
@@ -102,7 +102,7 @@ type MarketShareSectionProps = {
  * vendor list.
  */
 export function MarketShareSection(props: MarketShareSectionProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { resolvedTheme, themeReady } = useChartTheme()
   const chartTextColor =
     resolvedTheme === 'dark'
@@ -118,16 +118,26 @@ export function MarketShareSection(props: MarketShareSectionProps) {
     [props.history]
   )
 
+  // Labels are rebuilt from `ts` so the axis follows the interface language.
   const orderedPoints = useMemo(() => {
     const order = new Map(
       props.history.vendors.map((v, idx) => [v.name, idx] as const)
     )
-    return [...props.history.points].sort((a, b) => {
-      const tsCmp = a.ts.localeCompare(b.ts)
-      if (tsCmp !== 0) return tsCmp
-      return (order.get(a.vendor) ?? 999) - (order.get(b.vendor) ?? 999)
-    })
-  }, [props.history])
+    return [...props.history.points]
+      .sort((a, b) => {
+        const tsCmp = a.ts.localeCompare(b.ts)
+        if (tsCmp !== 0) return tsCmp
+        return (order.get(a.vendor) ?? 999) - (order.get(b.vendor) ?? 999)
+      })
+      .map((point) => ({
+        ...point,
+        label: formatRankingBucketLabel(
+          point.ts,
+          i18n.language,
+          props.period === 'today'
+        ),
+      }))
+  }, [props.history, i18n.language, props.period])
 
   const spec = useMemo(() => {
     if (orderedPoints.length === 0) return null

@@ -1242,7 +1242,7 @@
     "Daily": "Hàng ngày",
     "Daily Check-in": "Điểm danh hàng ngày",
     "Daily token usage by model across the past few weeks": "Sử dụng token theo mô hình hàng ngày trong vài tuần qua",
-    "Daily token usage by model across the past month": "Sử dụng token hàng ngày của từng mô hình trong tháng qua",
+    "Daily token usage by model across this month": "Mức dùng token hằng ngày theo mô hình trong tháng này",
     "Daily token usage by model over the past month": "Sử dụng token theo mô hình hàng ngày trong tháng qua",
     "Daily uptime over the last 30 days": "Thời gian hoạt động hàng ngày trong 30 ngày qua",
     "Daily uptime; {{incidents}} incidents totalling {{minutes}} minutes": "Thời gian hoạt động hàng ngày; {{incidents}} sự cố tổng cộng {{minutes}} phút",

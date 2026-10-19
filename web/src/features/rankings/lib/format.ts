@@ -15,6 +15,27 @@ For commercial licensing, please contact support@quantumnous.com
 // ----------------------------------------------------------------------------
 // Rankings formatting helpers
 // ----------------------------------------------------------------------------
+/**
+ * Localised x-axis label for a ranking bucket.
+ *
+ * The backend still sends an English `label` ("Sep 26"), but the axis must
+ * follow the interface language, so the label is rebuilt from the bucket's
+ * ISO timestamp. Hourly buckets (the "today" period) show a time instead of a
+ * date.
+ */
+export function formatRankingBucketLabel(
+  ts: string,
+  locale: string,
+  hourly = false
+): string {
+  const date = new Date(ts)
+  if (Number.isNaN(date.getTime())) return ts
+  const options: Intl.DateTimeFormatOptions = hourly
+    ? { hour: '2-digit', minute: '2-digit' }
+    : { month: 'short', day: 'numeric' }
+  return new Intl.DateTimeFormat(locale, options).format(date)
+}
+
 /** Format a 0..1 share as a percentage with two decimals. */
 export function formatShare(share: number): string {
   if (!Number.isFinite(share) || share <= 0) return '0%'

@@ -107,6 +107,9 @@ type rankingPeriodConfig struct {
 	bucketSize  int64
 	labelLayout string
 	hasPrevious bool
+	// calendarMonth makes the range the current calendar month instead of a
+	// rolling `duration` window (see rankingTimeRange).
+	calendarMonth bool
 }
 
 type rankingCacheItem struct {
@@ -170,7 +173,7 @@ func rankingConfig(period string) (rankingPeriodConfig, error) {
 	case "today":
 		return rankingPeriodConfig{id: "today", duration: 24 * time.Hour, bucketSize: 3600, labelLayout: "15:04", hasPrevious: true}, nil
 	case "month":
-		return rankingPeriodConfig{id: "month", duration: 30 * 24 * time.Hour, bucketSize: 24 * 3600, labelLayout: "Jan 2", hasPrevious: true}, nil
+		return rankingPeriodConfig{id: "month", duration: 30 * 24 * time.Hour, bucketSize: 24 * 3600, labelLayout: "Jan 2", hasPrevious: true, calendarMonth: true}, nil
 	case "year":
 		return rankingPeriodConfig{id: "year", duration: 365 * 24 * time.Hour, bucketSize: 7 * 24 * 3600, labelLayout: "Jan 2", hasPrevious: true}, nil
 	default:
@@ -221,6 +224,12 @@ func buildRankingsSnapshot(config rankingPeriodConfig, now time.Time) (*Rankings
 
 func rankingTimeRange(config rankingPeriodConfig, now time.Time) (int64, int64) {
 	endTime := now.Unix()
+	if config.calendarMonth {
+		// First instant of the current month in the server's location: the
+		// "month" ranking means the calendar month to date, not a rolling 30d.
+		start := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+		return start.Unix(), endTime
+	}
 	if config.duration <= 0 {
 		return 0, endTime
 	}
@@ -229,6 +238,14 @@ func rankingTimeRange(config rankingPeriodConfig, now time.Time) (int64, int64) 
 
 func previousRankingTimeRange(config rankingPeriodConfig, currentStart int64) (int64, int64) {
 	previousEnd := currentStart - 1
+	if config.calendarMonth {
+		// The whole previous calendar month, in the same location.
+		current := time.Unix(currentStart, 0).In(time.Local)
+		previousStart := time.Date(
+			current.Year(), current.Month()-1, 1, 0, 0, 0, 0, current.Location(),
+		)
+		return previousStart.Unix(), previousEnd
+	}
 	previousStart := time.Unix(currentStart, 0).Add(-config.duration).Unix()
 	return previousStart, previousEnd
 }

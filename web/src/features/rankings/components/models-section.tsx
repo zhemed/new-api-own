@@ -21,17 +21,20 @@ import { BarChart3, Trophy } from 'lucide-react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { getSavedChartPreferences } from '@/features/dashboard/lib'
 import { formatTokens } from '@/lib/format'
 import { useChartTheme } from '@/lib/use-chart-theme'
 import { VCHART_OPTION } from '@/lib/vchart'
 
+import { rankingChartType } from '../lib/chart-preference'
+import { formatRankingBucketLabel } from '../lib/format'
 import type { ModelHistorySeries, ModelRanking, RankingPeriod } from '../types'
 import { ModelLeaderboard } from './model-leaderboard'
 
 const PERIOD_DESCRIPTIONS: Record<RankingPeriod, string> = {
   today: 'Hourly token usage by model across the last 24 hours',
   week: 'Weekly token usage by model across the past few weeks',
-  month: 'Daily token usage by model across the past month',
+  month: 'Daily token usage by model across this month',
   year: 'Weekly token usage by model across the past year',
 }
 
@@ -49,7 +52,7 @@ type ModelsSectionProps = {
  * chart anchors the eye while the leaderboard provides the detailed key.
  */
 export function ModelsSection(props: ModelsSectionProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { resolvedTheme, themeReady } = useChartTheme()
   const chartTextColor =
     resolvedTheme === 'dark'
@@ -61,16 +64,27 @@ export function ModelsSection(props: ModelsSectionProps) {
       : 'rgba(15, 23, 42, 0.12)'
 
   // Order points so the largest model appears at the bottom of every stack.
+  // The axis label is rebuilt from `ts` so it follows the interface language
+  // instead of the backend's English "Sep 26".
   const orderedPoints = useMemo(() => {
     const order = new Map(
       props.history.models.map((m, idx) => [m.name, idx] as const)
     )
-    return [...props.history.points].sort((a, b) => {
-      const tsCmp = a.ts.localeCompare(b.ts)
-      if (tsCmp !== 0) return tsCmp
-      return (order.get(a.model) ?? 999) - (order.get(b.model) ?? 999)
-    })
-  }, [props.history])
+    return [...props.history.points]
+      .sort((a, b) => {
+        const tsCmp = a.ts.localeCompare(b.ts)
+        if (tsCmp !== 0) return tsCmp
+        return (order.get(a.model) ?? 999) - (order.get(b.model) ?? 999)
+      })
+      .map((point) => ({
+        ...point,
+        label: formatRankingBucketLabel(
+          point.ts,
+          i18n.language,
+          props.period === 'today'
+        ),
+      }))
+  }, [props.history, i18n.language, props.period])
 
   const totalTokens = useMemo(
     () => props.rows.reduce((s, r) => s + r.total_tokens, 0),
@@ -79,8 +93,13 @@ export function ModelsSection(props: ModelsSectionProps) {
 
   const spec = useMemo(() => {
     if (orderedPoints.length === 0) return null
+    // Follow the dashboard preference: an area preference renders a stacked
+    // area chart, anything else stays a stacked bar chart.
+    const chartType = rankingChartType(
+      getSavedChartPreferences().consumptionDistributionChart
+    )
     return {
-      type: 'bar' as const,
+      type: chartType,
       data: [{ id: 'models-history', values: orderedPoints }],
       xField: 'label',
       yField: 'tokens',

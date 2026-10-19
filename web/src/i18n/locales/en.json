@@ -1242,7 +1242,7 @@
     "Daily": "Daily",
     "Daily Check-in": "Daily Check-in",
     "Daily token usage by model across the past few weeks": "Daily token usage by model across the past few weeks",
-    "Daily token usage by model across the past month": "Daily token usage by model across the past month",
+    "Daily token usage by model across this month": "Daily token usage by model across this month",
     "Daily token usage by model over the past month": "Daily token usage by model over the past month",
     "Daily uptime over the last 30 days": "Daily uptime over the last 30 days",
     "Daily uptime; {{incidents}} incidents totalling {{minutes}} minutes": "Daily uptime; {{incidents}} incidents totalling {{minutes}} minutes",

@@ -36,7 +36,7 @@ export const MAX_CHART_TREND_POINTS = 7
 export const MAX_CHART_AXIS_BUCKETS = 1000
 
 export const DEFAULT_DASHBOARD_CHART_PREFERENCES: DashboardChartPreferences = {
-  consumptionDistributionChart: 'bar',
+  consumptionDistributionChart: 'area',
   modelAnalyticsChart: 'trend',
   defaultTimeRangeDays: 1,
   defaultTimeGranularity: DEFAULT_TIME_GRANULARITY,
@@ -83,8 +83,8 @@ export const NATURAL_MONTH_PRESETS: readonly DashboardRangePreset[] = [
 ]
 
 export const CONSUMPTION_DISTRIBUTION_CHART_OPTIONS = [
-  { value: 'bar', labelKey: 'Bar Chart' },
   { value: 'area', labelKey: 'Area Chart' },
+  { value: 'bar', labelKey: 'Bar Chart' },
 ] as const
 
 export const MODEL_ANALYTICS_CHART_OPTIONS = [
