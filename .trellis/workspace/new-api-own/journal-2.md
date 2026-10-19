@@ -413,3 +413,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 请用户刷新浏览器核对：排行榜本月从 1 号起、日期为中文、图形为面积图；消耗分布默认面积图且切换顺序为 面积图→柱状图
+
+
+## Session 73: 修复 zhCN 语言码导致的 500（三层防御+真实语言码回归）；年挡位改自然年；首次用无头浏览器真机验证页面
+<!-- trellis-session: v=2 fp=0d0c8fa76e1d12cc -->
+
+**Date**: 2026-10-19
+**Task**: 修复 zhCN 语言码导致的 500（三层防御+真实语言码回归）；年挡位改自然年；首次用无头浏览器真机验证页面
+**Branch**: `main`
+
+### Summary
+
+用户报 v0.0.30 页面 500。定位：排行榜把 i18n.language 原值（zhCN/zhTW/enUS）传给 Intl.DateTimeFormat → RangeError invalid language tag → 渲染抛错到全局错误页；后端日志无 panic、/api/rankings 四档均 200。修复三层：调用点改 toIntlLocale、函数内候选链 try/catch + 手工格式兜底、回归测试改用真实语言码（zhCN/enUS/zhTW/xx-invalid/undefined）+ i18next 端到端。另按要求把 year 改成自然年（今年1/1→now，上一周期=上一年整年，桶粒度不变）。Go make test exit 0（39 包）、前端 359 pass、七条门全绿；发 v0.0.31。Lead 首次用无头浏览器 fetch 登录（cookie 会话）真机验证：/rankings 无 500、日期中文；?period=month 本月高亮/说明正确/中文日期/面积图/总计1.68M；?period=year 无 500。沉淀：UI 改动必须加页面级真机校验，测试不得用假 locale。
+
+### Main Changes
+
+- 两条硬经验：①引入 Intl 必须用 toIntlLocale 且不得假设 locale 合法；②任何 UI 改动都要有'真机页面'验证，不能只靠单测
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `404d72d` | fix(rankings): 修复 zhCN 语言码导致 Intl 抛错引发 500（三层防御 + 真实语言码回归）；年挡位改自然年 [task:fix-rankings-500-and-year-range] |
+
+### Testing
+
+- [OK] [OK] Go make test 39 包 ok；前端 359 pass；真机三档页面均无 500 且 label 中文、面积图生效
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 如需，可把无头浏览器 fetch 登录封装成标准验证步骤（当前为临时脚本）
