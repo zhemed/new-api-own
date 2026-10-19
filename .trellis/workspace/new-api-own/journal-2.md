@@ -345,3 +345,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 下一个 tag 发布时核对 Release 正文是否为 changelog
+
+
+## Session 71: 排行榜本月改自然月+日期本地化+跟随偏好；消耗分布默认面积图，发 v0.0.30
+<!-- trellis-session: v=2 fp=e30e4b3ac3548a58 -->
+
+**Date**: 2026-10-19
+**Task**: 排行榜本月改自然月+日期本地化+跟随偏好；消耗分布默认面积图，发 v0.0.30
+**Branch**: `main`
+
+### Summary
+
+用户报排行榜：本月不是1号、日期英文、只有柱状图，并要求面积图设为默认排首位、排行榜跟随主页偏好。实现：后端 rankings.go 给 month 加 calendarMonth（本月1号00:00→now，上一周期=上月整月，today/week/year 不动，保留 label 字段）；前端新增 formatRankingBucketLabel 用 Intl 按界面语言出标签（zh 9月26日 / en Sep 26），新增 rankingChartType/defaultRankingPeriod 纯函数，models-section 图表类型取自偏好且保留 stack，market-share 同法，rankings/index 默认周期按偏好；消耗分布默认改 area 且选项顺序 [area, bar]。测试：Go 4 个（本月/跨年/上一周期/其它档仍滚动，go test ./... exit 0、33 包全过）+ 前端 11 个，bun test 346→357，七条门全绿。顺带核实仓库测试入口是小写 makefile（make test 可用），并确认新 Release 正文已是 changelog。发 v0.0.30。
+
+### Main Changes
+
+- 统一口径：排行榜也遵循'自然月=1号起'与界面语言；图表类型/默认周期以已保存偏好为单一来源
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `16f6b71` | feat(rankings): 本月改自然月、日期随界面语言、图表类型与默认周期跟随偏好；消耗分布默认面积图并排首位 [task:rankings-follow-preferences] |
+
+### Testing
+
+- [OK] [OK] go build/vet/test 全绿；前端 357 pass / knip exit 0；v0.0.30 镜像与 Release 成功且正文为 changelog
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 待用户决定是否升级实例到 v0.0.30 并核对排行榜本月从 1 号起、日期为中文、图表为面积图

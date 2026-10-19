@@ -27,3 +27,32 @@
 - [ ] 四条定位到文件:行号
 - [ ] 本月=自然月 1 号 00:00 → 现在；日期随语言；图表类型跟随偏好；面积图默认且排首位
 - [ ] 七条门全绿；发版并真机核对
+
+## 执行结果（2026-10-19，v0.0.30）
+
+### 后端（只动 month）
+
+- `service/rankings.go:176`：`month` 档加 **`calendarMonth: true`**；`:227`/`:241` 在 calendar 模式下
+  `start = 本机时区本月 1 号 00:00`、`end = now`；上一周期 = **上一个自然月整月**；
+- `today` / `week` / `year` **未动**（用户认可现状）；API 的 `label` 字段保留（前端不再用它的英文格式）。
+
+### 前端
+
+- `dashboard/constants.ts:39` 默认 `consumptionDistributionChart` → **`'area'`**；
+- `constants.ts:86-87` 选项顺序 → **`[area, bar]`**（面积图在首位）；
+- 新增 `rankings/lib/format.ts: formatRankingBucketLabel(ts, locale, hourly)` —— `Intl.DateTimeFormat` 按界面语言出标签
+  （zh: `9月26日` / en: `Sep 26`；today 档出时分；非法值回退原值）；
+- 新增 `rankings/lib/chart-preference.ts`：`rankingChartType(pref)` / `defaultRankingPeriod(rangeKind)`；
+- `models-section.tsx`：图表 `type` 取自偏好且保留 `stack: true`；标签改由 `point.ts` 生成本地化文本；
+  `market-share-section.tsx` 同法；`rankings/index.tsx` 默认周期按偏好推导（自然月 → 本月）。
+
+### 验证
+
+- **Go**：`go build ./...` ✓、`go vet ./...` ✓（无输出）、`go test ./...` **exit 0，33 包全过**；
+  另查明仓库的测试入口是小写 **`makefile`**（`make test` 可用 ✓，成员用大小写敏感的 find 才没找到 ✗）；
+- **前端七条门**：typecheck 0 / lint 0-0 / **357 pass**（346→+11）/ build / knip exit 0 / format / i18n 全绿；
+- **发布**：v0.0.30 镜像与 Release 成功；**新 Release 正文即 changelog**（新的 release.yml 首次生效 ✓）。
+
+### 已知取舍
+
+`last-month` 偏好暂映射到排行榜的 `month` 档（排行榜只有今天/本周/本月/今年四档）；需要第 5 档可另做。
