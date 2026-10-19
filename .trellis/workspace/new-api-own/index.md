@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 71
+- **Total Sessions**: 72
 - **Last Active**: 2026-10-19
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~381 | Active |
+| `journal-2.md` | ~415 | Active |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 72 | 2026-10-19 | 升级到 v0.0.30：+20s 完成、0 次中断采样、会话净增 0 | `ee2174a` | `main` |
 | 71 | 2026-10-19 | 排行榜本月改自然月+日期本地化+跟随偏好；消耗分布默认面积图，发 v0.0.30 | `16f6b71` | `main` |
 | 70 | 2026-10-19 | Release 正文改为 tag 注解 changelog，并回填全部 28 个历史 Release | `4e22794` | `main` |
 | 69 | 2026-10-19 | 升级到 v0.0.29：+26s 完成、0 次中断采样、RestartCount 0；我的会话清零（active 6 全是用户浏览器） | `f018560` | `main` |

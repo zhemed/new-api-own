@@ -379,3 +379,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 待用户决定是否升级实例到 v0.0.30 并核对排行榜本月从 1 号起、日期为中文、图表为面积图
+
+
+## Session 72: 升级到 v0.0.30：+20s 完成、0 次中断采样、会话净增 0
+<!-- trellis-session: v=2 fp=0dd0d490e79341d6 -->
+
+**Date**: 2026-10-19
+**Task**: 升级到 v0.0.30：+20s 完成、0 次中断采样、会话净增 0
+**Branch**: `main`
+
+### Summary
+
+用户要求升级。执行 apply → +18s 仍 v0.0.29、+20s 变 v0.0.30，累计中断采样 0 次；容器 RestartCount 0、StartedAt 未变（原地重执行），日志无 panic，四条 LOG_* 与 --log-opt 未变，前端包 index.7110c132c6.js。会话：清理本轮 curl 会话后 active 7→7（全部是用户浏览器会话），净增 0。
+
+### Main Changes
+
+- 无代码改动（实例升级）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ee2174a` | chore(task): archive 10-19-rankings-natural-month-i18n |
+
+### Testing
+
+- [OK] [OK] v0.0.30 / +20s / 0 中断 / RestartCount 0 / 会话净增 0
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 请用户刷新浏览器核对：排行榜本月从 1 号起、日期为中文、图形为面积图；消耗分布默认面积图且切换顺序为 面积图→柱状图
