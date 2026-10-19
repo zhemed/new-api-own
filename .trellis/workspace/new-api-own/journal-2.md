@@ -277,3 +277,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 待用户决定是否升级实例到 v0.0.29 查看效果
+
+
+## Session 69: 升级到 v0.0.29：+26s 完成、0 次中断采样、RestartCount 0；我的会话清零（active 6 全是用户浏览器）
+<!-- trellis-session: v=2 fp=c5d15594a323fccc -->
+
+**Date**: 2026-10-19
+**Task**: 升级到 v0.0.29：+26s 完成、0 次中断采样、RestartCount 0；我的会话清零（active 6 全是用户浏览器）
+**Branch**: `main`
+
+### Summary
+
+用户要求升级试用。执行 apply → +24s 仍 v0.0.28、+26s 变 v0.0.29，累计中断采样 0 次（切换窗口小于 2s 采样间隔），容器 RestartCount 0 / StartedAt 未变证明原地重执行，日志无 panic，env 与 --log-opt 未变，前端包 index.b907d24f59.js，latest=v0.0.29。会话：清理后 curl 类 active 会话为 0，当前 active 6 条全部是 Windows 浏览器会话（用户期间又登录一次），我未造成堆积。自报：查 latest 时先写错路径（release/latest→404），已用正确路径复核。
+
+### Main Changes
+
+- 无代码改动（实例升级）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f018560` | chore(task): archive 10-19-total-value-emphasis |
+
+### Testing
+
+- [OK] [OK] v0.0.29 / +26s / 0 中断采样 / RestartCount 0 / 日志无异常 / 我的会话 0 条
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 请用户刷新浏览器查看『总计』数值的新视觉；下一版本发布时可用面板点更新验收新弹窗
