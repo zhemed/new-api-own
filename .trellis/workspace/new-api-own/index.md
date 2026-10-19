@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 76
+- **Total Sessions**: 77
 - **Last Active**: 2026-10-19
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~551 | Active |
+| `journal-2.md` | ~585 | Active |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 77 | 2026-10-19 | 保存偏好后图表即时生效（useSyncExternalStore + 稳定快照），发 v0.0.35 并真机点保存验证 | `e19547e` | `main` |
 | 76 | 2026-10-19 | 市场份额卡片跟随偏好改面积图（100% 堆叠不变），发 v0.0.34 并真机验证 | `c4f61de` | `main` |
 | 75 | 2026-10-19 | 交付刻度密度结论并升级实例到 v0.0.33（真机核对周期文案） | `f8d0291` | `main` |
 | 74 | 2026-10-19 | 核实并加固月/年视图刻度密度：确定性上限≤10、年档按月、修正桶起点与过期文案（v0.0.32/v0.0.33） | `4c0c6a4` | `main` |

@@ -549,3 +549,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 无
+
+
+## Session 77: 保存偏好后图表即时生效（useSyncExternalStore + 稳定快照），发 v0.0.35 并真机点保存验证
+<!-- trellis-session: v=2 fp=207882cf25f10ff1 -->
+
+**Date**: 2026-10-19
+**Task**: 保存偏好后图表即时生效（useSyncExternalStore + 稳定快照），发 v0.0.35 并真机点保存验证
+**Branch**: `main`
+
+### Summary
+
+用户要求把偏好热更新绑到『保存偏好设置』按钮。实现：新增 chart-preferences-events（listener+emit，含 storage 跨标签）与 use-chart-preferences（useSyncExternalStore，用 localStorage 原始串做快照身份避免无限重渲染）；saveChartPreferences 写盘后广播；5 处读取点（dashboard、排行榜默认周期-仅挂载读、热门模型、市场份额、barrel）改为订阅。测试 +4（通知恰一次、快照引用稳定、保存后类型切换、周期不被重置），bun test 369→373，七条门全绿；发 v0.0.35 并升级实例。Lead 真机验证：打开 /dashboard/models → 选柱状图 → 点保存偏好设置 → 页面不刷新即见 localStorage 变 bar 且切换按钮立刻选中柱状图；随后改回面积图恢复原设置。清理会话。
+
+### Main Changes
+
+- 偏好成为可订阅的单一来源：保存即全局生效，默认周期仍只在挂载时读取，不覆盖手动切换
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e19547e` | feat(web): 偏好保存后图表即时生效（useSyncExternalStore + 稳定快照），覆盖排行榜与模型分析 [task:prefs-live-update] |
+
+### Testing
+
+- [OK] [OK] 373 pass / knip 0；真机点保存后无刷新即时生效（bar→area 双向验证）
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 无
