@@ -22,6 +22,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { getSavedChartPreferences } from '@/features/dashboard/lib'
+import { toIntlLocale } from '@/i18n/languages'
 import { formatTokens } from '@/lib/format'
 import { useChartTheme } from '@/lib/use-chart-theme'
 import { VCHART_OPTION } from '@/lib/vchart'
@@ -80,11 +81,11 @@ export function ModelsSection(props: ModelsSectionProps) {
         ...point,
         label: formatRankingBucketLabel(
           point.ts,
-          i18n.language,
+          toIntlLocale(i18n.resolvedLanguage || i18n.language),
           props.period === 'today'
         ),
       }))
-  }, [props.history, i18n.language, props.period])
+  }, [props.history, i18n.resolvedLanguage, i18n.language, props.period])
 
   const totalTokens = useMemo(
     () => props.rows.reduce((s, r) => s + r.total_tokens, 0),

@@ -55,11 +55,57 @@ func TestPreviousRankingTimeRangeMonthIsPreviousCalendarMonth(t *testing.T) {
 	)
 }
 
+// The "year" ranking is a calendar year to date: the first point is January 1st.
+func TestRankingTimeRangeYearIsCalendarYear(t *testing.T) {
+	config, err := rankingConfig("year")
+	require.NoError(t, err)
+
+	now := time.Date(2026, time.October, 18, 13, 45, 0, 0, time.Local)
+	start, end := rankingTimeRange(config, now)
+
+	assert.Equal(t, time.Date(2026, time.January, 1, 0, 0, 0, 0, time.Local).Unix(), start)
+	assert.Equal(t, now.Unix(), end)
+}
+
+func TestRankingTimeRangeYearHandlesJanuaryBoundary(t *testing.T) {
+	config, err := rankingConfig("year")
+	require.NoError(t, err)
+
+	now := time.Date(2026, time.January, 1, 0, 30, 0, 0, time.Local)
+	start, _ := rankingTimeRange(config, now)
+
+	assert.Equal(t, time.Date(2026, time.January, 1, 0, 0, 0, 0, time.Local).Unix(), start)
+}
+
+func TestPreviousRankingTimeRangeYearIsPreviousCalendarYear(t *testing.T) {
+	config, err := rankingConfig("year")
+	require.NoError(t, err)
+
+	currentStart := time.Date(2026, time.January, 1, 0, 0, 0, 0, time.Local).Unix()
+	previousStart, previousEnd := previousRankingTimeRange(config, currentStart)
+
+	assert.Equal(t, time.Date(2025, time.January, 1, 0, 0, 0, 0, time.Local).Unix(), previousStart)
+	assert.Equal(t, currentStart-1, previousEnd)
+	assert.Equal(
+		t,
+		time.Date(2025, time.December, 31, 23, 59, 59, 0, time.Local).Unix(),
+		previousEnd,
+	)
+}
+
+// The year buckets stay weekly (a calendar year must not explode into days).
+func TestYearBucketsStayWeekly(t *testing.T) {
+	config, err := rankingConfig("year")
+	require.NoError(t, err)
+
+	assert.Equal(t, int64(7*24*3600), config.bucketSize)
+}
+
 // The other periods keep their rolling-window behaviour.
 func TestRankingTimeRangeOtherPeriodsStayRolling(t *testing.T) {
 	now := time.Date(2026, time.October, 18, 13, 45, 0, 0, time.Local)
 
-	for _, period := range []string{"week", "today", "year"} {
+	for _, period := range []string{"week", "today"} {
 		config, err := rankingConfig(period)
 		require.NoError(t, err)
 

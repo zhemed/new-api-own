@@ -13,6 +13,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 // ----------------------------------------------------------------------------
+import { toIntlLocale } from '@/i18n/languages'
+
 // Rankings formatting helpers
 // ----------------------------------------------------------------------------
 /**
@@ -22,18 +24,37 @@ For commercial licensing, please contact support@quantumnous.com
  * follow the interface language, so the label is rebuilt from the bucket's
  * ISO timestamp. Hourly buckets (the "today" period) show a time instead of a
  * date.
+ *
+ * i18next language codes (`zhCN`, `zhTW`, …) are NOT valid BCP-47 tags and make
+ * `new Intl.DateTimeFormat` throw `RangeError`, which used to crash the whole
+ * rankings page. The tag is normalised first and every construction attempt is
+ * guarded, so an unknown locale degrades to English and never throws.
  */
 export function formatRankingBucketLabel(
   ts: string,
-  locale: string,
+  locale?: string | null,
   hourly = false
 ): string {
   const date = new Date(ts)
   if (Number.isNaN(date.getTime())) return ts
+
   const options: Intl.DateTimeFormatOptions = hourly
     ? { hour: '2-digit', minute: '2-digit' }
     : { month: 'short', day: 'numeric' }
-  return new Intl.DateTimeFormat(locale, options).format(date)
+
+  for (const tag of [toIntlLocale(locale), locale, 'en']) {
+    if (!tag) continue
+    try {
+      return new Intl.DateTimeFormat(tag, options).format(date)
+    } catch {
+      // invalid tag — try the next candidate
+    }
+  }
+
+  // Last resort: a locale-independent label is better than a crashed page.
+  const pad = (value: number) => String(value).padStart(2, '0')
+  const time = `${pad(date.getHours())}:${pad(date.getMinutes())}`
+  return hourly ? time : `${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
 /** Format a 0..1 share as a percentage with two decimals. */

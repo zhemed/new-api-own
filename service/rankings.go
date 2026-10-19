@@ -110,6 +110,9 @@ type rankingPeriodConfig struct {
 	// calendarMonth makes the range the current calendar month instead of a
 	// rolling `duration` window (see rankingTimeRange).
 	calendarMonth bool
+	// calendarYear does the same for the current calendar year. The bucket size
+	// stays weekly so a year never explodes into hundreds of daily points.
+	calendarYear bool
 }
 
 type rankingCacheItem struct {
@@ -175,7 +178,7 @@ func rankingConfig(period string) (rankingPeriodConfig, error) {
 	case "month":
 		return rankingPeriodConfig{id: "month", duration: 30 * 24 * time.Hour, bucketSize: 24 * 3600, labelLayout: "Jan 2", hasPrevious: true, calendarMonth: true}, nil
 	case "year":
-		return rankingPeriodConfig{id: "year", duration: 365 * 24 * time.Hour, bucketSize: 7 * 24 * 3600, labelLayout: "Jan 2", hasPrevious: true}, nil
+		return rankingPeriodConfig{id: "year", duration: 365 * 24 * time.Hour, bucketSize: 7 * 24 * 3600, labelLayout: "Jan 2", hasPrevious: true, calendarYear: true}, nil
 	default:
 		return rankingPeriodConfig{}, fmt.Errorf("invalid ranking period: %s", period)
 	}
@@ -224,6 +227,11 @@ func buildRankingsSnapshot(config rankingPeriodConfig, now time.Time) (*Rankings
 
 func rankingTimeRange(config rankingPeriodConfig, now time.Time) (int64, int64) {
 	endTime := now.Unix()
+	if config.calendarYear {
+		// First instant of the current year in the server's location.
+		start := time.Date(now.Year(), 1, 1, 0, 0, 0, 0, now.Location())
+		return start.Unix(), endTime
+	}
 	if config.calendarMonth {
 		// First instant of the current month in the server's location: the
 		// "month" ranking means the calendar month to date, not a rolling 30d.
@@ -238,6 +246,14 @@ func rankingTimeRange(config rankingPeriodConfig, now time.Time) (int64, int64) 
 
 func previousRankingTimeRange(config rankingPeriodConfig, currentStart int64) (int64, int64) {
 	previousEnd := currentStart - 1
+	if config.calendarYear {
+		// The whole previous calendar year, in the same location.
+		current := time.Unix(currentStart, 0).In(time.Local)
+		previousStart := time.Date(
+			current.Year()-1, time.January, 1, 0, 0, 0, 0, current.Location(),
+		)
+		return previousStart.Unix(), previousEnd
+	}
 	if config.calendarMonth {
 		// The whole previous calendar month, in the same location.
 		current := time.Unix(currentStart, 0).In(time.Local)

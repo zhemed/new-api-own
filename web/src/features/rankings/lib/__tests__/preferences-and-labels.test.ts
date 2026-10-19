@@ -24,6 +24,7 @@ import {
   CONSUMPTION_DISTRIBUTION_CHART_OPTIONS,
   DEFAULT_DASHBOARD_CHART_PREFERENCES,
 } from '@/features/dashboard/constants'
+import { toIntlLocale } from '@/i18n/languages'
 
 import { defaultRankingPeriod, rankingChartType } from '../chart-preference'
 import { formatRankingBucketLabel } from '../format'
@@ -95,6 +96,68 @@ describe('ranking bucket labels follow the interface language', () => {
 
     assert.match(label, /\d{1,2}:\d{2}/)
     assert.equal(label.includes('月'), false, `unexpected date label: ${label}`)
+  })
+
+  // Regression: the app feeds i18next codes such as `zhCN` / `enUS` here, and
+  // `new Intl.DateTimeFormat('zhCN')` throws RangeError — which crashed the
+  // rankings page in production. Every one of these must stay throw-free.
+  test("the app's real language codes never throw", () => {
+    const cases: Array<[string | undefined, string]> = [
+      ['zhCN', '月'],
+      ['enUS', 'Sep'],
+      ['zhTW', '月'],
+      ['zh-TW', '月'],
+      ['en', 'Sep'],
+      ['xx-invalid', ''],
+      [undefined, ''],
+    ]
+
+    for (const [code, expectedFragment] of cases) {
+      let label = ''
+      assert.doesNotThrow(
+        () => {
+          label = formatRankingBucketLabel(TS, code)
+        },
+        `locale ${String(code)} must not throw`
+      )
+
+      assert.notEqual(
+        label,
+        '',
+        `locale ${String(code)} produced an empty label`
+      )
+      if (expectedFragment) {
+        assert.equal(
+          label.includes(expectedFragment),
+          true,
+          `locale ${String(code)} produced "${label}"`
+        )
+      }
+    }
+  })
+
+  // The production path: an i18next instance configured with the app's own
+  // `zhCN` code feeds the chart label builder. This is the exact chain that
+  // crashed the rankings page, so it is asserted end to end here.
+  test('a zhCN i18next instance still yields Chinese chart labels', async () => {
+    const { createInstance } = await import('i18next')
+    const i18n = createInstance()
+    await i18n.init({
+      lng: 'zhCN',
+      fallbackLng: 'zhCN',
+      resources: { zhCN: { translation: {} } },
+    })
+
+    const locale = toIntlLocale(i18n.resolvedLanguage || i18n.language)
+    assert.equal(locale, 'zh-CN')
+
+    const points = [{ ts: TS, label: 'Sep 26' }].map((point) => ({
+      ...point,
+      label: formatRankingBucketLabel(point.ts, locale),
+    }))
+
+    assert.equal(points[0].label, '9月26日')
+    await i18n.removeResourceBundle('zhCN', 'translation')
   })
 
   test('an unparsable timestamp falls back to the raw value', () => {

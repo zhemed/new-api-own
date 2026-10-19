@@ -21,6 +21,7 @@ import { PieChart } from 'lucide-react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { toIntlLocale } from '@/i18n/languages'
 import { formatTokens } from '@/lib/format'
 import { useChartTheme } from '@/lib/use-chart-theme'
 import { VCHART_OPTION } from '@/lib/vchart'
@@ -133,11 +134,11 @@ export function MarketShareSection(props: MarketShareSectionProps) {
         ...point,
         label: formatRankingBucketLabel(
           point.ts,
-          i18n.language,
+          toIntlLocale(i18n.resolvedLanguage || i18n.language),
           props.period === 'today'
         ),
       }))
-  }, [props.history, i18n.language, props.period])
+  }, [props.history, i18n.resolvedLanguage, i18n.language, props.period])
 
   const spec = useMemo(() => {
     if (orderedPoints.length === 0) return null
