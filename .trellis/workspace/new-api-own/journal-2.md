@@ -515,3 +515,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 无
+
+
+## Session 76: 市场份额卡片跟随偏好改面积图（100% 堆叠不变），发 v0.0.34 并真机验证
+<!-- trellis-session: v=2 fp=84bf4201aa160cd1 -->
+
+**Date**: 2026-10-19
+**Task**: 市场份额卡片跟随偏好改面积图（100% 堆叠不变），发 v0.0.34 并真机验证
+**Branch**: `main`
+
+### Summary
+
+用户要求市场份额卡片与热门模型一致也变面积图。实现：新增 rankingChartShape(pref) 统一返回 {type, stack:true, bar 时带 paddingInner:0.12}，market-share-section 用它替换写死 type:'bar'；因该图表在数据层已把 share 归一化到 0–1（y 轴 min0/max1、标签*100%），换 type 不影响 100% 语义；标签抽稀共用 rankingLabelFilter。测试 +3（area/bar 形态与 100% 契约），bun test 366→369，七条门全绿；发 v0.0.34 并升级实例。真机验证：week 单桶为点、month 多桶为填充面积@100%、中文日期，截图留证。已知边界：同页切换偏好不热更新。
+
+### Main Changes
+
+- 两处排行榜图表统一走 rankingChartShape，偏好成为单一来源
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c4f61de` | feat(rankings): 市场份额卡片也跟随偏好（面积/柱状 100% 堆叠），共用 rankingChartShape [task:market-share-area-chart] |
+
+### Testing
+
+- [OK] [OK] 369 pass / knip 0；真机 month 面积图@100% 与 week 单点均正常
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 无
