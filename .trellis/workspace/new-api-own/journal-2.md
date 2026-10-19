@@ -447,3 +447,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 如需，可把无头浏览器 fetch 登录封装成标准验证步骤（当前为临时脚本）
+
+
+## Session 74: 核实并加固月/年视图刻度密度：确定性上限≤10、年档按月、修正桶起点与过期文案（v0.0.32/v0.0.33）
+<!-- trellis-session: v=2 fp=2bcffcdcd869c346 -->
+
+**Date**: 2026-10-19
+**Task**: 核实并加固月/年视图刻度密度：确定性上限≤10、年档按月、修正桶起点与过期文案（v0.0.32/v0.0.33）
+**Branch**: `main`
+
+### Summary
+
+用户担心本月从1号起30个点会密密麻麻。核实：月档按天最多30桶、年档原为按周(52点)、标签只有 autoHide/autoLimit 不可靠。按用户选择：①年档改30天桶(12-13点)；②x 轴标签改确定性抽稀(复用 axisLabelStride，stride=ceil(n/10)，首尾必留，dataFilter 实现，1-60 桶全枚举测试)；③顺手修 epoch 对齐导致首桶早于范围起点的问题(clampRankingBucketsToRange)。真机验证 v0.0.32：本月无500、中文日期、面积图，接口实测仅3个桶有数据故显示3个标签，满月30桶的≤10由枚举测试保证。另发现并修正 4+3 条过期周期描述（week/year/market-share），v0.0.33 发布。Go make test 39包ok、前端 366 pass、七条门全绿。
+
+### Main Changes
+
+- 确立'标签密度必须确定性可证'的原则：不依赖第三方库 autoLimit 的未知上限，用自己的 stride + 首尾必留 + 枚举测试
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4c0c6a4` | docs(i18n): 修正排行榜四个周期的描述文案（与按天/按 30 天/自然月/自然年分桶一致）[task:verify-rankings-density] |
+
+### Testing
+
+- [OK] [OK] 30桶→10标签、12桶→7标签、1-60桶全枚举≤10；两版均真机无500
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 无需后续；若真实流量覆盖整月，可再截图确认观感
