@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 74
+- **Total Sessions**: 75
 - **Last Active**: 2026-10-19
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~483 | Active |
+| `journal-2.md` | ~517 | Active |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 75 | 2026-10-19 | 交付刻度密度结论并升级实例到 v0.0.33（真机核对周期文案） | `f8d0291` | `main` |
 | 74 | 2026-10-19 | 核实并加固月/年视图刻度密度：确定性上限≤10、年档按月、修正桶起点与过期文案（v0.0.32/v0.0.33） | `4c0c6a4` | `main` |
 | 73 | 2026-10-19 | 修复 zhCN 语言码导致的 500（三层防御+真实语言码回归）；年挡位改自然年；首次用无头浏览器真机验证页面 | `404d72d` | `main` |
 | 72 | 2026-10-19 | 升级到 v0.0.30：+20s 完成、0 次中断采样、会话净增 0 | `ee2174a` | `main` |

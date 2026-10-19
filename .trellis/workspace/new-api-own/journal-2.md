@@ -481,3 +481,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 无需后续；若真实流量覆盖整月，可再截图确认观感
+
+
+## Session 75: 交付刻度密度结论并升级实例到 v0.0.33（真机核对周期文案）
+<!-- trellis-session: v=2 fp=9cad89431ead41e0 -->
+
+**Date**: 2026-10-19
+**Task**: 交付刻度密度结论并升级实例到 v0.0.33（真机核对周期文案）
+**Branch**: `main`
+
+### Summary
+
+回答用户'本月30天会不会密密麻麻'：v0.0.32 已把 x 轴标签改为确定性抽稀（stride=ceil(n/10)、首尾必留、1-60 桶全枚举测试），30 桶只显示 10 个；真机当前仅 3 个桶有数据故图上 3 标签。同版本把年档改 30 天桶并修正桶起点早于范围的问题。v0.0.33 修正四个周期描述与 market-share 三条文案。按用户选择把实例升级到 v0.0.33：apply 后 6 秒内切换、RestartCount 0、日志正常、前端包 index.3266cd733c.js；真机核对 week/year 文案已正确。清理本轮 curl 与无头浏览器会话，active 8 条均为用户浏览器会话。
+
+### Main Changes
+
+- 无新增代码（本轮为交付与升级）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f8d0291` | chore(task): archive 10-19-verify-rankings-density |
+
+### Testing
+
+- [OK] [OK] 真机 week/year 文案正确；升级零中断、容器未重建
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 无
