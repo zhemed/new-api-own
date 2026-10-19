@@ -45,3 +45,19 @@
 2. 备选：数值同时 `text-sm`（会更醒目，但可能影响标题行高度，需顺带检查对齐）。
 
 风险低：`text-foreground` 在明暗两种主题下都是正文色，不会出现暗色模式看不清的问题。
+
+## 实现结果（2026-10-19，v0.0.29）
+
+用户选"两处都改"：
+
+- `consumption-distribution-chart.tsx:137` 与 `model-charts.tsx:138`：数值单独包
+  `<span data-testid='chart-total-value' className='text-foreground font-medium tabular-nums'>`；
+- 标签保持 `text-muted-foreground`、外层仍 `text-xs` → **字号与布局不变**；
+- `text-foreground` 随明暗主题（无硬编码色）；`tabular-nums` 让数字等宽不跳动；
+- **未动** tooltip 行内总计与排行榜汇总（本就是辅助值）；
+- 新增 5 条结构契约断言；`bun test` 341 → **346**；七条门全绿。
+
+### 成员的诚实说明
+
+两处组件会挂载 `@visactor/react-vchart`，需要真实 canvas 2D（happy-dom 无、本机无 `canvas` 包且安装需联网 ✗），
+因此断言只能停在**源码结构契约**层面（覆盖：数值单独包裹、类名正确、标签仍弱化、字号未变、未误改其它总计）。

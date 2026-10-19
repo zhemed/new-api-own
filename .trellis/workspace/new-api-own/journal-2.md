@@ -243,3 +243,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 下一版本发布时，用户从面板点『立即升级』可验收新弹窗（不消失+进度+自动刷新）
+
+
+## Session 68: 图表标题『总计』数值提亮加粗（两处），发 v0.0.29
+<!-- trellis-session: v=2 fp=b8a734d5bd34abcc -->
+
+**Date**: 2026-10-19
+**Task**: 图表标题『总计』数值提亮加粗（两处），发 v0.0.29
+**Branch**: `main`
+
+### Summary
+
+用户反馈消耗分布标题里 总计:1.68M 的数字颜色太浅。定位：两处图表标题把标签与数值放在同一个 text-muted-foreground text-xs span 里，主指标被当辅助信息弱化。按用户选择两处都改：数值单独包 text-foreground + font-medium + tabular-nums，标签保持 muted、字号与布局不变；未动 tooltip/排行榜的汇总（辅助值保留弱化）。新增 5 条结构契约断言（成员说明因 vchart 需要真实 canvas 且禁止联网安装 canvas 包，断言止于源码结构层）。test 341→346，七条门全绿。发 v0.0.29（latest=v0.0.29、三资产齐）。
+
+### Main Changes
+
+- 确立视觉层级：主指标（标题旁总计）用正文色+加粗+等宽数字，辅助汇总保持弱化色
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1822599` | style(web): 图表标题的总计数值改用正文色+加粗+等宽数字（标签保持弱化）[task:investigate-chart-total-color] |
+
+### Testing
+
+- [OK] [OK] 346 pass / knip exit 0；两处类名与标签弱化均有断言
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 待用户决定是否升级实例到 v0.0.29 查看效果
