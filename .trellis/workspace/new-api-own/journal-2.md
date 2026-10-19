@@ -311,3 +311,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 请用户刷新浏览器查看『总计』数值的新视觉；下一版本发布时可用面板点更新验收新弹窗
+
+
+## Session 70: Release 正文改为 tag 注解 changelog，并回填全部 28 个历史 Release
+<!-- trellis-session: v=2 fp=78fe2bbfcebea421 -->
+
+**Date**: 2026-10-19
+**Task**: Release 正文改为 tag 注解 changelog，并回填全部 28 个历史 Release
+**Branch**: `main`
+
+### Summary
+
+用户指出 Release 正文全是部署说明（README 已有），要求改成更新日志。定位 release.yml:210-221 硬编码 BODY；发现 28/28 个 tag 注解正文本身就是 changelog。改造：BODY 取 git tag -l --format='%(contents:body)'，空时回退提交标题；保留附件上传与契约断言、latest/prerelease 逻辑；bash -n 校验 run 块通过、两个仓库门禁通过。回填：对 28 个已有 Release 执行 gh release edit --notes <tag 注解正文>，28 成功 0 失败；抽验三版正文均为 changelog；latest 仍 v0.0.29、附件三件套完好。工作流对新 tag 生效。
+
+### Main Changes
+
+- 确立 Release 正文的唯一来源 = 注解 tag 正文，部署说明只留在 README（避免两处重复且各自过期）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4e22794` | chore(task): archive 10-19-upgrade-instance-v0029 |
+
+### Testing
+
+- [OK] [OK] bash -n 全部 run 块 exit 0；两道门禁通过；回填 28/28；latest 与附件未变
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 下一个 tag 发布时核对 Release 正文是否为 changelog

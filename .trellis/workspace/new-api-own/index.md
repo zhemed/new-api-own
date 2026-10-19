@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 69
+- **Total Sessions**: 70
 - **Last Active**: 2026-10-19
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~313 | Active |
+| `journal-2.md` | ~347 | Active |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 70 | 2026-10-19 | Release 正文改为 tag 注解 changelog，并回填全部 28 个历史 Release | `4e22794` | `main` |
 | 69 | 2026-10-19 | 升级到 v0.0.29：+26s 完成、0 次中断采样、RestartCount 0；我的会话清零（active 6 全是用户浏览器） | `f018560` | `main` |
 | 68 | 2026-10-19 | 图表标题『总计』数值提亮加粗（两处），发 v0.0.29 | `1822599` | `main` |
 | 67 | 2026-10-19 | 升级到 v0.0.28 并盯测：RestartCount 0（原地重执行）、日志无异常、会话净增 0 | `474945c` | `main` |
