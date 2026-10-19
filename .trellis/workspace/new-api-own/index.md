@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 66
+- **Total Sessions**: 67
 - **Last Active**: 2026-10-19
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~211 | Active |
+| `journal-2.md` | ~245 | Active |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 67 | 2026-10-19 | 升级到 v0.0.28 并盯测：RestartCount 0（原地重执行）、日志无异常、会话净增 0 | `474945c` | `main` |
 | 66 | 2026-10-19 | 修复立即升级弹窗提前关闭（重启中在弹窗内显示进度），发 v0.0.28 | `8759472` | `main` |
 | 65 | 2026-10-19 | 查清 logout 200 未撤销的根因（重启换签名密钥）并清理我的 7 条会话（12→5 active） | `29d5cf9` | `main` |
 | 64 | 2026-10-18 | 按用户要求升级实例到 v0.0.27，并 logout 撤销本次会话 | `85e494b` | `main` |

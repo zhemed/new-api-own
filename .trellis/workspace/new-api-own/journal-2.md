@@ -209,3 +209,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 待用户决定是否升级到 v0.0.28（下一个版本发布时可端到端看到新弹窗行为）
+
+
+## Session 67: 升级到 v0.0.28 并盯测：RestartCount 0（原地重执行）、日志无异常、会话净增 0
+<!-- trellis-session: v=2 fp=28c41e2411b36e99 -->
+
+**Date**: 2026-10-19
+**Task**: 升级到 v0.0.28 并盯测：RestartCount 0（原地重执行）、日志无异常、会话净增 0
+**Branch**: `main`
+
+### Summary
+
+用户要求升级并盯测。执行 apply → 首次采样即 v0.0.28。盯测证据：容器 running 且 RestartCount 0、StartedAt 未变（证明原地重执行而非容器重启）；docker logs 无 panic/error，重启后正常 200；四条 LOG_* 与 --log-opt 未变；前端包 index.fc5a125e62.js；latest=v0.0.28。会话收尾：DELETE /api/user/self/sessions/<JWT-sid> 返回 404（接口 id 语义与 JWT sid 不一致），改按 UA 精确删除本轮 curl 会话（保留 5 条浏览器会话）→ active 6→5，净增 0；logout（新 token）返回 revoked_sid，再次验证 token 有效才真正撤销。过程失误自报：监控脚本 case 语法错误导致采样循环未执行（apply 已成功，未重复触发）。
+
+### Main Changes
+
+- 沉淀两条可复用结论：RestartCount + StartedAt 可证明'in-place exec'；会话接口的 sid 与 JWT sid 不同源，清理应走 UA 精确匹配
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `474945c` | chore(task): archive 10-19-update-dialog-progress |
+
+### Testing
+
+- [OK] [OK] v0.0.28 / RestartCount 0 / 日志无异常 / active 6→5
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 下一版本发布时，用户从面板点『立即升级』可验收新弹窗（不消失+进度+自动刷新）
