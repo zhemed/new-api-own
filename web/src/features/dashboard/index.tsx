@@ -43,7 +43,7 @@ import { DEFAULT_TIME_GRANULARITY } from './constants'
 import {
   buildDefaultDashboardFilters,
   getDefaultDays,
-  getSavedChartPreferences,
+  useChartPreferences,
   granularityForRangeDays,
   saveChartPreferences,
 } from './lib'
@@ -202,10 +202,11 @@ export function Dashboard() {
 
   const [modelData, setModelData] = useState<QuotaDataItem[]>([])
   const [dataLoading, setDataLoading] = useState(false)
-  const [chartPreferences, setChartPreferences] =
-    useState<DashboardChartPreferences>(() => getSavedChartPreferences())
+  // Single source of truth: the saved preferences, kept live by the store so
+  // saving them re-renders every consumer (this page and the rankings page).
+  const chartPreferences = useChartPreferences()
   const [modelFilters, setModelFilters] = useState<DashboardFilters>(() =>
-    buildDefaultDashboardFilters(getSavedChartPreferences())
+    buildDefaultDashboardFilters(chartPreferences)
   )
   const [userChartsFilters, setUserChartsFilters] = useState<UserChartsFilters>(
     () => {
@@ -248,8 +249,9 @@ export function Dashboard() {
 
   const handleChartPreferencesChange = useCallback(
     (preferences: DashboardChartPreferences) => {
-      setChartPreferences(preferences)
       setModelFilters(buildDefaultDashboardFilters(preferences))
+      // Writing notifies subscribers, which feeds the new value back through
+      // useChartPreferences() — no local copy to keep in sync.
       saveChartPreferences(preferences)
     },
     []

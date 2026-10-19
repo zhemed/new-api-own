@@ -20,7 +20,6 @@ export {
   cleanFilters,
   buildQueryParams,
   getDefaultDays,
-  getSavedChartPreferences,
   saveChartPreferences,
   buildDefaultDashboardFilters,
   granularityForRangeDays,
@@ -37,3 +36,7 @@ export {
 } from './flow'
 export { safeDivide, calculateDashboardStats } from './stats'
 export { getPreviewText } from './text'
+export {
+  resetChartPreferencesSnapshot,
+  useChartPreferences,
+} from './use-chart-preferences'

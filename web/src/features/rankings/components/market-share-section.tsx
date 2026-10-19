@@ -21,7 +21,7 @@ import { PieChart } from 'lucide-react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { getSavedChartPreferences } from '@/features/dashboard/lib'
+import { useChartPreferences } from '@/features/dashboard/lib'
 import { toIntlLocale } from '@/i18n/languages'
 import { formatTokens } from '@/lib/format'
 import { useChartTheme } from '@/lib/use-chart-theme'
@@ -107,6 +107,7 @@ type MarketShareSectionProps = {
  */
 export function MarketShareSection(props: MarketShareSectionProps) {
   const { t, i18n } = useTranslation()
+  const preferences = useChartPreferences()
   const { resolvedTheme, themeReady } = useChartTheme()
   const chartTextColor =
     resolvedTheme === 'dark'
@@ -155,9 +156,7 @@ export function MarketShareSection(props: MarketShareSectionProps) {
       // Same preference as the model chart: an area preference renders a
       // stacked area. The share values stay pre-normalised (0–1), so the
       // 100 % reading is unchanged.
-      ...rankingChartShape(
-        getSavedChartPreferences().consumptionDistributionChart
-      ),
+      ...rankingChartShape(preferences.consumptionDistributionChart),
       data: [{ id: 'vendor-share', values: orderedPoints }],
       xField: 'label',
       yField: 'share',
@@ -231,7 +230,14 @@ export function MarketShareSection(props: MarketShareSectionProps) {
       },
       animationAppear: { duration: 500 },
     }
-  }, [bucketCount, chartGridColor, chartTextColor, colourMap, orderedPoints])
+  }, [
+    bucketCount,
+    chartGridColor,
+    chartTextColor,
+    colourMap,
+    orderedPoints,
+    preferences.consumptionDistributionChart,
+  ])
 
   const visible = props.rows.slice(0, MAX_VENDORS_IN_LIST)
   const half = Math.ceil(visible.length / 2)

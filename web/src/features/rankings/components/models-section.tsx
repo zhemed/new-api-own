@@ -21,7 +21,7 @@ import { BarChart3, Trophy } from 'lucide-react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { getSavedChartPreferences } from '@/features/dashboard/lib'
+import { useChartPreferences } from '@/features/dashboard/lib'
 import { toIntlLocale } from '@/i18n/languages'
 import { formatTokens } from '@/lib/format'
 import { useChartTheme } from '@/lib/use-chart-theme'
@@ -55,6 +55,7 @@ type ModelsSectionProps = {
  */
 export function ModelsSection(props: ModelsSectionProps) {
   const { t, i18n } = useTranslation()
+  const preferences = useChartPreferences()
   const { resolvedTheme, themeReady } = useChartTheme()
   const chartTextColor =
     resolvedTheme === 'dark'
@@ -103,9 +104,7 @@ export function ModelsSection(props: ModelsSectionProps) {
     if (orderedPoints.length === 0) return null
     // Follow the dashboard preference: an area preference renders a stacked
     // area chart, anything else stays a stacked bar chart.
-    const chartType = rankingChartType(
-      getSavedChartPreferences().consumptionDistributionChart
-    )
+    const chartType = rankingChartType(preferences.consumptionDistributionChart)
     return {
       type: chartType,
       data: [{ id: 'models-history', values: orderedPoints }],
@@ -191,7 +190,14 @@ export function ModelsSection(props: ModelsSectionProps) {
       },
       animationAppear: { duration: 500 },
     }
-  }, [bucketCount, chartGridColor, chartTextColor, orderedPoints, t])
+  }, [
+    bucketCount,
+    chartGridColor,
+    chartTextColor,
+    orderedPoints,
+    preferences.consumptionDistributionChart,
+    t,
+  ])
 
   return (
     <section className='bg-card overflow-hidden rounded-lg border'>

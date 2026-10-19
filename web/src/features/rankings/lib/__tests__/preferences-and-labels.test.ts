@@ -72,7 +72,10 @@ describe('rankings follow the saved preference', () => {
 
     assert.match(source, /type: chartType,/)
     assert.match(source, /stack: true,/)
-    assert.match(source, /rankingChartType\(\s*getSavedChartPreferences\(\)/)
+    assert.match(
+      source,
+      /rankingChartType\(\s*preferences\.consumptionDistributionChart\s*\)/
+    )
   })
 
   test('an area preference produces a stacked area shape without bar padding', () => {

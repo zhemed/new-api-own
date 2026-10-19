@@ -34,6 +34,8 @@ import type {
 } from '@/features/dashboard/types'
 import { getCalendarDateRange, type TimeGranularity } from '@/lib/time'
 
+import { emitChartPreferencesChange } from './chart-preferences-events'
+
 function isTimeGranularity(value: unknown): value is TimeGranularity {
   return value === 'hour' || value === 'day' || value === 'week'
 }
@@ -236,6 +238,8 @@ export function saveChartPreferences(
     DASHBOARD_CHART_PREFERENCES_STORAGE_KEY,
     JSON.stringify(stored)
   )
+  // Tell every mounted consumer (rankings cards, chart types) to re-read.
+  emitChartPreferencesChange()
 }
 
 export function getDefaultDays(granularity?: TimeGranularity): number {
