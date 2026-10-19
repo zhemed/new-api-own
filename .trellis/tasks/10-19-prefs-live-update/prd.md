@@ -24,3 +24,24 @@
 - [ ] 排行榜页同法生效
 - [ ] 有测试覆盖"保存 → 订阅者收到新值"，且旧偏好读取接口仍可用
 - [ ] 七条门全绿；发版；Lead 真机点保存验证
+
+## 实现与真机验证（2026-10-19，v0.0.35）
+
+### 实现
+
+- `chart-preferences-events.ts`：listener Set + `subscribe/emit`（+ 跨标签页 storage 事件）；
+- `use-chart-preferences.ts`：`useSyncExternalStore`，**用 localStorage 原始串做快照身份** ——
+  原始串不变就复用同一对象引用（`getSavedChartPreferences()` 每次解析都造新对象，直接用会无限重渲染）；
+- `saveChartPreferences()` 写盘后 `emitChartPreferencesChange()`；
+- 5 处读取点改为订阅：dashboard 主页面、排行榜默认周期（**仅挂载读**）、热门模型、市场份额、barrel。
+
+### Lead 真机验证（实例 v0.0.35，无刷新）
+
+1. 打开 `/dashboard/models`：图表切换按钮为 **面积图（默认，选中）/ 柱状图** ✓；
+2. 偏好弹窗实际内容：默认范围 `上月/本月`、默认消耗分布图 `面积图/柱状图`、默认模型调用图 ✓；
+3. 选「柱状图」→ 点「**保存偏好设置**」→ **不刷新页面**：
+   - `localStorage.dashboard_models_chart_preferences = {"consumptionDistributionChart":"bar", ...}` ✓；
+   - 图表切换按钮变为 **柱状图选中、面积图未选中** ✓；
+4. 再改回「面积图」保存 → 存储回到 `"area"`、按钮回到面积图选中 ✓（用户偏好已恢复原状）。
+
+截图：`.verify-scratch/v0035-prefs-open.png`、`v0035-prefs-restored.png`。
