@@ -26,7 +26,11 @@ import {
 } from '@/features/dashboard/constants'
 import { toIntlLocale } from '@/i18n/languages'
 
-import { defaultRankingPeriod, rankingChartType } from '../chart-preference'
+import {
+  defaultRankingPeriod,
+  rankingChartShape,
+  rankingChartType,
+} from '../chart-preference'
 import { formatRankingBucketLabel } from '../format'
 
 /** Local noon on 26 September 2026, so the label is stable in any timezone. */
@@ -69,6 +73,43 @@ describe('rankings follow the saved preference', () => {
     assert.match(source, /type: chartType,/)
     assert.match(source, /stack: true,/)
     assert.match(source, /rankingChartType\(\s*getSavedChartPreferences\(\)/)
+  })
+
+  test('an area preference produces a stacked area shape without bar padding', () => {
+    const shape = rankingChartShape('area')
+
+    assert.equal(shape.type, 'area')
+    assert.equal(shape.stack, true)
+    assert.equal(
+      Object.hasOwn(shape, 'paddingInner'),
+      false,
+      'paddingInner only affects bar geometry'
+    )
+  })
+
+  test('a bar preference produces a stacked bar shape with padding', () => {
+    const shape = rankingChartShape('bar')
+
+    assert.equal(shape.type, 'bar')
+    assert.equal(shape.stack, true)
+    assert.equal(shape.paddingInner, 0.12)
+  })
+
+  test('the vendor share chart keeps its 100% semantics and label thinning', () => {
+    // VChart cannot render without a canvas, so the spec contract is asserted
+    // at the source level: preference-driven type, pre-normalised share field,
+    // a fixed 0–1 axis and the shared label filter.
+    const source = readFileSync(
+      new URL('../../components/market-share-section.tsx', import.meta.url)
+        .pathname,
+      'utf8'
+    )
+
+    assert.match(source, /\.\.\.rankingChartShape\(/)
+    assert.match(source, /yField: 'share',/)
+    assert.match(source, /max: 1,/)
+    assert.match(source, /min: 0,/)
+    assert.match(source, /dataFilter: rankingLabelFilter\(bucketCount\)/)
   })
 
   test('a natural-month default range selects the month period', () => {

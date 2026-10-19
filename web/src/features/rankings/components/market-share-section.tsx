@@ -21,12 +21,14 @@ import { PieChart } from 'lucide-react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { getSavedChartPreferences } from '@/features/dashboard/lib'
 import { toIntlLocale } from '@/i18n/languages'
 import { formatTokens } from '@/lib/format'
 import { useChartTheme } from '@/lib/use-chart-theme'
 import { VCHART_OPTION } from '@/lib/vchart'
 
 import { rankingLabelFilter } from '../lib/axis-labels'
+import { rankingChartShape } from '../lib/chart-preference'
 import { formatRankingBucketLabel, formatShare } from '../lib/format'
 import type { RankingPeriod, VendorRanking, VendorShareSeries } from '../types'
 import { VendorLink } from './entity-links'
@@ -150,13 +152,16 @@ export function MarketShareSection(props: MarketShareSectionProps) {
   const spec = useMemo(() => {
     if (orderedPoints.length === 0) return null
     return {
-      type: 'bar' as const,
+      // Same preference as the model chart: an area preference renders a
+      // stacked area. The share values stay pre-normalised (0–1), so the
+      // 100 % reading is unchanged.
+      ...rankingChartShape(
+        getSavedChartPreferences().consumptionDistributionChart
+      ),
       data: [{ id: 'vendor-share', values: orderedPoints }],
       xField: 'label',
       yField: 'share',
       seriesField: 'vendor',
-      stack: true,
-      paddingInner: 0.12,
       legends: { visible: false },
       color: { specified: colourMap },
       axes: [

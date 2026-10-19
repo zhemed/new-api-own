@@ -29,6 +29,27 @@ export function rankingChartType(
 }
 
 /**
+ * Chart geometry shared by the rankings cards.
+ *
+ * `stack` is always on: the vendor share series is pre-normalised to 0–1, so a
+ * stacked area keeps the exact 100 % meaning a stacked bar had.
+ * `paddingInner` only affects bar geometry (the gap between categories) and is
+ * meaningless for an area series, so it is emitted for bars only.
+ */
+export function rankingChartShape(preference: string | undefined): {
+  type: 'area' | 'bar'
+  stack: true
+  paddingInner?: number
+} {
+  const type = rankingChartType(preference)
+  return {
+    type,
+    stack: true,
+    ...(type === 'bar' ? { paddingInner: 0.12 } : {}),
+  }
+}
+
+/**
  * Period used when the URL does not name one. A natural-month default range
  * opens the rankings on "This month" so both pages agree; otherwise the
  * historical weekly default is kept.
