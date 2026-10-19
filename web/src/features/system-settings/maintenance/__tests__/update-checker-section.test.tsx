@@ -350,6 +350,73 @@ describe('update checker apply flow', () => {
     )
   })
 
+  test('a successful apply keeps the dialog open showing restart progress', async () => {
+    signInAsAdmin()
+    stubApplyUpdate(() => ({
+      data: { success: true, data: { applied: true, version: '0.0.7' } },
+    }))
+
+    let release: (() => void) | undefined
+    const watched: string[] = []
+    const container = await renderUpdateChecker({
+      postUpdateWatch: async (deps) => {
+        watched.push(deps.previousVersion)
+        // hold the "restart in progress" state so the test can observe it
+        await new Promise<void>((resolve) => {
+          release = resolve
+        })
+        return { status: 'timeout' }
+      },
+    })
+
+    await clickButton(applyButton(container))
+    await clickButton(confirmButton())
+
+    // the dialog must stay open, in the restarting state
+    assert.notEqual(dialogContent(), null, 'confirm dialog was closed')
+    assert.notEqual(
+      document.body.querySelector('[data-testid="update-restart-progress"]'),
+      null
+    )
+    assert.deepEqual(watched, ['0.0.6'])
+
+    const restarting = dialogButton(en['Restarting…'])
+    assert.equal(
+      (restarting as HTMLButtonElement).disabled,
+      true,
+      'the primary action must be disabled while restarting'
+    )
+
+    // settle the pending watch so the test can finish
+    await act(async () => {
+      release?.()
+      for (let tick = 0; tick < 8; tick++) await Promise.resolve()
+    })
+  })
+
+  test('after the restart timeout the dialog asks for a manual refresh and closes cleanly', async () => {
+    signInAsAdmin()
+    stubApplyUpdate(() => ({
+      data: { success: true, data: { applied: true, version: '0.0.7' } },
+    }))
+    const container = await renderUpdateChecker({
+      postUpdateWatch: async () => ({ status: 'timeout' }),
+    })
+
+    await clickButton(applyButton(container))
+    await clickButton(confirmButton())
+
+    assert.notEqual(dialogContent(), null, 'confirm dialog should stay open')
+    assert.notEqual(
+      document.body.querySelector('[data-testid="update-restart-timeout"]'),
+      null
+    )
+
+    // closing the dialog ends the flow; it never reloads the page
+    await clickButton(dialogButton(en['Close']))
+    assert.equal(dialogContent(), null, 'dialog should be closed now')
+  })
+
   test('a failed apply never starts the restart watch', async () => {
     signInAsAdmin()
     stubApplyUpdate(() => ({
@@ -370,6 +437,12 @@ describe('update checker apply flow', () => {
     assert.equal(
       container.querySelector('[data-testid="update-restart-note"]'),
       null
+    )
+    // the dialog stays open so the operator can retry after fixing the cause
+    assert.notEqual(dialogContent(), null, 'dialog should stay open on failure')
+    assert.equal(
+      (dialogContent()?.textContent ?? '').includes(en['Update now']),
+      true
     )
   })
 
@@ -415,6 +488,20 @@ function confirmButton(): HTMLElement {
     if (button.textContent?.trim() === en['Update now']) return button
   }
   throw new Error('confirm button was not rendered')
+}
+
+function dialogContent(): HTMLElement | null {
+  return document.body.querySelector('[data-slot="alert-dialog-content"]')
+}
+
+/** Confirm-dialog button by its visible label. */
+function dialogButton(label: string): HTMLElement {
+  const content = dialogContent()
+  if (!content) throw new Error('confirm dialog did not open')
+  for (const button of content.querySelectorAll('button')) {
+    if (button.textContent?.trim() === label) return button as HTMLElement
+  }
+  throw new Error(`dialog button not found: ${label}`)
 }
 
 function latestToastTitle(): string {

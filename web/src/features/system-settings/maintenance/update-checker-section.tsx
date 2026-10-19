@@ -107,7 +107,8 @@ export function UpdateCheckerSection({
       if (result.ok) {
         // Belt and braces: only a confirmed success may ever reload the page.
         if (!shouldWatchAfterApply(result)) return
-        setConfirmOpen(false)
+        // The dialog stays open: the restart progress belongs in it, otherwise
+        // the operator sees the dialog vanish and the page reload "by itself".
         setPhase('restarting')
         const outcome = await (postUpdateWatch ?? watchForRestartAndReload)({
           previousVersion: currentVersion ?? '',
@@ -153,6 +154,51 @@ export function UpdateCheckerSection({
     } finally {
       setApplying(false)
     }
+  }
+
+  let dialogTitle = t('Update to {{version}}?', {
+    version: latestVersion ?? '',
+  })
+  let confirmText = t('Update now')
+  let dialogDesc = (
+    <div className='space-y-2'>
+      <p>
+        {t(
+          'The service restarts during the update, so the panel is briefly unavailable.'
+        )}
+      </p>
+      <p>
+        {t(
+          'If the container is recreated, the panel falls back to the image version.'
+        )}
+      </p>
+    </div>
+  )
+
+  if (phase === 'restarting') {
+    dialogTitle = t('Restarting the service…')
+    confirmText = t('Restarting…')
+    dialogDesc = (
+      <div className='space-y-2' data-testid='update-restart-progress'>
+        <p>
+          {t(
+            'The update was applied. The service is restarting and this page reloads automatically once the new version answers — usually within a few seconds, at most about 90.'
+          )}
+        </p>
+      </div>
+    )
+  } else if (phase === 'timed-out') {
+    dialogTitle = t('Update may be complete')
+    confirmText = t('Close')
+    dialogDesc = (
+      <div className='space-y-2' data-testid='update-restart-timeout'>
+        <p>
+          {t(
+            'The update may already be finished. Reload this page manually to check the new version.'
+          )}
+        </p>
+      </div>
+    )
   }
 
   return (
@@ -237,18 +283,14 @@ export function UpdateCheckerSection({
                 )}
               </p>
             )}
-            {phase !== 'idle' && (
+            {phase === 'timed-out' && (
               <p
                 data-testid='update-restart-note'
                 className='text-muted-foreground text-xs'
               >
-                {phase === 'restarting'
-                  ? t(
-                      'Update started. The service is restarting; this page reloads automatically as soon as the new version answers.'
-                    )
-                  : t(
-                      'The update may already be finished. Reload this page manually to check the new version.'
-                    )}
+                {t(
+                  'The update may already be finished. Reload this page manually to check the new version.'
+                )}
               </p>
             )}
             <p
@@ -268,26 +310,26 @@ export function UpdateCheckerSection({
 
       <ConfirmDialog
         open={confirmOpen}
-        onOpenChange={setConfirmOpen}
-        title={t('Update to {{version}}?', { version: latestVersion ?? '' })}
-        desc={
-          <div className='space-y-2'>
-            <p>
-              {t(
-                'The service restarts during the update, so the panel is briefly unavailable.'
-              )}
-            </p>
-            <p>
-              {t(
-                'If the container is recreated, the panel falls back to the image version.'
-              )}
-            </p>
-          </div>
-        }
-        confirmText={t('Update now')}
-        destructive
-        isLoading={applying}
-        handleConfirm={handleConfirmUpdate}
+        onOpenChange={(nextOpen) => {
+          // While restarting the dialog is the progress indicator; dismissing it
+          // would hide the only feedback the operator has.
+          if (!nextOpen && phase === 'restarting') return
+          setConfirmOpen(nextOpen)
+        }}
+        title={dialogTitle}
+        desc={dialogDesc}
+        confirmText={confirmText}
+        destructive={phase !== 'timed-out'}
+        isLoading={applying || phase === 'restarting'}
+        disabled={phase === 'restarting'}
+        handleConfirm={async () => {
+          if (phase === 'timed-out') {
+            // Manual-refresh path: closing is the end of it, never a reload.
+            setConfirmOpen(false)
+            return
+          }
+          await handleConfirmUpdate()
+        }}
       />
     </>
   )
