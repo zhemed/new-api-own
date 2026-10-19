@@ -141,3 +141,37 @@
 ### Next Steps
 
 - 用户在偏好设置确认默认范围只有上月/本月，并保存一次完成旧值迁移
+
+
+## Session 65: 查清 logout 200 未撤销的根因（重启换签名密钥）并清理我的 7 条会话（12→5 active）
+<!-- trellis-session: v=2 fp=6656dc2bc43c9cef -->
+
+**Date**: 2026-10-19
+**Task**: 查清 logout 200 未撤销的根因（重启换签名密钥）并清理我的 7 条会话（12→5 active）
+**Branch**: `main`
+
+### Summary
+
+v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的撤销分支要求 ParseAccessToken 成功，而实例未设 SESSION_SECRET，每次重启会换签名密钥 → 升级后旧 token 验签失败 → 走兜底只清 cookie 仍返回 200。危险度：上限按 status='active' 计（当初 50 撞顶），当时 11 条。按用户授权清理：先用新登录 token 的 logout 验证理论（返回 revoked_sid ✓），会话列表接口结构不符预期故改走 DB（已备份）：删除 active 且 UA 为 curl/% 或 %X11; Linux% 的 7 条，保留 5 条 Windows 浏览器会话 → active 12→5，服务与实例版本正常。沉淀升级轮会话卫生做法：A 登录→升级→B 登录→用 B 删 A（解 JWT 取 sid）→logout B，净增 0。
+
+### Main Changes
+
+- 记录两条结论：logout 的 200 不代表撤销（需 token 可解析）；判断会话堆积要看 status='active' 且可用 user_agent 区分自己的 curl 会话与用户浏览器会话
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `29d5cf9` | chore(task): archive 10-18-upgrade-instance-v0027 |
+
+### Testing
+
+- [OK] [OK] active 12→5；/api/status 200；实例 v0.0.27；new-token logout 返回 revoked_sid
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 下次升级按新的会话卫生流程执行；如需彻底避免换密钥可另行设置 SESSION_SECRET（需用户自行操作）
