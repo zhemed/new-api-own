@@ -583,3 +583,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 无
+
+
+## Session 78: 全站美元改人民币：实例切 CUSTOM ¥/1.0、默认值与硬编码、i18n 两轮去美元（v0.0.36/v0.0.37）
+<!-- trellis-session: v=2 fp=f92a5cae76a2ace9 -->
+
+**Date**: 2026-10-22
+**Task**: 全站美元改人民币：实例切 CUSTOM ¥/1.0、默认值与硬编码、i18n 两轮去美元（v0.0.36/v0.0.37）
+**Branch**: `main`
+
+### Summary
+
+用户要求把美元改成人民币（￥），选定口径=只换符号、数值不变。调查（两路只读）：前端 43 文件/156 处走统一货币层，8 文件 13 处硬编码绕过；后端内置 quota_display_type(USD/CNY/TOKENS/CUSTOM)+自定义符号+汇率，经 /api/status 下发且 logger 的日志/错误/通知跟随；CNY 模式会乘 USDExchangeRate=7.3 与口径不符，唯一可行=CUSTOM+¥+1.0。执行：①实例 PUT /api/option/ 设三键并落库复核，真机确认 dashboard ¥1.15、pricing ¥0.3/¥15 且无 $；旧键 DisplayInCurrencyEnabled 不在库中（否则会强制改回 USD）。②v0.0.36：Go 默认值改 CUSTOM/¥/1.0、logger 统一复用 GetCurrencySymbol/GetUsdToCurrencyRate 真源（USD/TOKENS 输出字节级不变）、前端 8 处硬编码改走货币层并新增 getCurrencySymbol()、i18n 22 键×7 语言。③v0.0.37：10 个机制类键去美元字样改“基准货币”口径，API 值不变。门禁：Go vet/build/relaykit/make test(40 包) 全绿；前端七条门全绿 383 pass。成员曾因裸替换一度改坏 32 文件 228 处 USD 子串，已完全还原并经 Lead 独立复核（工作区仅 9 文件、关键标识符完好）。
+
+### Main Changes
+
+- 确立口径：显示货币由设置驱动（CUSTOM+符号+汇率），代码不得写死符号；日志/错误/通知与前端同源
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3e9825c` | i18n(currency): 机制类文案去美元字样（改用基准货币口径），保留 API 值不变 [task:switch-currency-to-cny] |
+
+### Testing
+
+- [OK] [OK] 真机 ¥ 且无 $；Go 40 包 ok；前端 383 pass；i18n 零美元命中
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 待用户裁定：显示模式 USD 分支的 $/USD 标签、Waffo 网关币种字段；并确认是否升级实例到 v0.0.37

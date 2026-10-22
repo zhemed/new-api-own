@@ -45,3 +45,30 @@
 
 i18n 中 10 个"机制/模式"键保留美元字样，例如 `USD`（显示模式名）、`USD Exchange Rate`、`CNY per USD`、
 `Units per USD`、`Conversion rate from USD to your custom currency`——它们描述的是**内部换算机制**，改了会与实现/DB 键不符。
+
+## 第二轮（i18n 收尾，v0.0.37）
+
+用户裁定"界面上零美元字样" → 10 个机制/模式类键改中性口径（`基准货币 / 每 1 单位基准货币`）：
+
+| 旧键 | 新键（en） | zh |
+|---|---|---|
+| `USD` | `Base currency` | 基准货币 |
+| `USD Exchange Rate` | `Base Currency Exchange Rate` | 基准货币汇率 |
+| `CNY per USD` | `CNY per base currency unit` | 每 1 单位基准货币折合人民币 |
+| `Units per USD` | `Units per base currency unit` | 每 1 单位基准货币的额度单位数 |
+| `Conversion rate from USD to your custom currency` | `Conversion rate from the base currency to your custom currency` | 从基准货币到自定义货币的换算率 |
+| `Real exchange rate between USD and your payment gateway currency` | `…between the base currency and your payment gateway currency` | 基准货币与支付网关货币之间的实际汇率 |
+| `e.g. 8 means 1 USD = 8 units` | `…1 base currency unit = 8 units` | 例如 8 表示 1 单位基准货币 = 8 个单位 |
+| `e.g., 8 means 8 local currency per USD` | `…per base currency unit` | 例如 8 表示每 1 单位基准货币兑 8 单位本地货币 |
+| `How much to charge for each US dollar of balance (Epay)` | `…each base currency unit of balance (Epay)` | 每 1 单位基准货币余额收取多少 |
+| `Configure Waffo Pancake … for USD-priced top-ups` | `…for top-ups priced in the base currency` | 以基准货币计价的充值 |
+
+- **API 值未动**（`value: 'USD'`、`z.enum(['USD',...])`、`default('USD')` 均原样）；
+- 7 语言同步，键数净变化 0（各 5304 键），零美元命中；
+- **Lead 独立复核**：工作区仅 9 文件改动（成员曾因裸替换一度改坏 32 文件 228 处，**已完全还原** ✓）；
+  关键标识符完好；`formatCurrencyFromUSD` 等未受影响；七条门 Lead 复跑全绿（383 pass）。
+
+### 仍存在的两处"美元"（待用户裁定）
+
+1. **显示模式选 `Base currency`（API 值 USD）时**：`getCurrencyLabel()` 返回 `'USD'`、符号走 `$` 分支 —— 属该模式自身语义，消除需代码级改动；
+2. **Waffo 网关币种输入框**显示网关真实结算币种（默认 USD）—— 改了会误导管理员（网关按美元扣款），故未改。
