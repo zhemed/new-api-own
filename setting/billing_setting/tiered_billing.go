@@ -22,10 +22,32 @@ type BillingSetting struct {
 	BillingExpr map[string]string `json:"billing_expr"`
 }
 
-var billingSetting = BillingSetting{
-	BillingMode: make(map[string]string),
-	BillingExpr: make(map[string]string),
+// defaultDeepSeekPeakOffPeakExpr 是 deepseek 家族的默认峰谷定价表达式（2026-10-22 官方人民币价）。
+// 计价语义（详见 pkg/billingexpr/expr.md）：
+//   - 系数是"每 1M tokens 的价格"（文档写作 $/1M），换算 quota 用
+//     quota = 系数 × tokens / 1_000_000 × QuotaPerUnit × 分组倍率
+//     （relay/helper/price.go 的 tiered 分支）；
+//   - 显示值（每 1M）= 系数 × 显示汇率。因此下面的 ¥1.00 / ¥4.00 / ¥0.02 只在
+//     "显示汇率 = 1.0"（当前默认：CUSTOM + ¥ + 1.0，见 setting/operation_setting/general_setting.go）
+//     时与官方人民币价一一对应；若把显示汇率改成 7.3，同一表达式显示会放大 7.3 倍。
+//   - 高峰窗口按官方说明取北京时间工作日 09:00-12:00 与 14:00-18:00，缓存命中/未命中/输出全部 ×2。
+//   - 低谷：p*1（未命中 ¥1.00/M）、c*4（输出 ¥4.00/M）、cr*0.02（命中 ¥0.02/M）。
+const defaultDeepSeekPeakOffPeakExpr = `(weekday("Asia/Shanghai") >= 1 && weekday("Asia/Shanghai") <= 5 && ((hour("Asia/Shanghai") >= 9 && hour("Asia/Shanghai") < 12) || (hour("Asia/Shanghai") >= 14 && hour("Asia/Shanghai") < 18))) ? tier("peak", p*2 + c*8 + cr*0.04) : tier("offpeak", p*1 + c*4 + cr*0.02)`
+
+// defaultTieredBillingModels 默认启用峰谷表达式计费的模型，与 defaultModelRatio 的 deepseek 家族一致。
+var defaultTieredBillingModels = []string{"deepseek-flash", "deepseek-v4-flash", "deepseek-chat", "deepseek-reasoner"}
+
+func defaultBillingSetting() BillingSetting {
+	modes := make(map[string]string, len(defaultTieredBillingModels))
+	exprs := make(map[string]string, len(defaultTieredBillingModels))
+	for _, model := range defaultTieredBillingModels {
+		modes[model] = BillingModeTieredExpr
+		exprs[model] = defaultDeepSeekPeakOffPeakExpr
+	}
+	return BillingSetting{BillingMode: modes, BillingExpr: exprs}
 }
+
+var billingSetting = defaultBillingSetting()
 
 func init() {
 	config.GlobalConfig.Register("billing_setting", &billingSetting)
