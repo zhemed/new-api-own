@@ -991,3 +991,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 等 task-43 完成并发 v0.0.42，随后更新本地与生产实例
+
+
+## Session 90: 发 v0.0.42：峰谷定价做成代码默认值，两端实例升级并复核一致
+<!-- trellis-session: v=2 fp=d74d0cf4069e3a36 -->
+
+**Date**: 2026-10-22
+**Task**: 发 v0.0.42：峰谷定价做成代码默认值，两端实例升级并复核一致
+**Branch**: `main`
+
+### Summary
+
+用户要求'发一个新版本来修复，不要每次改和删除，要默认就是'。代码线完成 task-43：billing_setting 默认给 deepseek 家族 4 个模型写入 tiered_expr 与官方峰谷表达式（与实例逐字符一致 266 字符），并确认计价语义（系数为真实价格，显示值=系数×显示汇率；默认汇率 1.0 → 1/4/0.02 即 ¥1/¥4/¥0.02 每 1M tokens），新增 4 组测试（默认值/编译与 smoke/峰谷金额/与比率表一致性），make test 42 包 ok。发 v0.0.42（tag push 首次网络失败导致先 dispatch 的工作流失败、latest 未变，重试后成功），随后升级两端：本地 v0.0.42、生产 v0.0.42（applied=true/restart_mode=exec/RestartCount=0），两端均 CUSTOM+¥。已知限制：表达式写错不阻止启动但每请求 400（测试兜底）；显示汇率若改 7.3 需重定系数。
+
+### Main Changes
+
+- 默认值即产品口径：新部署无需任何手工配置就得到人民币显示、只剩 deepseek 家族目录与峰谷定价
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8e7acb8` | feat(billing): deepseek 峰谷定价做成代码默认值（新部署开箱即用）[task:release-defaults-v0042] |
+
+### Testing
+
+- [OK] [OK] make test 42 包 ok；两端 /api/status 均 v0.0.42 + CUSTOM + ¥；latest=v0.0.42
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 如需验证峰谷实际计费，可用真实请求查日志 matched_tier；用户上游此前报错需其自行更新上游密钥
