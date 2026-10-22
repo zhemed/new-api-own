@@ -889,3 +889,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 待用户决定是否升级实例到 v0.0.41；可选：把 distributor 的默认注入改为直接报错（需用户确认）
+
+
+## Session 87: 升级到 v0.0.41 并复核：模型定价表只剩 deepseek-flash（数据库与接口双证）
+<!-- trellis-session: v=2 fp=588c426d02684ef6 -->
+
+**Date**: 2026-10-22
+**Task**: 升级到 v0.0.41 并复核：模型定价表只剩 deepseek-flash（数据库与接口双证）
+**Branch**: `main`
+
+### Summary
+
+用户选择升到 v0.0.41、音频注入语义保持现状。执行：apply 后约 6 秒切到 v0.0.41，容器 RestartCount 0。升级后双证复核——数据库：ModelRatio/CompletionRatio/CacheRatio 各 1 条（deepseek-flash）、ModelPrice/AudioRatio/AudioCompletionRatio 为 0 条，模型名并集=deepseek-flash；接口：8 个定价键并集=1、唯一名称 deepseek-flash；币种仍 CUSTOM+人民币符号。清理会话。
+
+### Main Changes
+
+- 无代码改动（实例升级与复核）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f1b6aea` | chore(task): archive 10-22-deliver-pricing-cleanup-and-decide |
+
+### Testing
+
+- [OK] [OK] v0.0.41；数据库与接口双向确认表格只剩 1 行
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 无；若日后要启用 TTS/MJ/Suno，在实例侧给对应键配价即可
