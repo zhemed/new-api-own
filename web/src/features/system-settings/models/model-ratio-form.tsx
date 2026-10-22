@@ -90,7 +90,7 @@ const modelJsonFields: Array<{
     name: 'ModelPrice',
     labelKey: 'Model fixed pricing',
     descriptionKey:
-      'JSON map of model → USD cost per request. Takes precedence over ratio based billing.',
+      'JSON map of model → ¥ cost per request. Takes precedence over ratio based billing.',
   },
   {
     name: 'ModelRatio',

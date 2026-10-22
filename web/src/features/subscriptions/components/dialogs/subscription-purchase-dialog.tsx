@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { useSystemConfig } from '@/hooks/use-system-config'
+import { formatLocalCurrencyAmount } from '@/lib/currency'
 import { formatQuota } from '@/lib/format'
 import { DEFAULT_CURRENCY_CONFIG } from '@/stores/system-config-store'
 
@@ -98,7 +99,8 @@ export function SubscriptionPurchaseDialog(props: Props) {
     selectedEpayMethod ||
     t('Select payment method')
   const totalAmount = Number(plan.total_amount || 0)
-  const price = Number(plan.price_amount || 0).toFixed(2)
+  // Payment amount: symbol from settings, value unchanged (never converted).
+  const price = formatLocalCurrencyAmount(Number(plan.price_amount || 0))
   const quotaPerUnit =
     currency?.quotaPerUnit && currency.quotaPerUnit > 0
       ? currency.quotaPerUnit
@@ -317,7 +319,7 @@ export function SubscriptionPurchaseDialog(props: Props) {
           <Separator />
           <div className='flex items-center justify-between'>
             <span className='text-sm font-medium'>{t('Amount Due')}</span>
-            <span className='text-primary text-lg font-bold'>${price}</span>
+            <span className='text-primary text-lg font-bold'>{price}</span>
           </div>
         </div>
 

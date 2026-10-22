@@ -60,7 +60,7 @@ await i18n.use(initReactI18next).init({
   resources: {
     en: {
       translation: {
-        'Price ($/1K calls)': 'Price ($/1K calls)',
+        'Price (¥/1K calls)': 'Price (¥/1K calls)',
         'Please enter a valid number': 'Please enter a valid number',
         'Tool identifier': 'Tool identifier',
       },
@@ -109,7 +109,7 @@ describe('tool price validation', () => {
     })
 
     const priceInput = container.querySelector<HTMLInputElement>(
-      'input[aria-label="Price ($/1K calls): web_search"]'
+      'input[aria-label="Price (¥/1K calls): web_search"]'
     )
     assert.ok(priceInput)
 

@@ -16,6 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { getCurrencySymbol } from '@/lib/currency'
+
 import { DEFAULT_DISCOUNT_RATE } from '../constants'
 
 // ============================================================================
@@ -23,13 +25,17 @@ import { DEFAULT_DISCOUNT_RATE } from '../constants'
 // ============================================================================
 
 /**
- * Format Creem price with currency symbol (USD/EUR)
+ * Format a Creem price with its payment currency symbol.
+ *
+ * EUR is a real foreign currency the gateway charges in, so it keeps its own
+ * symbol. USD is the system currency, so it follows the admin-configured
+ * display symbol instead of a hardcoded dollar sign.
  */
 export function formatCreemPrice(
   price: number,
   currency: 'USD' | 'EUR'
 ): string {
-  const symbol = currency === 'EUR' ? '€' : '$'
+  const symbol = currency === 'EUR' ? '€' : getCurrencySymbol()
   return `${symbol}${price.toFixed(2)}`
 }
 

@@ -486,7 +486,7 @@ export function WaffoPancakeSettingsSection({
               </li>
               <li>
                 {t(
-                  'The bound Product powers wallet top-ups: when a user enters any amount, new-api runs the checkout against this single Pancake product and overrides the price per session — no need to pre-create $1 / $5 / $10 SKUs.'
+                  'The bound Product powers wallet top-ups: when a user enters any amount, new-api runs the checkout against this single Pancake product and overrides the price per session — no need to pre-create ¥1 / ¥5 / ¥10 SKUs.'
                 )}
               </li>
               <li>

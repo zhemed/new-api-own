@@ -24,6 +24,7 @@ import { StaticDataTable } from '@/components/data-table/static/static-data-tabl
 import { StaticRowActions } from '@/components/data-table/static/static-row-actions'
 import { StatusBadge } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
+import { getCurrencySymbol } from '@/lib/currency'
 
 import { safeJsonParseWithValidation } from '../utils/json-parser'
 import { isObjectRecord } from '../utils/json-validators'
@@ -154,7 +155,10 @@ export function AmountDiscountVisualEditor({
                 id: 'amount',
                 header: t('Recharge Amount'),
                 cell: (discount) => (
-                  <span className='font-mono text-sm'>${discount.amount}</span>
+                  <span className='font-mono text-sm'>
+                    {getCurrencySymbol()}
+                    {discount.amount}
+                  </span>
                 ),
               },
               {

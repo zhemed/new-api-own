@@ -30,6 +30,7 @@ import {
   HoverCardTrigger,
 } from '@/components/ui/hover-card'
 import { Progress } from '@/components/ui/progress'
+import { formatLocalCurrencyAmount } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 
 const PERCENT_MAX = 100
@@ -233,10 +234,8 @@ export const ContextContentFooter = ({
         },
       }).costUSD?.totalUSD
     : undefined
-  const totalCost = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(costUSD ?? 0)
+  // Currency-aware: follows the admin-configured display symbol.
+  const totalCost = formatLocalCurrencyAmount(costUSD ?? 0)
 
   return (
     <div
@@ -281,10 +280,7 @@ export const ContextInputUsage = ({
         usage: { input: inputTokens, output: 0 },
       }).costUSD?.totalUSD
     : undefined
-  const inputCostText = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(inputCost ?? 0)
+  const inputCostText = formatLocalCurrencyAmount(inputCost ?? 0)
 
   return (
     <div
@@ -322,10 +318,7 @@ export const ContextOutputUsage = ({
         usage: { input: 0, output: outputTokens },
       }).costUSD?.totalUSD
     : undefined
-  const outputCostText = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(outputCost ?? 0)
+  const outputCostText = formatLocalCurrencyAmount(outputCost ?? 0)
 
   return (
     <div
@@ -363,10 +356,7 @@ export const ContextReasoningUsage = ({
         usage: { reasoningTokens },
       }).costUSD?.totalUSD
     : undefined
-  const reasoningCostText = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(reasoningCost ?? 0)
+  const reasoningCostText = formatLocalCurrencyAmount(reasoningCost ?? 0)
 
   return (
     <div
@@ -404,10 +394,7 @@ export const ContextCacheUsage = ({
         usage: { cacheReads: cacheTokens, input: 0, output: 0 },
       }).costUSD?.totalUSD
     : undefined
-  const cacheCostText = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(cacheCost ?? 0)
+  const cacheCostText = formatLocalCurrencyAmount(cacheCost ?? 0)
 
   return (
     <div

@@ -275,7 +275,7 @@ export function PricingSection({ defaultValues }: PricingSectionProps) {
                           onBlur={field.onBlur}
                           ref={field.ref}
                           maxLength={8}
-                          placeholder={t('e.g. ¥ or HK$')}
+                          placeholder={t('e.g. ¥')}
                         />
                       </FormControl>
                       <FormDescription>

@@ -466,6 +466,16 @@ export function formatQuotaWithCurrency(
   return formatCurrencyFromUSD(amountUSD, options)
 }
 /**
+ * The plain display symbol from settings, with no number attached.
+ *
+ * Use it for input prefixes, template strings and any place that formats the
+ * number itself. Token mode has no symbol, so the USD symbol is the fallback.
+ */
+export function getCurrencySymbol(): string {
+  const { meta } = getCurrencyDisplay()
+  return 'symbol' in meta ? meta.symbol : '$'
+}
+/**
  * Get the current currency label for UI display.
  *
  * Returns a simple string label representing the current display currency.

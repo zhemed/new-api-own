@@ -119,26 +119,20 @@ func logHelper(ctx context.Context, level string, msg string) {
 	}
 }
 
+// displayCurrencyAmount 把 quota 换算成展示货币数值：先除以 QuotaPerUnit 得到基准金额，
+// 再乘当前展示类型对应的汇率。符号与汇率都取自 operation_setting 的唯一真源
+// （GetCurrencySymbol / GetUsdToCurrencyRate），不要在调用点各写一份。
+func displayCurrencyAmount(quota int) float64 {
+	usd := float64(quota) / common.QuotaPerUnit
+	return usd * operation_setting.GetUsdToCurrencyRate(operation_setting.USDExchangeRate)
+}
+
 func LogQuota(quota int) string {
 	// 新逻辑：根据额度展示类型输出
 	q := float64(quota)
 	switch operation_setting.GetQuotaDisplayType() {
-	case operation_setting.QuotaDisplayTypeCNY:
-		usd := q / common.QuotaPerUnit
-		cny := usd * operation_setting.USDExchangeRate
-		return fmt.Sprintf("¥%.6f 额度", cny)
-	case operation_setting.QuotaDisplayTypeCustom:
-		usd := q / common.QuotaPerUnit
-		rate := operation_setting.GetGeneralSetting().CustomCurrencyExchangeRate
-		symbol := operation_setting.GetGeneralSetting().CustomCurrencySymbol
-		if symbol == "" {
-			symbol = "¤"
-		}
-		if rate <= 0 {
-			rate = 1
-		}
-		v := usd * rate
-		return fmt.Sprintf("%s%.6f 额度", symbol, v)
+	case operation_setting.QuotaDisplayTypeCNY, operation_setting.QuotaDisplayTypeCustom:
+		return fmt.Sprintf("%s%.6f 额度", operation_setting.GetCurrencySymbol(), displayCurrencyAmount(quota))
 	case operation_setting.QuotaDisplayTypeTokens:
 		return fmt.Sprintf("%d 点额度", quota)
 	default: // USD
@@ -149,22 +143,8 @@ func LogQuota(quota int) string {
 func FormatQuota(quota int) string {
 	q := float64(quota)
 	switch operation_setting.GetQuotaDisplayType() {
-	case operation_setting.QuotaDisplayTypeCNY:
-		usd := q / common.QuotaPerUnit
-		cny := usd * operation_setting.USDExchangeRate
-		return fmt.Sprintf("¥%.6f", cny)
-	case operation_setting.QuotaDisplayTypeCustom:
-		usd := q / common.QuotaPerUnit
-		rate := operation_setting.GetGeneralSetting().CustomCurrencyExchangeRate
-		symbol := operation_setting.GetGeneralSetting().CustomCurrencySymbol
-		if symbol == "" {
-			symbol = "¤"
-		}
-		if rate <= 0 {
-			rate = 1
-		}
-		v := usd * rate
-		return fmt.Sprintf("%s%.6f", symbol, v)
+	case operation_setting.QuotaDisplayTypeCNY, operation_setting.QuotaDisplayTypeCustom:
+		return fmt.Sprintf("%s%.6f", operation_setting.GetCurrencySymbol(), displayCurrencyAmount(quota))
 	case operation_setting.QuotaDisplayTypeTokens:
 		return fmt.Sprintf("%d", quota)
 	default:

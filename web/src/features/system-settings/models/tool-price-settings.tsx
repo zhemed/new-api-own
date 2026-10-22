@@ -248,7 +248,7 @@ export const ToolPriceSettings = memo(function ToolPriceSettings({
         <AlertDescription className='space-y-1 text-sm'>
           <div>
             {t(
-              'Configure per-tool unit prices ($/1K calls). Per-request models do not incur additional tool fees.'
+              'Configure per-tool unit prices (¥/1K calls). Per-request models do not incur additional tool fees.'
             )}
           </div>
           <div>
@@ -324,7 +324,7 @@ export const ToolPriceSettings = memo(function ToolPriceSettings({
             },
             {
               id: 'price',
-              header: t('Price ($/1K calls)'),
+              header: t('Price (¥/1K calls)'),
               className: 'w-[200px]',
               cell: (row) => {
                 const isInvalid = invalidRowIds.has(row.id)
@@ -336,7 +336,7 @@ export const ToolPriceSettings = memo(function ToolPriceSettings({
                       step={0.5}
                       value={row.price}
                       aria-invalid={isInvalid}
-                      aria-label={`${t('Price ($/1K calls)')}: ${row.key || t('Tool identifier')}`}
+                      aria-label={`${t('Price (¥/1K calls)')}: ${row.key || t('Tool identifier')}`}
                       onChange={(e) =>
                         updateRow(row.id, 'price', e.target.value)
                       }

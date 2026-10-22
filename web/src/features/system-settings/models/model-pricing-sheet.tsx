@@ -61,6 +61,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { getCurrencySymbol } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 
 import {
@@ -566,7 +567,7 @@ export const ModelPricingEditorPanel = forwardRef<
                           onChange={handlePromptPriceChange}
                         />
                         <FieldDescription>
-                          {t('USD price per 1M input tokens.')}
+                          {t('¥ price per 1M input tokens.')}
                         </FieldDescription>
                       </Field>
 
@@ -609,7 +610,9 @@ export const ModelPricingEditorPanel = forwardRef<
                               <FieldLabel>{t('Fixed price')}</FieldLabel>
                               <FormControl>
                                 <InputGroup>
-                                  <InputGroupAddon>$</InputGroupAddon>
+                                  <InputGroupAddon>
+                                    {getCurrencySymbol()}
+                                  </InputGroupAddon>
                                   <InputGroupInput
                                     inputMode='decimal'
                                     placeholder='0.01'
@@ -628,7 +631,7 @@ export const ModelPricingEditorPanel = forwardRef<
                               </FormControl>
                               <FieldDescription>
                                 {t(
-                                  'Cost in USD per request, regardless of tokens used.'
+                                  'Cost in ¥ per request, regardless of tokens used.'
                                 )}
                               </FieldDescription>
                               <FormMessage />
