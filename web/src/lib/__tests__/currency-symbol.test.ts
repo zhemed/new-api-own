@@ -108,7 +108,48 @@ describe('other display modes', () => {
 
     assert.equal(getCurrencySymbol(), '¥')
     assert.equal(getCurrencyLabel(), 'CNY')
-    assert.equal(formatCurrencyFromUSD(10), '¥70')
+    // symbol + space, exactly like the base-currency mode
+    assert.equal(formatCurrencyFromUSD(10), '¥ 70')
+  })
+
+  test('CNY conversion keeps working at a fractional rate', () => {
+    setCurrency({ quotaDisplayType: 'CNY', usdExchangeRate: 7.3 })
+
+    assert.equal(formatCurrencyFromUSD(10), '¥ 73')
+    assert.equal(formatQuotaWithCurrency(6_250_000), '¥ 91.25')
+  })
+
+  test('all three currency modes share one spacing format', () => {
+    const formatted = () => [
+      formatCurrencyFromUSD(10),
+      formatLocalCurrencyAmount(10),
+      formatQuotaWithCurrency(6_250_000),
+    ]
+
+    setCurrency({ quotaDisplayType: 'CNY', usdExchangeRate: 7 })
+    const cny = formatted()
+
+    setCurrency(DEFAULT_CURRENCY_CONFIG)
+    const baseCurrency = formatted()
+
+    setCurrency({
+      quotaDisplayType: 'CUSTOM',
+      customCurrencySymbol: '¥',
+      customCurrencyExchangeRate: 1,
+    })
+    const custom = formatted()
+
+    // same shape everywhere: symbol, single space, no symbol/space mismatch
+    assert.deepEqual(baseCurrency, custom)
+    for (const value of [...cny, ...baseCurrency, ...custom]) {
+      assert.match(value, /^¥ \d/)
+    }
+    // CNY is the only mode that converts, so only its numbers differ:
+    // 10 USD -> 70 CNY, and 6,250,000 quota (= 12.5 USD) -> 87.5 CNY.
+    // The billing path never converts (the amount is already local).
+    assert.equal(cny[0], '¥ 70')
+    assert.equal(cny[1], '¥ 10')
+    assert.equal(cny[2], '¥ 87.5')
   })
 
   test('token mode keeps the RMB sign for input prefixes', () => {

@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next'
 
 import { StaticDataTable } from '@/components/data-table'
 import { Badge } from '@/components/ui/badge'
+import { formatBillingCurrencyFromUSD } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 import { useSystemConfigStore } from '@/stores/system-config-store'
 
@@ -153,6 +154,13 @@ function describeGroup(
     .join(' && ')
 }
 
+/** Unit prices keep their 4-decimal precision; the layer strips trailing zeros. */
+const UNIT_PRICE_FORMAT_OPTIONS = {
+  digitsLarge: 4,
+  digitsSmall: 4,
+  abbreviate: false,
+} as const
+
 export function DynamicPricingBreakdown({
   billingExpr,
   matchedTierLabel,
@@ -161,21 +169,22 @@ export function DynamicPricingBreakdown({
 }: DynamicPricingBreakdownProps) {
   const { t } = useTranslation()
   const expr = billingExpr || ''
-  const currency = useSystemConfigStore((s) => s.config.currency)
+  // Subscribed so the money cells re-render when the admin changes the display
+  // currency; the value itself is read by the shared currency layer.
+  const displayCurrency = useSystemConfigStore((s) => s.config.currency)
+  const moneySettingsKey = [
+    displayCurrency.quotaDisplayType,
+    displayCurrency.usdExchangeRate,
+    displayCurrency.customCurrencySymbol,
+    displayCurrency.customCurrencyExchangeRate,
+  ].join(':')
 
-  const { symbol, rate } = useMemo(() => {
-    if (currency.quotaDisplayType === 'CNY') {
-      return { symbol: '¥', rate: currency.usdExchangeRate || 7 }
-    }
-    if (currency.quotaDisplayType === 'CUSTOM') {
-      return {
-        symbol: currency.customCurrencySymbol || '¤',
-        rate: currency.customCurrencyExchangeRate || 1,
-      }
-    }
-    // base-currency mode: same visible sign as the shared currency layer
-    return { symbol: '¥', rate: 1 }
-  }, [currency])
+  // Unit prices go through the shared currency layer instead of a local
+  // symbol/rate switch: one conversion source, one spacing rule (symbol, then
+  // a space, then the number), and the token-only display mode is handled by
+  // the layer as well. The subscription above re-renders these cells.
+  const formatUnitPrice = (value: number) =>
+    formatBillingCurrencyFromUSD(value, UNIT_PRICE_FORMAT_OPTIONS)
 
   const { tiers, ruleGroups } = useMemo(() => {
     const split = splitBillingExprAndRequestRules(expr)
@@ -197,7 +206,12 @@ export function DynamicPricingBreakdown({
 
   if (!hasTiers) {
     return (
-      <section className={cn('min-w-0', !compact && 'py-4')}>
+      // Remounts the table when the money settings change, so every cell picks
+      // up the new sign without a page reload.
+      <section
+        key={moneySettingsKey}
+        className={cn('min-w-0', !compact && 'py-4')}
+      >
         {!compact && (
           <div className='mb-3 flex items-center gap-2'>
             <span className='inline-flex size-6 items-center justify-center rounded-lg bg-amber-100 text-amber-700 shadow-sm dark:bg-amber-500/20 dark:text-amber-300'>
@@ -232,7 +246,10 @@ export function DynamicPricingBreakdown({
   })
 
   return (
-    <section className={cn('min-w-0', !compact && 'py-3 sm:py-4')}>
+    <section
+      key={moneySettingsKey}
+      className={cn('min-w-0', !compact && 'py-3 sm:py-4')}
+    >
       {!compact && (
         <div className='mb-3 flex items-start gap-2 sm:mb-4'>
           <span className='mt-0.5 inline-flex size-6 items-center justify-center rounded-lg bg-amber-100 text-amber-700 shadow-sm dark:bg-amber-500/20 dark:text-amber-300'>
@@ -313,9 +330,7 @@ export function DynamicPricingBreakdown({
                               compact ? 'text-xs' : 'text-sm font-semibold'
                             )}
                           >
-                            {value > 0
-                              ? `${symbol}${(value * rate).toFixed(4)}`
-                              : '-'}
+                            {value > 0 ? formatUnitPrice(value) : '-'}
                           </div>
                         </div>
                       )
@@ -403,7 +418,7 @@ export function DynamicPricingBreakdown({
                   )
                   return value > 0 ? (
                     <span className={cn(!compact && 'font-semibold')}>
-                      {`${symbol}${(value * rate).toFixed(4)}`}
+                      {formatUnitPrice(value)}
                     </span>
                   ) : (
                     '-'

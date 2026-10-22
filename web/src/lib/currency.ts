@@ -179,11 +179,16 @@ function getConfig(): CurrencyConfig {
 function getDisplayMeta(config: CurrencyConfig): DisplayMeta {
   switch (config.quotaDisplayType) {
     case 'CNY':
+      // Same rendering path as the base-currency and CUSTOM modes, so the
+      // spacing is identical everywhere: `¥ 70`, never `¥70`. `currencyCode`
+      // and the exchange rate keep their meaning (the amount is still
+      // converted with `usdExchangeRate`); only the sign is glued on here.
       return {
         kind: 'currency',
         symbol: '¥',
         currencyCode: 'CNY',
         exchangeRate: config.usdExchangeRate,
+        useSymbol: true,
       }
     case 'CUSTOM':
       return {

@@ -62,10 +62,11 @@ function renderQuotaCompat(rawQuota: number, digits = 4): string {
   const symbol = 'symbol' in meta ? meta.symbol : '¥'
   const value = usd * rate
   const fixed = value.toFixed(digits)
+  // Same spacing as the shared currency layer: symbol, space, then number.
   if (Number.parseFloat(fixed) === 0 && rawQuota > 0 && value > 0) {
-    return symbol + Math.pow(10, -digits).toFixed(digits)
+    return `${symbol} ${Math.pow(10, -digits).toFixed(digits)}`
   }
-  return symbol + fixed
+  return `${symbol} ${fixed}`
 }
 
 /**

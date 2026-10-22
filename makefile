@@ -3,7 +3,7 @@ API_DIR = .
 DEV_WEB_PORT ?= 5173
 DEV_SQLITE_PATH ?= one-api.db
 
-.PHONY: all build-web build-all-web start-api dev dev-api dev-web reset-setup test check-version
+.PHONY: all build-web build-all-web start-api dev dev-api dev-web reset-setup test check-version check-money-format
 
 all: build-all-web start-api
 
@@ -46,6 +46,12 @@ test:
 # 例：make check-version INSTANCE=http://127.0.0.1:3000
 check-version:
 	@./scripts/check-version-drift.sh $(if $(INSTANCE),--instance $(INSTANCE),) $(if $(REGISTRY),--registry $(REGISTRY),) $(if $(VERSION),--version $(VERSION),)
+
+# 前端金额硬编码防回归：扫描 web/src 里写死的货币符号（$/¥/€）、字符串拼接金额、
+# 以及 Intl.NumberFormat/toLocaleString 里钉死 currency: 'USD' 的写法。
+# 规则与白名单（注释/正则替换/shell 示例/i18n key/契约值）见脚本顶部注释。
+check-money-format:
+	@node scripts/check-money-format.mjs
 
 reset-setup:
 	@echo "Resetting local setup wizard state (SQLite)..."

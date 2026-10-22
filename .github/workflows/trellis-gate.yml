@@ -32,3 +32,9 @@ jobs:
       # compose / helm / k8s 等第二种编排形态一律拒绝，含"改名换壳"的检测。
       - name: 检查部署方式唯一（禁止 compose/集群编排）
         run: ./scripts/forbid-extra-deploy-methods.sh
+
+      # 前端金额一律走 currency 层（web/src/lib/currency.ts，管理员可配 USD/CNY/CUSTOM）。
+      # 上一轮漏过 15 处模板字面量形式的硬编码美元，这个扫描防同类回归；
+      # 白名单（注释/正则/shell 示例/i18n key/契约值）见脚本顶部注释。
+      - name: 检查货币硬编码（前端必须走 currency 层）
+        run: node scripts/check-money-format.mjs
