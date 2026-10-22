@@ -13,6 +13,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { splitBillingExprAndRequestRules } from '@/features/pricing/lib/billing-expr'
+import { getCurrencySymbol } from '@/lib/currency'
 
 import { safeJsonParse } from '../utils/json-parser'
 import { formatPricingNumber } from './pricing-format'
@@ -98,7 +99,9 @@ export const getPriceSummary = (
     return getExpressionSummary(row, t)
   }
   if (row.billingMode === 'per-request') {
-    return row.price ? `$${row.price} / ${t('request')}` : t('Unset price')
+    return row.price
+      ? `${getCurrencySymbol()}${row.price} / ${t('request')}`
+      : t('Unset price')
   }
   const inputPrice = ratioToPrice(row.ratio)
   if (!inputPrice) return t('Unset price')
@@ -111,8 +114,8 @@ export const getPriceSummary = (
     row.audioCompletionRatio,
   ].filter(hasPricingValue).length
   return extraCount > 0
-    ? `${t('Input')} $${inputPrice} · ${extraCount} ${t('extras')}`
-    : `${t('Input')} $${inputPrice}`
+    ? `${t('Input')} ${getCurrencySymbol()}${inputPrice} · ${extraCount} ${t('extras')}`
+    : `${t('Input')} ${getCurrencySymbol()}${inputPrice}`
 }
 export const getPriceDetail = (
   row: ModelPricingSnapshot,
@@ -130,11 +133,11 @@ export const getPriceDetail = (
   if (!inputPrice) return t('No base input price')
   const details = [
     row.completionRatio &&
-      `${t('Output')} $${ratioToPrice(row.completionRatio, inputPrice)}`,
+      `${t('Output')} ${getCurrencySymbol()}${ratioToPrice(row.completionRatio, inputPrice)}`,
     row.cacheRatio &&
-      `${t('Cache')} $${ratioToPrice(row.cacheRatio, inputPrice)}`,
+      `${t('Cache')} ${getCurrencySymbol()}${ratioToPrice(row.cacheRatio, inputPrice)}`,
     row.createCacheRatio &&
-      `${t('Cache write')} $${ratioToPrice(row.createCacheRatio, inputPrice)}`,
+      `${t('Cache write')} ${getCurrencySymbol()}${ratioToPrice(row.createCacheRatio, inputPrice)}`,
   ]
     .filter(Boolean)
     .slice(0, 2)

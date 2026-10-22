@@ -1093,7 +1093,14 @@ export function ModelMutateDrawer({
                             <FormDescription>
                               {field.value &&
                               !Number.isNaN(Number.parseFloat(field.value))
-                                ? `Calculated price: $${(Number.parseFloat(field.value) * 2).toFixed(4)} per 1M tokens`
+                                ? t(
+                                    'Calculated price: ¥{{price}} per 1M tokens',
+                                    {
+                                      price: (
+                                        Number.parseFloat(field.value) * 2
+                                      ).toFixed(4),
+                                    }
+                                  )
                                 : t('Multiplier for prompt tokens.')}
                             </FormDescription>
                             <FormMessage />
@@ -1135,7 +1142,15 @@ export function ModelMutateDrawer({
                               !Number.isNaN(Number.parseFloat(field.value)) &&
                               promptPrice &&
                               !Number.isNaN(Number.parseFloat(promptPrice))
-                                ? `Calculated price: $${(Number.parseFloat(promptPrice) * Number.parseFloat(field.value)).toFixed(4)} per 1M tokens`
+                                ? t(
+                                    'Calculated price: ¥{{price}} per 1M tokens',
+                                    {
+                                      price: (
+                                        Number.parseFloat(promptPrice) *
+                                        Number.parseFloat(field.value)
+                                      ).toFixed(4),
+                                    }
+                                  )
                                 : t('Multiplier for completion tokens.')}
                             </FormDescription>
                             <FormMessage />

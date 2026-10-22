@@ -26,8 +26,11 @@ import {
 } from '@/stores/system-config-store'
 
 import {
+  formatBillingCurrencyFromUSD,
   formatCurrencyFromUSD,
   formatLocalCurrencyAmount,
+  formatQuotaWithCurrency,
+  getCurrencyDisplay,
   getCurrencyLabel,
   getCurrencySymbol,
 } from '../currency'
@@ -45,67 +48,104 @@ afterEach(() => {
   setCurrency(DEFAULT_CURRENCY_CONFIG)
 })
 
-// The product decision is "swap the symbol, keep the number": the RMB display
-// is configured as a CUSTOM currency with symbol ¥ and rate 1, so every
-// symbol-only surface must render the same amount with a different sign.
-describe('currency symbol source', () => {
-  test('the default configuration shows the dollar symbol', () => {
+// Product decision: the panel is RMB-only in every display mode. The
+// base-currency mode (API value 'USD') keeps its accounting semantics — code
+// and rate untouched — but shows the ¥ sign, so no dollar sign reaches the UI.
+describe('base currency display mode', () => {
+  test('shows the RMB sign without touching the accounting unit', () => {
     setCurrency(DEFAULT_CURRENCY_CONFIG)
 
-    assert.equal(getCurrencySymbol(), '$')
-    assert.equal(getCurrencyLabel(), 'USD')
+    const { config, meta } = getCurrencyDisplay()
+    assert.equal(config.quotaDisplayType, 'USD')
+    assert.equal(meta.kind, 'currency')
+    assert.equal('currencyCode' in meta ? meta.currencyCode : '', 'USD')
+    assert.equal('exchangeRate' in meta ? meta.exchangeRate : 0, 1)
   })
 
-  test('a custom ¥ currency replaces the hardcoded dollar sign', () => {
+  test('reports the RMB symbol and label to the UI', () => {
+    setCurrency(DEFAULT_CURRENCY_CONFIG)
+
+    assert.equal(getCurrencySymbol(), '¥')
+    assert.equal(getCurrencyLabel(), '¥')
+  })
+
+  test('never converts the amount, because the rate stays 1', () => {
+    setCurrency(DEFAULT_CURRENCY_CONFIG)
+
+    assert.equal(formatCurrencyFromUSD(10), '¥ 10')
+    assert.equal(formatLocalCurrencyAmount(12.5), '¥ 12.5')
+    assert.equal(formatQuotaWithCurrency(6_250_000), '¥ 12.5')
+  })
+
+  test('renders exactly like CUSTOM(¥, 1)', () => {
+    setCurrency(DEFAULT_CURRENCY_CONFIG)
+    const baseCurrencyMode = [
+      formatCurrencyFromUSD(12.5),
+      formatLocalCurrencyAmount(12.5),
+      formatQuotaWithCurrency(6_250_000),
+      getCurrencyLabel(),
+    ]
+
     setCurrency({
       quotaDisplayType: 'CUSTOM',
       customCurrencySymbol: '¥',
       customCurrencyExchangeRate: 1,
     })
+    const customMode = [
+      formatCurrencyFromUSD(12.5),
+      formatLocalCurrencyAmount(12.5),
+      formatQuotaWithCurrency(6_250_000),
+      getCurrencyLabel(),
+    ]
 
-    assert.equal(getCurrencySymbol(), '¥')
+    assert.deepEqual(baseCurrencyMode, customMode)
   })
+})
 
-  test('CNY mode reports both the label and the symbol', () => {
+describe('other display modes', () => {
+  test('CNY mode still converts with the configured rate', () => {
     setCurrency({ quotaDisplayType: 'CNY', usdExchangeRate: 7 })
 
     assert.equal(getCurrencySymbol(), '¥')
     assert.equal(getCurrencyLabel(), 'CNY')
+    assert.equal(formatCurrencyFromUSD(10), '¥70')
   })
 
-  test('token mode falls back to the dollar symbol for input prefixes', () => {
+  test('token mode keeps the RMB sign for input prefixes', () => {
     setCurrency({ quotaDisplayType: 'TOKENS' })
 
-    assert.equal(getCurrencySymbol(), '$')
+    assert.equal(getCurrencySymbol(), '¥')
     assert.equal(getCurrencyLabel(), 'Tokens')
   })
-})
 
-describe('symbol-only formatting keeps the amount untouched', () => {
-  test('formatLocalCurrencyAmount never applies the exchange rate', () => {
-    setCurrency({
-      quotaDisplayType: 'CUSTOM',
-      customCurrencySymbol: '¥',
-      customCurrencyExchangeRate: 7.3,
-    })
+  test('billing amounts use the same sign in base-currency mode', () => {
+    setCurrency(DEFAULT_CURRENCY_CONFIG)
 
+    assert.equal(formatBillingCurrencyFromUSD(10), '¥ 10')
+  })
+
+  test('token mode still prices billing amounts in ¥, never as tokens', () => {
+    setCurrency({ quotaDisplayType: 'TOKENS' })
+
+    // The billing path never shows tokens, and now signs them in ¥ as well.
+    assert.equal(formatBillingCurrencyFromUSD(10), '¥ 10')
     assert.equal(formatLocalCurrencyAmount(10), '¥ 10')
   })
 
-  test('formatCurrencyFromUSD still converts, so the two are not interchangeable', () => {
-    setCurrency({
-      quotaDisplayType: 'CUSTOM',
-      customCurrencySymbol: '¥',
-      customCurrencyExchangeRate: 7.3,
-    })
+  test('hiding the symbol leaves a bare number', () => {
+    setCurrency(DEFAULT_CURRENCY_CONFIG)
 
-    assert.equal(formatCurrencyFromUSD(10), '¥ 73')
+    assert.equal(formatLocalCurrencyAmount(10, { showSymbol: false }), '10')
   })
 
-  test('CNY mode formats the localised symbol without conversion', () => {
-    setCurrency({ quotaDisplayType: 'CNY', usdExchangeRate: 7 })
+  test('a custom non-RMB currency is still honoured', () => {
+    setCurrency({
+      quotaDisplayType: 'CUSTOM',
+      customCurrencySymbol: '€',
+      customCurrencyExchangeRate: 0.9,
+    })
 
-    assert.equal(formatLocalCurrencyAmount(10).includes('10'), true)
-    assert.equal(formatLocalCurrencyAmount(10).includes('¥'), true)
+    assert.equal(getCurrencySymbol(), '€')
+    assert.equal(formatLocalCurrencyAmount(10), '€ 10')
   })
 })

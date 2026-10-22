@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import * as z from 'zod'
 
 import { combineBillingExpr } from '@/features/pricing/lib/billing-expr'
+import { getCurrencySymbol } from '@/lib/currency'
 
 import { formatPricingNumber } from './pricing-format'
 
@@ -244,14 +245,14 @@ export function buildPreviewRows(
     {
       key: 'inputPrice',
       label: t('Input price'),
-      value: promptPrice ? `$${promptPrice}` : t('Empty'),
+      value: promptPrice ? `${getCurrencySymbol()}${promptPrice}` : t('Empty'),
     },
     {
       key: 'completion',
       label: t('Completion price'),
       value:
         laneEnabled.completion && lanePrices.completion
-          ? `$${lanePrices.completion}`
+          ? `${getCurrencySymbol()}${lanePrices.completion}`
           : t('Empty'),
     },
     {
@@ -259,7 +260,7 @@ export function buildPreviewRows(
       label: t('Cache read price'),
       value:
         laneEnabled.cache && lanePrices.cache
-          ? `$${lanePrices.cache}`
+          ? `${getCurrencySymbol()}${lanePrices.cache}`
           : t('Empty'),
     },
     {
@@ -267,7 +268,7 @@ export function buildPreviewRows(
       label: t('Cache write price'),
       value:
         laneEnabled.createCache && lanePrices.createCache
-          ? `$${lanePrices.createCache}`
+          ? `${getCurrencySymbol()}${lanePrices.createCache}`
           : t('Empty'),
     },
     {
@@ -275,7 +276,7 @@ export function buildPreviewRows(
       label: t('Image input price'),
       value:
         laneEnabled.image && lanePrices.image
-          ? `$${lanePrices.image}`
+          ? `${getCurrencySymbol()}${lanePrices.image}`
           : t('Empty'),
     },
     {
@@ -283,7 +284,7 @@ export function buildPreviewRows(
       label: t('Audio input price'),
       value:
         laneEnabled.audioInput && lanePrices.audioInput
-          ? `$${lanePrices.audioInput}`
+          ? `${getCurrencySymbol()}${lanePrices.audioInput}`
           : t('Empty'),
     },
     {
@@ -291,7 +292,7 @@ export function buildPreviewRows(
       label: t('Audio output price'),
       value:
         laneEnabled.audioOutput && lanePrices.audioOutput
-          ? `$${lanePrices.audioOutput}`
+          ? `${getCurrencySymbol()}${lanePrices.audioOutput}`
           : t('Empty'),
     },
   ]

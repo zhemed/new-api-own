@@ -173,7 +173,8 @@ export function DynamicPricingBreakdown({
         rate: currency.customCurrencyExchangeRate || 1,
       }
     }
-    return { symbol: '$', rate: 1 }
+    // base-currency mode: same visible sign as the shared currency layer
+    return { symbol: '¥', rate: 1 }
   }, [currency])
 
   const { tiers, ruleGroups } = useMemo(() => {

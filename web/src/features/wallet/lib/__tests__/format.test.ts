@@ -42,8 +42,9 @@ afterEach(() => {
 
 describe('Creem price formatting', () => {
   test('the system currency follows the configured symbol', () => {
+    // Base-currency mode shows ¥ as well (product decision, see lib/currency).
     setCurrency(DEFAULT_CURRENCY_CONFIG)
-    assert.equal(formatCreemPrice(10, 'USD'), '$10.00')
+    assert.equal(formatCreemPrice(10, 'USD'), '¥10.00')
 
     setCurrency({
       quotaDisplayType: 'CUSTOM',

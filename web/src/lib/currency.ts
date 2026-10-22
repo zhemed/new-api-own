@@ -112,6 +112,12 @@ type DisplayMeta =
       symbol: string
       currencyCode: string
       exchangeRate: number
+      /**
+       * Render `symbol` directly instead of letting Intl derive the sign from
+       * `currencyCode`. Display-only: the amount and the API value are
+       * unaffected.
+       */
+      useSymbol?: boolean
     }
   | {
       kind: 'custom'
@@ -192,11 +198,16 @@ function getDisplayMeta(config: CurrencyConfig): DisplayMeta {
       }
     case 'USD':
     default:
+      // Product decision (2026-10-22): the panel is RMB-only. The base unit
+      // stays what it is — `currencyCode`/`exchangeRate` are untouched, so the
+      // amount is never converted and the API contract keeps using 'USD' —
+      // but the sign the operator sees is ¥, exactly like CUSTOM(¥, 1).
       return {
         kind: 'currency',
-        symbol: '$',
+        symbol: '¥',
         currencyCode: 'USD',
         exchangeRate: 1,
+        useSymbol: true,
       }
   }
 }
@@ -205,9 +216,10 @@ function getBillingDisplayMeta(config: CurrencyConfig): DisplayMeta {
   if (meta.kind === 'tokens') {
     return {
       kind: 'currency',
-      symbol: '$',
+      symbol: '¥',
       currencyCode: 'USD',
       exchangeRate: 1,
+      useSymbol: true,
     }
   }
   return meta
@@ -288,6 +300,9 @@ function formatCurrencyValue(
         maximumFractionDigits: options.compact ? 1 : digits,
       }).format(adjustedValue)
     }
+    if (meta.useSymbol) {
+      return formatWithSymbol(adjustedValue, options, digits, meta.symbol)
+    }
     const formatted = new Intl.NumberFormat(options.locale, {
       style: 'currency',
       currency: meta.currencyCode,
@@ -298,12 +313,27 @@ function formatCurrencyValue(
     }).format(adjustedValue)
     return formatted
   }
+  return formatWithSymbol(adjustedValue, options, digits, meta.symbol)
+}
+
+/**
+ * `<symbol> <number>` (or just the number when the symbol is hidden).
+ *
+ * Shared by the CUSTOM branch and the base-currency branch so both render
+ * identically, which is what the RMB-only product policy requires.
+ */
+function formatWithSymbol(
+  value: number,
+  options: ResolvedCurrencyFormatOptions,
+  digits: number,
+  symbol: string
+): string {
   const decimal = new Intl.NumberFormat(options.locale, {
     notation: options.compact ? 'compact' : 'standard',
     minimumFractionDigits: 0,
     maximumFractionDigits: options.compact ? 1 : digits,
-  }).format(adjustedValue)
-  return options.showSymbol ? `${meta.symbol} ${decimal}` : decimal
+  }).format(value)
+  return options.showSymbol ? `${symbol} ${decimal}` : decimal
 }
 /**
  * Get the current currency configuration and display metadata.
@@ -473,7 +503,9 @@ export function formatQuotaWithCurrency(
  */
 export function getCurrencySymbol(): string {
   const { meta } = getCurrencyDisplay()
-  return 'symbol' in meta ? meta.symbol : '$'
+  // Token mode has no currency symbol; the panel still shows the ¥ sign it
+  // uses everywhere else rather than a stray dollar sign.
+  return 'symbol' in meta ? meta.symbol : '¥'
 }
 /**
  * Get the current currency label for UI display.
@@ -506,7 +538,9 @@ export function getCurrencyLabel(): string {
       return meta.kind === 'custom' ? meta.symbol : 'Custom'
     case 'USD':
     default:
-      return 'USD'
+      // Same product decision as the symbol above: `{{currency}}` placeholders
+      // must read ¥, never the API value 'USD'.
+      return '¥'
   }
 }
 /**
