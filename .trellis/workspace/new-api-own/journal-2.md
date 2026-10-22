@@ -651,3 +651,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 待用户裁定三项遗留；并按选择升级实例到 v0.0.38
+
+
+## Session 80: 统一金额格式（三模式一致+两处自研拼接收口）并新增货币硬编码守则，发 v0.0.39
+<!-- trellis-session: v=2 fp=69105dfe43201149 -->
+
+**Date**: 2026-10-22
+**Task**: 统一金额格式（三模式一致+两处自研拼接收口）并新增货币硬编码守则，发 v0.0.39
+**Branch**: `main`
+
+### Summary
+
+用户裁定只统一空格、Creem 不动、加防回归自检。执行：①CNY 分支改走 formatWithSymbol（¥70 到 ¥ 70），与基准货币/CUSTOM 三模式格式一致，换算率与位数语义未动；②收口两处自研拼接——计费拆解组件删掉自研 symbol/rate switch 改用 formatBillingCurrencyFromUSD（保留 4 位有效数字，不再补零、大额带千分位），图表 renderQuotaCompat 只加空格；③新增 scripts/check-money-format.mjs 守则（去注释状态机 + 三分类扫描 + 白名单），接 make 目标与 CI，当前 955 文件 OK、7 个人造反例全抓到、白名单零误报。Lead 实测澄清争议：守则确实跳过注释，命中的是字符串字面量（正确行为）。测试 386 到 393；七条门 + 守则 + 两道仓库门禁全绿；发 v0.0.39。
+
+### Main Changes
+
+- 全站金额格式与符号来源收敛为单一货币层；新增机械守则防止硬编码货币回归
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4859a62` | feat(currency): 统一金额格式（CNY 与图表/拆解均改为符号+空格）并新增货币硬编码防回归守则 [task:deliver-base-currency-and-decide] |
+
+### Testing
+
+- [OK] [OK] 393 pass；make check-money-format exit 0；守则反例 7/7 命中且白名单零误报
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 待用户决定是否升级实例到 v0.0.39

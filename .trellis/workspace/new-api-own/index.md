@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 79
+- **Total Sessions**: 80
 - **Last Active**: 2026-10-22
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~653 | Active |
+| `journal-2.md` | ~687 | Active |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 80 | 2026-10-22 | 统一金额格式（三模式一致+两处自研拼接收口）并新增货币硬编码守则，发 v0.0.39 | `4859a62` | `main` |
 | 79 | 2026-10-22 | 基准货币模式也显示 ¥（useSymbol 纯显示开关）+ 补 15 处模板字面量美元，发 v0.0.38 | `5a57ee5` | `main` |
 | 78 | 2026-10-22 | 全站美元改人民币：实例切 CUSTOM ¥/1.0、默认值与硬编码、i18n 两轮去美元（v0.0.36/v0.0.37） | `3e9825c` | `main` |
 | 77 | 2026-10-19 | 保存偏好后图表即时生效（useSyncExternalStore + 稳定快照），发 v0.0.35 并真机点保存验证 | `e19547e` | `main` |
