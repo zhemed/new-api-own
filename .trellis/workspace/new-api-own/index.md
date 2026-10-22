@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 88
+- **Total Sessions**: 89
 - **Last Active**: 2026-10-22
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~959 | Active |
+| `journal-2.md` | ~993 | Active |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 89 | 2026-10-22 | 生产配置 SSH 密钥/补装 sqlite3/同步峰谷计费；委派代码线把峰谷定价做成默认值 | `f20cd44` | `main` |
 | 88 | 2026-10-22 | 生产实例（x.miio.cc/zzds.de）定价目录对齐到只剩 deepseek-flash，并澄清两边差异根因 | `10e1c2f` | `main` |
 | 87 | 2026-10-22 | 升级到 v0.0.41 并复核：模型定价表只剩 deepseek-flash（数据库与接口双证） | `f1b6aea` | `main` |
 | 86 | 2026-10-22 | 代码默认表只保留 deepseek 家族（v0.0.41）并核实音频注入链路的最终行为 | `a600c08` | `main` |

@@ -957,3 +957,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 建议把 SSH 改为密钥登录并更换面板密码；生产面板强刷后应显示总计 1
+
+
+## Session 89: 生产配置 SSH 密钥/补装 sqlite3/同步峰谷计费；委派代码线把峰谷定价做成默认值
+<!-- trellis-session: v=2 fp=b57d4d1322795ec2 -->
+
+**Date**: 2026-10-22
+**Task**: 生产配置 SSH 密钥/补装 sqlite3/同步峰谷计费；委派代码线把峰谷定价做成默认值
+**Branch**: `main`
+
+### Summary
+
+用户裁定配 SSH 密钥、密码不轮换、缺工具直接补、生产定价要与本地一致且新版默认值要做对。执行：①生成专用 SSH 密钥并写入生产 authorized_keys，免密登录验证通过，私钥不回显不入库；②在生产补装 sqlite3；③通过生产本机 PUT /api/option/ 写入 billing_setting.billing_mode 与 billing_expr（官方峰谷表达式），sqlite3 复核落库，会话已注销；生产当前 v0.0.41 + CUSTOM/¥ + 定价表并集=1 + 峰谷表达式。④委派 task-43 把峰谷定价做成代码默认值（新部署开箱即用），完成后发 v0.0.42。过程中如实记录：公钥安装第一版脚本有 unbound variable（已用管道方式重做）；生产登录曾失败一次（重试成功）。
+
+### Main Changes
+
+- 生产维护改为密钥登录；生产与本地口径一致（币种 CUSTOM/¥、目录只剩 deepseek、峰谷表达式）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f20cd44` | chore(task): archive 10-22-investigate-update-issue-remote |
+
+### Testing
+
+- [OK] [OK] 免密登录通过；billing 两项落库；sqlite3 可用
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 等 task-43 完成并发 v0.0.42，随后更新本地与生产实例
