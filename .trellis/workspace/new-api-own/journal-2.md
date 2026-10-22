@@ -787,3 +787,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 用户可自行在面板核对模型定价表条目；如需进一步裁剪音频默认可另开任务
+
+
+## Session 84: 查明模型定价表 271 的来源（option 并集+进程内存）并修正自己的诊断命令错误
+<!-- trellis-session: v=2 fp=fdbb5cb4bd3f9183 -->
+
+**Date**: 2026-10-22
+**Task**: 查明模型定价表 271 的来源（option 并集+进程内存）并修正自己的诊断命令错误
+**Branch**: `main`
+
+### Summary
+
+用户报告 v0.0.40 模型定价表仍显示 271。调查（成员只读链路 + Lead 接口实测）：表行=8 个 JSON option 键的键名并集，通道为 RatioSettingsCard 到 GET /api/option/，而后端读的是进程内存 OptionMap（仅启动或走 API 保存时刷新），前端另有 5 分钟 staleTime；实证排除前端内置目录（下载 100 chunk/49MB，旧模型名 0 命中）、代码默认（9+20 条）与 ratio_config（403 因 ExposeRatioEnabled=false）。Lead 自报错误：上一轮把 /api/option/ 的 data 数组当对象用 to_entries 过滤，误判'没有 ModelRatio'；改用正确 jq 后实测内存并集=25（ModelPrice 20 + AudioCompletionRatio 4 + 三个 1 条），与后端 CompletionRatioMeta=25 一致，说明裁剪已生效、截图为改配置前的旧页面。用户裁定 20 个功能计费键保留。
+
+### Main Changes
+
+- 沉淀两条经验：/api/option/ 返回 data 为数组且读进程内存（改库不重启不生效）；诊断前先打印 data 的类型，别假设结构
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `131bf03` | chore(task): archive 10-22-deliver-model-trim-and-decide |
+
+### Testing
+
+- [OK] [OK] 接口并集=25 与 CompletionRatioMeta=25 一致；旧模型名在前端产物 0 命中
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 用户强刷页面确认总计变为 25；如仍为 271 再查镜像 digest 是否与 v0.0.40 一致
