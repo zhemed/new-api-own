@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 85
+- **Total Sessions**: 86
 - **Last Active**: 2026-10-22
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~857 | Active |
+| `journal-2.md` | ~891 | Active |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 86 | 2026-10-22 | 代码默认表只保留 deepseek 家族（v0.0.41）并核实音频注入链路的最终行为 | `a600c08` | `main` |
 | 85 | 2026-10-22 | 澄清定价表 25 行来源（产品默认非测试残留）并按裁定清空功能键与音频键，表格只剩 deepseek-flash | `68d77ef` | `main` |
 | 84 | 2026-10-22 | 查明模型定价表 271 的来源（option 并集+进程内存）并修正自己的诊断命令错误 | `131bf03` | `main` |
 | 83 | 2026-10-22 | 升级到 v0.0.40 并复核（目录裁剪与峰谷定价生效，option 未被重启覆盖） | `f5a210b` | `main` |

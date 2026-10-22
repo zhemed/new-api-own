@@ -855,3 +855,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 可选：把代码默认表里的 ModelPrice 20 条与音频 4 条也清掉（影响新部署/重置比率），需用户确认
+
+
+## Session 86: 代码默认表只保留 deepseek 家族（v0.0.41）并核实音频注入链路的最终行为
+<!-- trellis-session: v=2 fp=184ba9dda82a2156 -->
+
+**Date**: 2026-10-22
+**Task**: 代码默认表只保留 deepseek 家族（v0.0.41）并核实音频注入链路的最终行为
+**Branch**: `main`
+
+### Summary
+
+用户裁定把代码默认表的功能计费键与音频键也清掉。实现：defaultModelRatio 9 到 4（deepseek-flash+3 别名，移除 whisper-1 与 4 个 tts）、defaultModelPrice 20 到空、defaultAudioRatio/defaultAudioCompletionRatio 到空，变量保留并加产品口径注释；测试规模锁定改 4/0/4/4 并新增只含 deepseek 家族断言；make test 41 包 ok；发 v0.0.41。成员只读核实注入链路最终行为：未带 model 的音频请求在无渠道时 503、有渠道未配价时 400，不会静默走 37.5（仅 self-use 或显式接受未配置模型时兜底）。Lead 自报一次抽查脚本缺陷（非贪婪正则跨读下一个 map，误判五张表都含 deepseek），改用直接读文件核实代码正确。
+
+### Main Changes
+
+- 代码默认目录只保留 deepseek 家族：新部署与重置比率后同样只剩它；音频与功能动作计费改由运营在实例侧配置
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a600c08` | feat(pricing): 代码默认表只保留 deepseek 家族（清空功能计费键与音频默认）[task:deliver-pricing-cleanup-and-decide] |
+
+### Testing
+
+- [OK] [OK] make test 41 包 ok；直接读文件确认三张表为空 map；v0.0.41 已发布
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 待用户决定是否升级实例到 v0.0.41；可选：把 distributor 的默认注入改为直接报错（需用户确认）
