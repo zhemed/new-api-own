@@ -15,7 +15,8 @@ const (
 	RMB     = USD / USD2RMB
 )
 
-// 默认模型目录（2026-10-22 起）：只保留 deepseek-flash 及其别名。
+// 默认模型目录（2026-10-22 起）：**只保留 deepseek 家族**（deepseek-flash 及其别名）。
+// 音频模型与功能动作计费键不再随代码发货，由运营在实例侧自行配置。
 // 定价来源：DeepSeek 官方中文定价页 https://api-docs.deepseek.com/zh-cn/quick_start/pricing
 //
 //	低谷：缓存命中 ¥0.02 / 缓存未命中 ¥1.00 / 输出 ¥4.00（每 1M tokens）；高峰时段全部 ×2。
@@ -35,51 +36,19 @@ var defaultModelRatio = map[string]float64{
 	"deepseek-v4-flash": 0.5,
 	"deepseek-chat":     0.5,
 	"deepseek-reasoner": 0.5,
-	// 音频端点未带 model 时由 middleware/distributor.go 注入这两个默认模型，
-	// 删掉会让"未指定模型"的语音/转写请求直接失败，故保留。
-	"whisper-1":     15,  // $0.006 / minute -> $0.03 / 1k tokens
-	"tts-1":         7.5, // 1k characters -> $0.015
-	"tts-1-1106":    7.5, // 1k characters -> $0.015
-	"tts-1-hd":      15,  // 1k characters -> $0.03
-	"tts-1-hd-1106": 15,  // 1k characters -> $0.03
 }
 
-// 只保留「功能动作」计费键（不是模型目录条目）：
-// Midjourney / Suno 的动作名由 constant 包映射（constant/midjourney.go、constant/task.go），
-// service/midjourney.go 也会用到 swap_face；删除会让这些功能无法预扣费。
-var defaultModelPrice = map[string]float64{
-	"suno_music":        0.1,
-	"suno_lyrics":       0.01,
-	"mj_video":          0.8,
-	"mj_imagine":        0.1,
-	"mj_edits":          0.1,
-	"mj_variation":      0.1,
-	"mj_reroll":         0.1,
-	"mj_blend":          0.1,
-	"mj_modal":          0.1,
-	"mj_zoom":           0.1,
-	"mj_shorten":        0.1,
-	"mj_high_variation": 0.1,
-	"mj_low_variation":  0.1,
-	"mj_pan":            0.1,
-	"mj_inpaint":        0,
-	"mj_custom_zoom":    0,
-	"mj_describe":       0.05,
-	"mj_upscale":        0.05,
-	"swap_face":         0.05,
-	"mj_upload":         0.05,
-}
+// 产品口径（2026-10-22）：默认表只含 deepseek 家族。功能动作计费键（Midjourney/Suno 动作、
+// swap_face 等）不再随代码发货，需运营在实例侧自行配置；未配置时这些功能走
+// relay/helper/price.go 的「未配置计费」分支（非 self-use 站点直接拒绝请求）。
+var defaultModelPrice = map[string]float64{}
 
-// 目录裁剪后不再有 gpt-4o 音频模型，音频倍率表为空；
-// 音频端点的默认模型（tts-1 / whisper-1）走 defaultModelRatio。
+// 产品口径：默认不带任何音频模型倍率（gpt-4o-audio 与 tts 系列均已移除），
+// 需要时由运营在实例侧配置。
 var defaultAudioRatio = map[string]float64{}
 
-var defaultAudioCompletionRatio = map[string]float64{
-	"tts-1":         0,
-	"tts-1-hd":      0,
-	"tts-1-1106":    0,
-	"tts-1-hd-1106": 0,
-}
+// 产品口径：同上，默认不带音频补全倍率。
+var defaultAudioCompletionRatio = map[string]float64{}
 
 var modelPriceMap = types.NewRWMap[string, float64]()
 var modelRatioMap = types.NewRWMap[string, float64]()
