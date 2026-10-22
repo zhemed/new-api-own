@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 78
+- **Total Sessions**: 79
 - **Last Active**: 2026-10-22
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~619 | Active |
+| `journal-2.md` | ~653 | Active |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 79 | 2026-10-22 | 基准货币模式也显示 ¥（useSymbol 纯显示开关）+ 补 15 处模板字面量美元，发 v0.0.38 | `5a57ee5` | `main` |
 | 78 | 2026-10-22 | 全站美元改人民币：实例切 CUSTOM ¥/1.0、默认值与硬编码、i18n 两轮去美元（v0.0.36/v0.0.37） | `3e9825c` | `main` |
 | 77 | 2026-10-19 | 保存偏好后图表即时生效（useSyncExternalStore + 稳定快照），发 v0.0.35 并真机点保存验证 | `e19547e` | `main` |
 | 76 | 2026-10-19 | 市场份额卡片跟随偏好改面积图（100% 堆叠不变），发 v0.0.34 并真机验证 | `c4f61de` | `main` |

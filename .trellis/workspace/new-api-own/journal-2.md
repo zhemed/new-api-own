@@ -617,3 +617,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 待用户裁定：显示模式 USD 分支的 $/USD 标签、Waffo 网关币种字段；并确认是否升级实例到 v0.0.37
+
+
+## Session 79: 基准货币模式也显示 ¥（useSymbol 纯显示开关）+ 补 15 处模板字面量美元，发 v0.0.38
+<!-- trellis-session: v=2 fp=4bcf9957cbbb74f7 -->
+
+**Date**: 2026-10-22
+**Task**: 基准货币模式也显示 ¥（useSymbol 纯显示开关）+ 补 15 处模板字面量美元，发 v0.0.38
+**Branch**: `main`
+
+### Summary
+
+用户裁定基准货币（API 值 USD）模式也要显示人民币符号，Waffo 网关币种按高风险不改。实现：发现符号由 Intl.NumberFormat 的 currencyCode 生成、改 symbol 无效，故新增纯显示开关 useSymbol（currency.ts:120），置位时与 CUSTOM 共用 formatWithSymbol；USD 分支 symbol 为人民币符号 + useSymbol:true，kind/currencyCode:'USD'/exchangeRate:1 未动（永不换算、API 契约不变）；getCurrencyLabel 在基准货币与 Token 模式返回人民币符号。成员同时补掉上一轮盘点盲区：15 处模板字面量形式硬编码美元（管理端计价快照/单价核心）。测试 +3（386 pass）；七条门与契约复核全绿；发 v0.0.38（latest=v0.0.38）。遗留待裁定：CNY 模式空格不一致、Creem 美元商品显示、是否加防回归脚本。
+
+### Main Changes
+
+- 确立显示符号与计量币种解耦：useSymbol 只影响渲染，不动 currencyCode/exchangeRate，避免为改显示而影响换算与 API 契约
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5a57ee5` | feat(web): 基准货币模式也显示 ¥（纯显示开关 useSymbol），并补掉 15 处模板字面量美元 [task:deliver-cny-and-decide] |
+
+### Testing
+
+- [OK] [OK] 386 pass；currencyCode 仍为 USD、exchangeRate 仍为 1 有断言锁定；七条门全绿；v0.0.38 已发布
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 待用户裁定三项遗留；并按选择升级实例到 v0.0.38
