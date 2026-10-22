@@ -193,7 +193,7 @@ export function PricingSection({ defaultValues }: PricingSectionProps) {
                   <FormLabel>{t('Display Mode')}</FormLabel>
                   <Select
                     items={[
-                      { value: 'USD', label: t('USD') },
+                      { value: 'USD', label: t('Base currency') },
                       { value: 'CNY', label: t('CNY') },
                       { value: 'CUSTOM', label: t('Custom Currency') },
                       { value: 'TOKENS', label: t('Tokens Only') },
@@ -208,7 +208,9 @@ export function PricingSection({ defaultValues }: PricingSectionProps) {
                     </FormControl>
                     <SelectContent alignItemWithTrigger={false}>
                       <SelectGroup>
-                        <SelectItem value='USD'>{t('USD')}</SelectItem>
+                        <SelectItem value='USD'>
+                          {t('Base currency')}
+                        </SelectItem>
                         <SelectItem value='CNY'>{t('CNY')}</SelectItem>
                         <SelectItem value='CUSTOM'>
                           {t('Custom Currency')}
@@ -237,8 +239,8 @@ export function PricingSection({ defaultValues }: PricingSectionProps) {
                   <FormItem>
                     <FormLabel>
                       {displayType === 'CNY'
-                        ? t('CNY per USD')
-                        : t('USD Exchange Rate')}
+                        ? t('CNY per base currency unit')
+                        : t('Base Currency Exchange Rate')}
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -249,7 +251,7 @@ export function PricingSection({ defaultValues }: PricingSectionProps) {
                     </FormControl>
                     <FormDescription>
                       {t(
-                        'Real exchange rate between USD and your payment gateway currency'
+                        'Real exchange rate between the base currency and your payment gateway currency'
                       )}
                     </FormDescription>
                     <FormMessage />
@@ -290,7 +292,7 @@ export function PricingSection({ defaultValues }: PricingSectionProps) {
                   name='general_setting.custom_currency_exchange_rate'
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('Units per USD')}</FormLabel>
+                      <FormLabel>{t('Units per base currency unit')}</FormLabel>
                       <FormControl>
                         <Input
                           type='number'
@@ -306,11 +308,15 @@ export function PricingSection({ defaultValues }: PricingSectionProps) {
                           name={field.name}
                           onBlur={field.onBlur}
                           ref={field.ref}
-                          placeholder={t('e.g. 8 means 1 USD = 8 units')}
+                          placeholder={t(
+                            'e.g. 8 means 1 base currency unit = 8 units'
+                          )}
                         />
                       </FormControl>
                       <FormDescription>
-                        {t('Conversion rate from USD to your custom currency')}
+                        {t(
+                          'Conversion rate from the base currency to your custom currency'
+                        )}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

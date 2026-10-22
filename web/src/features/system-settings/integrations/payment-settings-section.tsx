@@ -915,7 +915,7 @@ export function PaymentSettingsSection({
                         </FormControl>
                         <FormDescription>
                           {t(
-                            'How much to charge for each US dollar of balance (Epay)'
+                            'How much to charge for each base currency unit of balance (Epay)'
                           )}
                         </FormDescription>
                         <FormMessage />
@@ -1390,7 +1390,9 @@ export function PaymentSettingsSection({
                           />
                         </FormControl>
                         <FormDescription>
-                          {t('e.g., 8 means 8 local currency per USD')}
+                          {t(
+                            'e.g., 8 means 8 local currency units per base currency unit'
+                          )}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
