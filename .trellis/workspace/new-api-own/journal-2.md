@@ -685,3 +685,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 待用户决定是否升级实例到 v0.0.39
+
+
+## Session 81: 升级实例到 v0.0.39 并真机复核三个页面无美元
+<!-- trellis-session: v=2 fp=6548dc61c90bd505 -->
+
+**Date**: 2026-10-22
+**Task**: 升级实例到 v0.0.39 并真机复核三个页面无美元
+**Branch**: `main`
+
+### Summary
+
+用户选择升到 v0.0.39 且计费拆解小数位保持现状。执行：apply 后约 6 秒切到 v0.0.39，容器 RestartCount 0、日志无异常、币种设置 CUSTOM/¥/1 重启后仍在。真机复核 /pricing（¥ 0.3、¥ 15，无美元符号与 USD 字样）、/dashboard/models（¥ 1.15）、/keys（无金额，无美元）均正常。清理本轮 curl 与无头浏览器会话。
+
+### Main Changes
+
+- 无代码改动（实例升级与复核）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3c5b5f9` | chore(task): archive 10-22-deliver-base-currency-and-decide |
+
+### Testing
+
+- [OK] [OK] v0.0.39；三页面零美元命中；设置保持
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 无；如需固定 4 位小数或收口 Creem 显示可另开任务
