@@ -330,18 +330,23 @@ LOG_SQL_DSN='sqlite:/dev/shm/newapi-logs.db?_pragma=journal_mode(WAL)&_pragma=sy
 
 ## 模型定价换算速查（防再踩坑）
 
-`defaultModelRatio` 的单位是 quota/token，UI 显示美元/百万 = ratio × 2。两种价格书写模式：
+`defaultModelRatio` 的单位是 quota/token；**显示值（每 1M tokens）= 2 × model_ratio × 显示汇率**。
+显示汇率来自 `general_setting`：默认显示类型 `CUSTOM`（符号 ¥、汇率 1.0）；`CNY` 用 `USDExchangeRate`；`USD` 为 1。
 
-- **美元模型**：`ratio = 美元/M × 0.5`（例：deepseek-chat 旧价 $0.27/M → `0.27 / 2`）
-- **人民币模型**：`ratio = 元/千 tokens × RMB`（RMB = USD/7.3 = 68.49；例：ERNIE `0.12 * RMB` = 0.12 元/千 tokens）
-- **⚠️ 错误教训（720a96fb）**：人民币价格写成 `元/M × RMB` 会**高估 1000 倍**（把 1.5 元/M 当成 1.5 元/K）——人民币必须先除以 1000 再乘 RMB。
+- **人民币价（当前默认口径，显示汇率 1.0）**：`model_ratio = 元/1M ÷ 2`（例：¥1.00/M → `0.5`）
+- **美元价（显示美元时）**：`model_ratio = USD/M × 0.5`（例：USD 0.27/M → `0.135`）
+- **只有把显示汇率设成 7.3 时**，旧写法 `元/千 × 68.49` 才成立（68.49 = 1000 ÷ (2 × 7.3)）；显示汇率 1.0 时照抄 68.49 会**低估 7.3 倍**。
+- **⚠️ 错误教训（720a96fb）**：人民币价格写成 `元/M × RMB` 会**高估 1000 倍**（把 1.5 元/M 当成 1.5 元/K）——必须先换算成"元/1M"再除以 2。
 
-deepseek-v4 已配置（2026-08-17 官方**美元**定价，英文站价格表；取谷价，高峰 2 倍）：
-- `ModelRatio`: flash `0.22/2`（0.11）、pro `0.66/2`（0.33）——官方 off-peak 输入 $0.22/$0.66 每 M
-- `CompletionRatio`: 3（官方输出 = 输入 × 3：$0.66/$1.98）
-- `CacheRatio`: flash `0.007/0.22`、pro `0.022/0.66`（官方缓存命中 $0.007/$0.022）
-- UI 校验：flash 输入 $0.22/M、补全 $0.66/M、缓存 $0.007/M ✅（官方英文站价，峰值 UTC 01:00-04:00/06:00-10:00 为 2 倍）
-- 注意：官方中文站是人民币价（1.5/4.5 元），英文站是美元价（$0.22/$0.66），两者汇率口径略有差异（≈6.8）；本仓库按美元价配置
+默认目录（2026-10-22 起）只剩 `deepseek-flash` 及其别名（`deepseek-v4-flash`、`deepseek-chat`、`deepseek-reasoner`），
+外加引擎注入的音频默认模型（`tts-1` 系、`whisper-1`）；价格取 DeepSeek 官方中文站**低谷**价
+（缓存命中 ¥0.02 / 未命中 ¥1.00 / 输出 ¥4.00，每 1M tokens，来源 api-docs.deepseek.com/zh-cn/quick_start/pricing）：
+
+- `ModelRatio`: 0.5（= 1.00 ÷ 2）
+- `CompletionRatio`: 4（输出 4.00 ÷ 输入 1.00）
+- `CacheRatio`: 0.02（缓存命中 0.02 ÷ 输入 1.00）
+- 高峰时段全部 ×2，由实例侧表达式计费（billingexpr）处理，代码默认只填低谷价。
+- UI 校验：输入 ¥1.00/M、补全 ¥4.00/M、缓存 ¥0.02/M ✅
 
 ## OpenCode Go 会话头（`x-opencode-session`）
 
