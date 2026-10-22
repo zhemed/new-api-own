@@ -821,3 +821,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 用户强刷页面确认总计变为 25；如仍为 271 再查镜像 digest 是否与 v0.0.40 一致
+
+
+## Session 85: 澄清定价表 25 行来源（产品默认非测试残留）并按裁定清空功能键与音频键，表格只剩 deepseek-flash
+<!-- trellis-session: v=2 fp=f440747832370ef4 -->
+
+**Date**: 2026-10-22
+**Task**: 澄清定价表 25 行来源（产品默认非测试残留）并按裁定清空功能键与音频键，表格只剩 deepseek-flash
+**Branch**: `main`
+
+### Summary
+
+用户看到表格 25 行、怀疑是测试残留。核实：DB 里只有我写的 3 个键（ModelRatio/CompletionRatio/CacheRatio 各 1 条），其余 24 行来自产品默认表（defaultModelPrice 20 条 MJ/Suno/换脸功能键 + defaultAudioRatio/AudioCompletionRatio 各 4 条音频键），不是测试残留；但如实认领副作用：DB ModelRatio 覆盖为 1 条后代码默认 9 条被整体替换，音频模型丢价显示未设。用户裁定两批都清，已写入 ModelPrice={}、AudioRatio={}、AudioCompletionRatio={} 并复核：接口内存 8 键并集=1，唯一模型名 deepseek-flash，DB 落库一致。代价（MJ/Suno 无法预扣费、未带 model 的语音请求报未配置计费）用户已知情。
+
+### Main Changes
+
+- 沉淀：/api/option/ 的定价键是『实例写入』与『代码默认播种』两来源的并集；清空某键即整体替换该键的运行时 map
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `68d77ef` | chore(task): archive 10-22-investigate-pricing-table-271 |
+
+### Testing
+
+- [OK] [OK] 接口并集=1 且只剩 deepseek-flash；DB 六键落库复核一致
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 可选：把代码默认表里的 ModelPrice 20 条与音频 4 条也清掉（影响新部署/重置比率），需用户确认
