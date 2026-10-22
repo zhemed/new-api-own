@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 87
+- **Total Sessions**: 88
 - **Last Active**: 2026-10-22
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~925 | Active |
+| `journal-2.md` | ~959 | Active |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 88 | 2026-10-22 | 生产实例（x.miio.cc/zzds.de）定价目录对齐到只剩 deepseek-flash，并澄清两边差异根因 | `10e1c2f` | `main` |
 | 87 | 2026-10-22 | 升级到 v0.0.41 并复核：模型定价表只剩 deepseek-flash（数据库与接口双证） | `f1b6aea` | `main` |
 | 86 | 2026-10-22 | 代码默认表只保留 deepseek 家族（v0.0.41）并核实音频注入链路的最终行为 | `a600c08` | `main` |
 | 85 | 2026-10-22 | 澄清定价表 25 行来源（产品默认非测试残留）并按裁定清空功能键与音频键，表格只剩 deepseek-flash | `68d77ef` | `main` |

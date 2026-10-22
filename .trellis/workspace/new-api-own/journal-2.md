@@ -923,3 +923,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 无；若日后要启用 TTS/MJ/Suno，在实例侧给对应键配价即可
+
+
+## Session 88: 生产实例（x.miio.cc/zzds.de）定价目录对齐到只剩 deepseek-flash，并澄清两边差异根因
+<!-- trellis-session: v=2 fp=c47a33a0c3ec6a3e -->
+
+**Date**: 2026-10-22
+**Task**: 生产实例（x.miio.cc/zzds.de）定价目录对齐到只剩 deepseek-flash，并澄清两边差异根因
+**Branch**: `main`
+
+### Summary
+
+用户报告生产与本地模型定价/数量不一致。调查：x.miio.cc 解析到另一台机器（非本机），两边都是 v0.0.41；生产库在 /root/new-api/data/one-api.db，改前 ModelRatio 4 条、CacheRatio 76 条、CompletionRatio 7 条（表格多出行数主因是 CacheRatio 旧模型），币种走代码默认。用户授权生产也对齐：先备份（bak-align-20261022-175404），再通过生产本机 PUT /api/option/ 写入 9 个键（3 个 deepseek 定价 + 3 个空表 + CUSTOM/¥/1.0），复核 /api/status 与库并集=1（deepseek-flash）、abilities 只有它，清理本次 curl 会话保留用户 19 条浏览器会话。SSH 首连报主机指纹变更，经用户确认重装后才 ssh-keygen -R 重连；已知本机/.ssh 操作与私有地址不入记录。如实记录两处 Lead 失误：探测角色时误打印 access_token（已注销该会话）、字符串型 option 误用 json.loads 导致无效参数（已修正）。
+
+### Main Changes
+
+- 确立：生产与本地是两套独立数据，代码默认值只影响未配置过的实例；对齐需改各自库的 option 并备份
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `10e1c2f` | chore(task): archive 10-22-deliver-v0041-and-decide |
+
+### Testing
+
+- [OK] [OK] 生产 /api/status=CUSTOM/¥；定价表并集=1；abilities=deepseek-flash；会话已清理
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 建议把 SSH 改为密钥登录并更换面板密码；生产面板强刷后应显示总计 1
