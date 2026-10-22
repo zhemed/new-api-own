@@ -719,3 +719,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 无；如需固定 4 位小数或收口 Creem 显示可另开任务
+
+
+## Session 82: 默认模型目录裁到只剩 deepseek 家族 + 官方人民币峰谷价（实例+代码），发 v0.0.40
+<!-- trellis-session: v=2 fp=38982a6e37fd4d23 -->
+
+**Date**: 2026-10-22
+**Task**: 默认模型目录裁到只剩 deepseek 家族 + 官方人民币峰谷价（实例+代码），发 v0.0.40
+**Branch**: `main`
+
+### Summary
+
+用户要求：①284 个默认模型除 deepseek-flash 外全部彻底移除；②查 DeepSeek-Flash 官方人民币定价（含低谷/高峰）并默认写入。三路只读调查结论：284 不是数据库模型表（models 0 行、abilities 只有 deepseek-flash、渠道只绑它、/api/pricing 只返回 1 个），而是代码内置定价目录（defaultModelRatio 239 + defaultModelPrice 31 等）+ 实例 option 覆盖；前端无写死清单、i18n 无关、删除不级联。官方价（2026-10-22）：低谷 缓存命中 ¥0.02/未命中 ¥1.00/输出 ¥4.00 每 1M tokens，高峰全部 ×2，高峰时段=北京时间周一至周五 09:00-12:00/14:00-18:00 不含节假日；比率体系不支持分时，唯一内建时段感知是 billingexpr。执行：①实例备份 + 写入 5 个 option（ModelRatio 240 到 1、CompletionRatio/CacheRatio、billing_mode/expr 峰谷表达式）；②真实请求测试打到上游但上游失败（与本次无关），顺带发现渠道上游是第三方网关而非官方；临时令牌用完即删；③代码 v0.0.40 把默认目录裁到 deepseek 家族（保留引擎注入音频默认与 MJ/Suno 计费键，均有硬依赖依据）、deepseek-flash 默认改官方低谷价、修 MAINTENANCE 低估 7.3 倍的旧公式、新增 4 测试；go vet/build/relaykit/make test(41 包)全绿。成员自报一次工作区外误写（已删、无外发）并已核实。
+
+### Main Changes
+
+- 确立：模型目录的唯一来源是代码默认表 + 实例 option，渠道能力表与定价目录是两件事；分时定价用 billingexpr
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5ce9703` | feat(pricing): 默认模型目录裁到只剩 deepseek 家族 + 按官方人民币低谷价配置；修文档换算公式 [task:deepseek-only-and-pricing] |
+
+### Testing
+
+- [OK] [OK] make test 41 包 ok；实例 option 落库复核；临时令牌与备份状态可查
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 待用户决定：是否升级到 v0.0.40、是否再删 5 个音频默认与 3 个别名、渠道上游失败需排查
