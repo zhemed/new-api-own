@@ -753,3 +753,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 待用户决定：是否升级到 v0.0.40、是否再删 5 个音频默认与 3 个别名、渠道上游失败需排查
+
+
+## Session 83: 升级到 v0.0.40 并复核（目录裁剪与峰谷定价生效，option 未被重启覆盖）
+<!-- trellis-session: v=2 fp=5cfcf027711a09de -->
+
+**Date**: 2026-10-22
+**Task**: 升级到 v0.0.40 并复核（目录裁剪与峰谷定价生效，option 未被重启覆盖）
+**Branch**: `main`
+
+### Summary
+
+用户选择：升到 v0.0.40、保留目录里 8 个非 deepseek 键（5 音频默认+3 别名）、上游报错系其自身忘记更新 API 故归档不排查。执行：apply 后约 6 秒切到 v0.0.40，RestartCount 0；重启后复查 option 未被覆盖——ModelRatio/CompletionRatio/CacheRatio 各 1 条且为官方低谷价（0.5/4/0.02），billing_setting.billing_mode 为 deepseek-flash:tiered_expr，币种仍 CUSTOM+人民币符号。清理本轮 curl 与无头浏览器会话。
+
+### Main Changes
+
+- 无代码改动（实例升级与复核）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f5a210b` | chore(task): archive 10-22-deepseek-only-and-pricing |
+
+### Testing
+
+- [OK] [OK] v0.0.40；option 重启后保持；币种与峰谷表达式生效
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 用户可自行在面板核对模型定价表条目；如需进一步裁剪音频默认可另开任务

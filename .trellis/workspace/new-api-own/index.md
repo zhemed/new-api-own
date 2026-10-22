@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 82
+- **Total Sessions**: 83
 - **Last Active**: 2026-10-22
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~755 | Active |
+| `journal-2.md` | ~789 | Active |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 83 | 2026-10-22 | 升级到 v0.0.40 并复核（目录裁剪与峰谷定价生效，option 未被重启覆盖） | `f5a210b` | `main` |
 | 82 | 2026-10-22 | 默认模型目录裁到只剩 deepseek 家族 + 官方人民币峰谷价（实例+代码），发 v0.0.40 | `5ce9703` | `main` |
 | 81 | 2026-10-22 | 升级实例到 v0.0.39 并真机复核三个页面无美元 | `3c5b5f9` | `main` |
 | 80 | 2026-10-22 | 统一金额格式（三模式一致+两处自研拼接收口）并新增货币硬编码守则，发 v0.0.39 | `4859a62` | `main` |
