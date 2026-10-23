@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 93
+- **Total Sessions**: 95
 - **Last Active**: 2026-10-23
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~1147 | Active |
+| `journal-2.md` | ~1228 | Active |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,8 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 95 | 2026-10-23 | 清理未完成事项：-none 记述订正 + 版本比对假漂移修复 + 回滚容器删除；PAT 受前置条件阻塞 | `b9142c5`, `d65ad76`, `808f5b4` | `main` |
+| 94 | 2026-10-23 | 盘点工作区未完成任务：无遗留活动任务，archive 161 个全部 completed | - | `main` |
 | 93 | 2026-10-23 | deepseek 定价与家族判定两条线：发 v0.0.44 / v0.0.45，实例定价校正与镜像升级 | `401f13c`, `b5f9388`, `09b1af1` | `main` |
 | 92 | 2026-10-23 | 自升级口径确认（GET 仅 root）与回滚演练安排（下次发布补做） | `18775a5` | `main` |
 | 91 | 2026-10-23 | 自升级改进交付：权限收紧/资产签名/不持久提示/回滚点，发 v0.0.43 并两端升级 | `813d5c4` | `main` |

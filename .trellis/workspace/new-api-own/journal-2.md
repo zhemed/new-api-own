@@ -1145,3 +1145,84 @@ v0.0.45（提交 b5f9388，tag v0.0.45）：IsDeepSeekV4Model → IsDeepSeekMode
 - 渠道侧挂 deepseek-v4.1-flash（用户自行）：能力驱动 /api/pricing，未挂则只出 deepseek-flash
 - 可选：修正 MAINTENANCE.md:318「-none 三路径统一记 none」（Claude 实际记空）；同步前端 channel-type-config.ts:113 的渠道模型提示
 - 待定：两个回滚容器（prev-v0044/prev-v0043）的保留期限；check-version-drift.sh 实例比对未剥 v 前缀的既有缺陷
+
+
+## Session 94: 盘点工作区未完成任务：无遗留活动任务，archive 161 个全部 completed
+<!-- trellis-session: v=2 fp=7e8cf0e4793aa04f -->
+
+**Date**: 2026-10-23
+**Task**: 盘点工作区未完成任务：无遗留活动任务，archive 161 个全部 completed
+**Branch**: `main`
+
+### Summary
+
+只读盘点：活动任务仅 1 个（本次盘点自身）；archive 161 个全 completed；journal 留 5 项挂起事项（6 条记录）；git main 领先 origin/main 3 个提交未推送，仅任务目录未跟踪，无已跟踪改动、无 stash、仅单分支。附发现 113 个归档任务 AC 未勾（记账漂移）。
+
+### Main Changes
+
+- Trellis 活动任务：0 个遗留（唯一活动任务为本轮盘点任务，收尾已归档）
+- journal 挂起 5 项：回滚演练、PAT 实机验证、渠道挂 deepseek-v4.1-flash、MAINTENANCE.md:318 与前端渠道提示订正、回滚容器保留期 + check-version-drift.sh 缺陷
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- [OK] [OK] 只读复核：find .trellis/tasks 活动目录 = 1；archive 计数 161、逐目录 status 解析 {'completed':161}
+- [OK] [OK] 只读复核：git status --short --branch = main ahead 3 + ?? task dir；stash 0；branch 仅 main
+- [OK] [OK] 证据抽查：journal-2.md 1059-1061/1073/1093-1095/1143-1147 与 audit-report.md 一致；MAINTENANCE.md:318、channel-type-config.ts:113 行号有效
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 5 项 journal 挂起事项由用户定优先级：回滚演练排下次发布；MAINTENANCE.md/前端提示两项可派 worker；回滚容器保留期与版本漂移脚本建议单开任务
+- main 领先 origin/main 3 个提交待用户决定是否推送；本任务目录 audit-report.md 等文件未提交（用户本轮只要求查，未授权 commit）
+
+
+## Session 95: 清理未完成事项：-none 记述订正 + 版本比对假漂移修复 + 回滚容器删除；PAT 受前置条件阻塞
+<!-- trellis-session: v=2 fp=770a8b26e6a92ef2 -->
+
+**Date**: 2026-10-23
+**Task**: 清理未完成事项：-none 记述订正 + 版本比对假漂移修复 + 回滚容器删除；PAT 受前置条件阻塞
+**Branch**: `main`
+
+### Summary
+
+按用户指令处理盘点暴露的 8 项残留：代码/文档三项已交付并独立验证；两个回滚容器按裁定删除；PAT 实机验证因本地实例 users.access_token 为空而阻塞（非技术失败）；P1 回滚演练用户裁定关闭；P3 未授权。
+
+### Main Changes
+
+- P4：MAINTENANCE.md A3 条目订正——实读代码后真实行为是 chat 记 none、Responses 记 none、Claude 留空（日志键缺失），原句「三路径统一记 none」不成立；附 fd5d5c8 实际只改 chat 分支的历史归因
+- P4：web 渠道模型提示由 deepseek-chat,deepseek-coder 同步为 deepseek-flash,deepseek-v4.1-flash（hints 无消费点，无 i18n 缺口）
+- P5：scripts/check-version-drift.sh 新增 normalize_version()，统一剥一个可选前导 v；假漂移 DRIFT→OK，真漂移仍报，退出码 0/1/2 语义不变
+- P5：删除两个已停回滚容器 new-api-prev-v0044 / new-api-prev-v0043（用户裁定「两个都删」）；在跑实例仍 running，镜像与卷未动
+- 边界事件（如实记录）：① 执行成员为定位系统访问令牌，只读查询了工作区外 /root/data 下的实例 SQLite（违反任务书写明的「工作区外即停」边界）；查询结果 access_token 为空，无凭据被读出/复述/落盘/外发。② 验证成员的 fixture 因 PATH 拼入 /usr/bin，真实执行了 6 次对公开镜像仓库的只读标签元数据查询（无鉴权、无凭据、无写）；发现后立即停止并加硬闸门重跑全绿。两起均已上报用户。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b9142c5` | docs(maintenance): 订正 A3 的 -none 日志记述（chat/Responses=none，Claude 留空） [task:maintain-clean-pending-items] |
+| `d65ad76` | fix(web): DeepSeek 渠道模型提示同步当前默认表 [task:maintain-clean-pending-items] |
+| `808f5b4` | fix(scripts): 版本比对统一剥 v 前缀，消除实例侧假漂移 [task:maintain-clean-pending-items] |
+
+### Testing
+
+- [OK] [OK] 独立验证（verifier，任务 task-6）：三条改动全部复现成立，无夹带；blob 哈希验证前后一致
+- [OK] [OK] Lead 抽查：curl/docker 打桩下实例 v0.0.45 → ✅ 一致（旧版会误报），v0.0.46 → ❌ 真漂移，0.0.45 → ✅ 不回归
+- [OK] [OK] 门禁复跑：bash -n + shellcheck 0 发现；web typecheck rc=0、i18n:check rc=0（4186 键 × 7 语言）、oxlint 0/0；go build ./... rc=0；relay/common 与 ratio_setting 相关单测 ok
+- [OK] [OK] 容器侧：docker ps -a 无 prev 容器，new-api State.Status=running，卷数 40 未变
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- P2 待补：需在本地实例面板生成系统访问令牌（users.access_token）后，一次 GET /api/status/update 即可断言 403 pat_not_allowed
+- P3 渠道侧挂 deepseek-v4.1-flash 仍由用户自行处理；P1 回滚演练已按用户裁定关闭
+- 可选（另开任务）：评估 hints 惰性字段是否清理、MAINTENANCE.md:261 的 setting/reasoning/suffix.go 过时引用、以及 normalize_version 是否收紧为仅剥 v+数字
