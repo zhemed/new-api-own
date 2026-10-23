@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 90
-- **Last Active**: 2026-10-22
+- **Total Sessions**: 91
+- **Last Active**: 2026-10-23
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~1027 | Active |
+| `journal-2.md` | ~1061 | Active |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 91 | 2026-10-23 | 自升级改进交付：权限收紧/资产签名/不持久提示/回滚点，发 v0.0.43 并两端升级 | `813d5c4` | `main` |
 | 90 | 2026-10-22 | 发 v0.0.42：峰谷定价做成代码默认值，两端实例升级并复核一致 | `8e7acb8` | `main` |
 | 89 | 2026-10-22 | 生产配置 SSH 密钥/补装 sqlite3/同步峰谷计费；委派代码线把峰谷定价做成默认值 | `f20cd44` | `main` |
 | 88 | 2026-10-22 | 生产实例（x.miio.cc/zzds.de）定价目录对齐到只剩 deepseek-flash，并澄清两边差异根因 | `10e1c2f` | `main` |

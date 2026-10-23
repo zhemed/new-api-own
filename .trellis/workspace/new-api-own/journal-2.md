@@ -1025,3 +1025,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 如需验证峰谷实际计费，可用真实请求查日志 matched_tier；用户上游此前报错需其自行更新上游密钥
+
+
+## Session 91: 自升级改进交付：权限收紧/资产签名/不持久提示/回滚点，发 v0.0.43 并两端升级
+<!-- trellis-session: v=2 fp=9bc83ebe42c837d4 -->
+
+**Date**: 2026-10-23
+**Task**: 自升级改进交付：权限收紧/资产签名/不持久提示/回滚点，发 v0.0.43 并两端升级
+**Branch**: `main`
+
+### Summary
+
+用户给出 5 项改进规格并要求对照实际评估。Lead 核实 5 项均仍在并写 design/implement，分三线并行：后端（路由提 RootAuth+新增 rollback、拒绝 PAT 的 RequireSessionCredential、SHA256SUMS.sig ed25519 验签先于下载且失败不触碰二进制、persistent/hint、.prev 回滚点、状态加 rollback_available、drain 评估暂缓）、CI（release.yml 签名步骤+secret↔公钥自检+四件套断言、docs/release-signing.md、导出公钥脚本、UPDATE_SIGNING_KEY 写入 secret）、前端（仅 root 显隐、两处不持久提示且优先渲染后端 hint、6 新码+3 别名文案 7 语言 +14 键、回滚入口）。Lead 复核：公钥两端一致（44 字符）、go build/make test 42 包 ok、gofmt 干净、前端 typecheck 0/bun test 408 pass。发 v0.0.43，Release 资产含 SHA256SUMS.sig，两端实例升级到 v0.0.43（RestartCount=0）。实机验收：root 会话 200；PAT 实机测试因账号未配置系统访问令牌无法执行（用 API 令牌误测得 401，属实测缺口，结论以权限矩阵单测为准）；回滚演练因 .prev 是 v0.0.43 新能力、两端从 v0.0.42 升级故无回滚点（rollback_available=false 且返回 no_rollback_point，语义正确），真实演练待下一次发布。
+
+### Main Changes
+
+- 自升级从『管理员可换二进制』收紧为『root 会话 + 资产签名校验 + 可回滚 + 明示不持久』
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `813d5c4` | feat(update): 自升级权限收紧/资产签名/不持久提示/回滚点 [task:improve-self-update] |
+
+### Testing
+
+- [OK] [OK] make test 42 包；bun test 408 pass；v0.0.43 资产含 .sig；两端 v0.0.43；root 200
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 下次发布演练：更新生成 .prev → rollback_available=true → 回滚成功（前后版本+哈希对比）；如需非 root 也能看更新状态，可把 GET 单独降回 AdminAuth（待用户定口径）
