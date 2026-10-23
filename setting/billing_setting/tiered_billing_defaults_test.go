@@ -18,7 +18,7 @@ const expectedDeepSeekPeakOffPeakExpr = `(weekday("Asia/Shanghai") >= 1 && weekd
 const deepSeekPeakCondition = `(weekday("Asia/Shanghai") >= 1 && weekday("Asia/Shanghai") <= 5 && ((hour("Asia/Shanghai") >= 9 && hour("Asia/Shanghai") < 12) || (hour("Asia/Shanghai") >= 14 && hour("Asia/Shanghai") < 18)))`
 
 func TestDefaultTieredBillingCoversDeepSeekFamily(t *testing.T) {
-	for _, model := range []string{"deepseek-flash", "deepseek-v4-flash", "deepseek-chat", "deepseek-reasoner"} {
+	for _, model := range []string{"deepseek-flash", "deepseek-v4-flash", "deepseek-v4.1-flash", "deepseek-chat", "deepseek-reasoner"} {
 		t.Run(model, func(t *testing.T) {
 			assert.Equal(t, BillingModeTieredExpr, GetBillingMode(model))
 

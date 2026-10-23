@@ -127,7 +127,7 @@ func ClaudeHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *typ
 
 	// DeepSeek V4 models think by default; record the default effort (high) so
 	// the usage log shows a reasoning level even when no suffix is used.
-	if info.ReasoningEffort == "" && strings.HasPrefix(request.Model, "deepseek-v4-") &&
+	if info.ReasoningEffort == "" && reasoning.IsDeepSeekV4Model(request.Model) &&
 		(request.Thinking == nil || request.Thinking.Type != "disabled") {
 		info.ReasoningEffort = "high"
 	}

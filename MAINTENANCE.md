@@ -338,7 +338,7 @@ LOG_SQL_DSN='sqlite:/dev/shm/newapi-logs.db?_pragma=journal_mode(WAL)&_pragma=sy
 - **只有把显示汇率设成 7.3 时**，旧写法 `元/千 × 68.49` 才成立（68.49 = 1000 ÷ (2 × 7.3)）；显示汇率 1.0 时照抄 68.49 会**低估 7.3 倍**。
 - **⚠️ 错误教训（720a96fb）**：人民币价格写成 `元/M × RMB` 会**高估 1000 倍**（把 1.5 元/M 当成 1.5 元/K）——必须先换算成"元/1M"再除以 2。
 
-默认目录（2026-10-22 起）只剩 `deepseek-flash` 及其别名（`deepseek-v4-flash`、`deepseek-chat`、`deepseek-reasoner`），
+默认目录（2026-10-22 起）只剩 `deepseek-flash` 及其别名（`deepseek-v4-flash`、`deepseek-v4.1-flash`、`deepseek-chat`、`deepseek-reasoner`），
 外加引擎注入的音频默认模型（`tts-1` 系、`whisper-1`）；价格取 DeepSeek 官方中文站**低谷**价
 （缓存命中 ¥0.02 / 未命中 ¥1.00 / 输出 ¥4.00，每 1M tokens，来源 api-docs.deepseek.com/zh-cn/quick_start/pricing）：
 

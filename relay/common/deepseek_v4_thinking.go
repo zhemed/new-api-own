@@ -2,7 +2,6 @@ package common
 
 import (
 	"fmt"
-	"strings"
 
 	appcommon "github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/relaykit/dto"
@@ -100,7 +99,7 @@ func ApplyDeepSeekV4ResponsesThinkingSuffix(info *RelayInfo, request *dto.OpenAI
 			info.UpstreamModelName = baseModel
 		}
 	}
-	if !ok && strings.HasPrefix(modelName, "deepseek-v4-") {
+	if !ok && reasoning.IsDeepSeekV4Model(modelName) {
 		if request.Reasoning == nil {
 			request.Reasoning = &dto.Reasoning{}
 		}
@@ -116,7 +115,7 @@ func ApplyDeepSeekV4ResponsesThinkingSuffix(info *RelayInfo, request *dto.OpenAI
 // applyDeepSeekV4OpenAIDefaultEffort records the default thinking effort (high)
 // for suffix-less DeepSeek V4 chat requests unless thinking is explicitly disabled.
 func applyDeepSeekV4OpenAIDefaultEffort(info *RelayInfo, modelName string, request *dto.GeneralOpenAIRequest) {
-	if request == nil || request.ReasoningEffort != "" || !strings.HasPrefix(modelName, "deepseek-v4-") {
+	if request == nil || request.ReasoningEffort != "" || !reasoning.IsDeepSeekV4Model(modelName) {
 		return
 	}
 	disabled := false

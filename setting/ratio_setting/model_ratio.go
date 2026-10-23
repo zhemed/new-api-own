@@ -5,6 +5,7 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
+	"github.com/QuantumNous/new-api/setting/reasoning"
 	"github.com/QuantumNous/new-api/types"
 )
 
@@ -32,10 +33,11 @@ var defaultModelRatio = map[string]float64{
 	// deepseek 家族别名：deepseek-v4-flash 被 deepseek 渠道的 ModelList
 	// （relay/channel/deepseek/constants.go）与 FormatMatchingModelName 的 -none/-max
 	// 后缀处理引用；deepseek-chat / deepseek-reasoner 是官方 API 名称，同一价格。
-	"deepseek-flash":    0.5,
-	"deepseek-v4-flash": 0.5,
-	"deepseek-chat":     0.5,
-	"deepseek-reasoner": 0.5,
+	"deepseek-flash":      0.5,
+	"deepseek-v4-flash":   0.5,
+	"deepseek-v4.1-flash": 0.5,
+	"deepseek-chat":       0.5,
+	"deepseek-reasoner":   0.5,
 }
 
 // 产品口径（2026-10-22）：默认表只含 deepseek 家族。功能动作计费键（Midjourney/Suno 动作、
@@ -56,10 +58,11 @@ var completionRatioMap = types.NewRWMap[string, float64]()
 
 // deepseek 家族：官方输出价 ÷ 输入价 = 4.00 / 1.00 = 4。
 var defaultCompletionRatio = map[string]float64{
-	"deepseek-flash":    4,
-	"deepseek-v4-flash": 4,
-	"deepseek-chat":     4,
-	"deepseek-reasoner": 4,
+	"deepseek-flash":      4,
+	"deepseek-v4-flash":   4,
+	"deepseek-v4.1-flash": 4,
+	"deepseek-chat":       4,
+	"deepseek-reasoner":   4,
 }
 
 // InitRatioSettings initializes all model related settings maps
@@ -485,8 +488,8 @@ func FormatMatchingModelName(name string) string {
 		name = handleThinkingBudgetModel(name, "gemini-2.5-pro", "gemini-2.5-pro-thinking-*")
 	}
 
-	// deepseek-v4 thinking effort suffix: deepseek-v4-flash-max / deepseek-v4-flash-none
-	if strings.HasPrefix(name, "deepseek-v4-") {
+	// deepseek-v4 family thinking effort suffix: deepseek-v4-flash-max / deepseek-v4.1-flash-none
+	if reasoning.IsDeepSeekV4Model(name) {
 		if strings.HasSuffix(name, "-none") {
 			name = strings.TrimSuffix(name, "-none")
 		} else if strings.HasSuffix(name, "-max") {

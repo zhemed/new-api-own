@@ -35,7 +35,7 @@ type BillingSetting struct {
 const defaultDeepSeekPeakOffPeakExpr = `(weekday("Asia/Shanghai") >= 1 && weekday("Asia/Shanghai") <= 5 && ((hour("Asia/Shanghai") >= 9 && hour("Asia/Shanghai") < 12) || (hour("Asia/Shanghai") >= 14 && hour("Asia/Shanghai") < 18))) ? tier("peak", p*2 + c*8 + cr*0.04) : tier("offpeak", p*1 + c*4 + cr*0.02)`
 
 // defaultTieredBillingModels 默认启用峰谷表达式计费的模型，与 defaultModelRatio 的 deepseek 家族一致。
-var defaultTieredBillingModels = []string{"deepseek-flash", "deepseek-v4-flash", "deepseek-chat", "deepseek-reasoner"}
+var defaultTieredBillingModels = []string{"deepseek-flash", "deepseek-v4-flash", "deepseek-v4.1-flash", "deepseek-chat", "deepseek-reasoner"}
 
 func defaultBillingSetting() BillingSetting {
 	modes := make(map[string]string, len(defaultTieredBillingModels))

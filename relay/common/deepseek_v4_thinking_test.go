@@ -97,3 +97,45 @@ func TestApplyDeepSeekV4OpenAIThinkingSuffixMapsMaxSuffix(t *testing.T) {
 	assert.Equal(t, "max", info.ReasoningEffort)
 	assert.Equal(t, "deepseek-v4-flash", info.UpstreamModelName)
 }
+
+// deepseek-v4.1-flash 与 deepseek-v4-flash 同族：带次版本号的基名必须同样被识别，
+// -max / -none 都归一到基名，且除基名本身外与既有 v4-flash 行为逐项一致。
+func TestApplyDeepSeekV4OpenAIThinkingSuffixCoversV41Family(t *testing.T) {
+	cases := []struct {
+		suffix        string
+		thinkingType  string
+		requestEffort string
+		infoEffort    string
+	}{
+		{suffix: "", thinkingType: "", requestEffort: "high", infoEffort: "high"},
+		{suffix: "-max", thinkingType: "enabled", requestEffort: "max", infoEffort: "max"},
+		{suffix: "-none", thinkingType: "disabled", requestEffort: "", infoEffort: "none"},
+	}
+
+	for _, tc := range cases {
+		t.Run("deepseek-v4.1-flash"+tc.suffix, func(t *testing.T) {
+			v41Info := &RelayInfo{ChannelMeta: &ChannelMeta{UpstreamModelName: "deepseek-v4.1-flash" + tc.suffix}}
+			v41Request := &dto.GeneralOpenAIRequest{Model: "deepseek-v4.1-flash" + tc.suffix}
+			require.NoError(t, ApplyDeepSeekV4OpenAIThinkingSuffix(v41Info, v41Request))
+
+			assert.Equal(t, "deepseek-v4.1-flash", v41Request.Model)
+			assert.Equal(t, "deepseek-v4.1-flash", v41Info.UpstreamModelName)
+			assert.Equal(t, tc.requestEffort, v41Request.ReasoningEffort)
+			assert.Equal(t, tc.infoEffort, v41Info.ReasoningEffort)
+			if tc.thinkingType == "" {
+				assert.Empty(t, v41Request.THINKING)
+			} else {
+				assert.Equal(t, `{"type":"`+tc.thinkingType+`"}`, string(v41Request.THINKING))
+			}
+
+			// 与既有 v4-flash 的结果一致（只是基名不同）。
+			v4Info := &RelayInfo{ChannelMeta: &ChannelMeta{UpstreamModelName: "deepseek-v4-flash" + tc.suffix}}
+			v4Request := &dto.GeneralOpenAIRequest{Model: "deepseek-v4-flash" + tc.suffix}
+			require.NoError(t, ApplyDeepSeekV4OpenAIThinkingSuffix(v4Info, v4Request))
+
+			assert.Equal(t, v4Request.ReasoningEffort, v41Request.ReasoningEffort)
+			assert.Equal(t, v4Info.ReasoningEffort, v41Info.ReasoningEffort)
+			assert.Equal(t, string(v4Request.THINKING), string(v41Request.THINKING))
+		})
+	}
+}

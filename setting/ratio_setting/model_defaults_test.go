@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/QuantumNous/new-api/setting/billing_setting"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -20,7 +21,7 @@ const (
 func TestDeepSeekFlashDefaultPricing(t *testing.T) {
 	InitRatioSettings()
 
-	for _, name := range []string{"deepseek-flash", "deepseek-v4-flash", "deepseek-chat", "deepseek-reasoner"} {
+	for _, name := range []string{"deepseek-flash", "deepseek-v4-flash", "deepseek-v4.1-flash", "deepseek-chat", "deepseek-reasoner"} {
 		t.Run(name, func(t *testing.T) {
 			modelRatio, ok, _ := GetModelRatio(name)
 			require.True(t, ok, "%s 必须带默认倍率", name)
@@ -35,12 +36,57 @@ func TestDeepSeekFlashDefaultPricing(t *testing.T) {
 	}
 
 	// deepseek 渠道的模型列表带 -none / -max 思考档位后缀（relay/channel/deepseek/constants.go），
-	// FormatMatchingModelName 会把它归一到 deepseek-v4-flash，价格必须仍然命中。
-	for _, name := range []string{"deepseek-v4-flash-none", "deepseek-v4-flash-max"} {
+	// FormatMatchingModelName 会把它归一到基名（含带次版本号的 deepseek-v4.1-flash），价格必须仍然命中。
+	for _, name := range []string{
+		"deepseek-v4-flash-none", "deepseek-v4-flash-max",
+		"deepseek-v4.1-flash-none", "deepseek-v4.1-flash-max",
+	} {
 		modelRatio, ok, _ := GetModelRatio(name)
 		require.True(t, ok, "%s 必须能归一到别名倍率", name)
 		assert.Equal(t, deepSeekOffPeakModelRatio, modelRatio)
 	}
+}
+
+// "与 deepseek-flash 同价"必须是可执行断言：五个默认模型的三项数值两两相等，
+// 且都走同一条峰谷表达式（逐字符相同），而不是各写一份"看似相同"的配置。
+func TestDeepSeekFamilySharesOnePricing(t *testing.T) {
+	InitRatioSettings()
+
+	family := []string{"deepseek-flash", "deepseek-v4-flash", "deepseek-v4.1-flash", "deepseek-chat", "deepseek-reasoner"}
+	require.Len(t, family, 5, "家族清单是本测试的基准，调整默认目录时必须同步")
+
+	baselineRatio, ok, _ := GetModelRatio("deepseek-flash")
+	require.True(t, ok, "deepseek-flash 必须带默认倍率")
+	baselineCompletion := GetCompletionRatio("deepseek-flash")
+	baselineCache, ok := GetCacheRatio("deepseek-flash")
+	require.True(t, ok, "deepseek-flash 必须带默认缓存倍率")
+	baselineExpr, ok := billing_setting.GetBillingExpr("deepseek-flash")
+	require.True(t, ok, "deepseek-flash 必须带默认峰谷表达式")
+
+	for _, name := range family {
+		t.Run(name, func(t *testing.T) {
+			modelRatio, ok, _ := GetModelRatio(name)
+			require.True(t, ok, "%s 必须带默认倍率", name)
+			assert.Equal(t, baselineRatio, modelRatio)
+
+			assert.Equal(t, baselineCompletion, GetCompletionRatio(name))
+
+			cacheRatio, ok := GetCacheRatio(name)
+			require.True(t, ok, "%s 必须带默认缓存倍率", name)
+			assert.Equal(t, baselineCache, cacheRatio)
+
+			assert.Equal(t, billing_setting.BillingModeTieredExpr, billing_setting.GetBillingMode(name))
+
+			expr, ok := billing_setting.GetBillingExpr(name)
+			require.True(t, ok, "%s 必须带默认峰谷表达式", name)
+			assert.Equal(t, baselineExpr, expr, "表达式必须与 deepseek-flash 逐字符相同")
+		})
+	}
+
+	// 基准值自身锁定为官方低谷价，否则"家族一致"可能一致地错。
+	assert.Equal(t, deepSeekOffPeakModelRatio, baselineRatio)
+	assert.Equal(t, deepSeekOffPeakCompletionRatio, baselineCompletion)
+	assert.Equal(t, deepSeekOffPeakCacheRatio, baselineCache)
 }
 
 // 被裁掉的目录条目（含音频模型与功能动作计费键）不能再带默认计费配置，
@@ -98,10 +144,10 @@ func TestDefaultTablesOnlyContainDeepSeekFamily(t *testing.T) {
 func TestDefaultCatalogSizeStaysPruned(t *testing.T) {
 	InitRatioSettings()
 
-	assert.Len(t, GetModelRatioCopy(), 4)
+	assert.Len(t, GetModelRatioCopy(), 5)
 	assert.Empty(t, GetModelPriceCopy())
-	assert.Len(t, GetCompletionRatioCopy(), 4)
-	assert.Len(t, GetCacheRatioCopy(), 4)
+	assert.Len(t, GetCompletionRatioCopy(), 5)
+	assert.Len(t, GetCacheRatioCopy(), 5)
 	assert.Empty(t, GetCreateCacheRatioCopy())
 	assert.Empty(t, GetImageRatioCopy())
 	assert.Empty(t, GetAudioRatioCopy())

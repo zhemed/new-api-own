@@ -1,0 +1,5 @@
+{"file": "setting/ratio_setting/model_ratio.go", "reason": "定价表与 FormatMatchingModelName 的事实源，新增键与谓词收敛都在此"}
+{"file": "setting/billing_setting/tiered_billing.go", "reason": "峰谷表达式与 defaultTieredBillingModels 的默认值，新模型必须同表"}
+{"file": "relaykit/relayconvert/reasoning/suffix.go", "reason": "deepseek-v4 思考后缀解析的归属包，谓词落在这里"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "后端强制质量门与计费不变量"}
+{"file": ".trellis/spec/guides/index.md", "reason": "改常量前必须先全局搜索（Pre-Modification Rule）"}

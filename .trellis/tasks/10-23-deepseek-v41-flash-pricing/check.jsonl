@@ -1,0 +1,3 @@
+{"file": "setting/ratio_setting/model_defaults_test.go", "reason": "目录锁与家族断言，验证时的对照基准"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "验证时的强制命令清单与禁止写法"}
+{"file": ".trellis/tasks/archive/2026-10/10-23-decide-update-scope-and-drill/prd.md", "reason": "回滚演练四步清单的原始裁定"}
