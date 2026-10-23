@@ -1226,3 +1226,44 @@ v0.0.45（提交 b5f9388，tag v0.0.45）：IsDeepSeekV4Model → IsDeepSeekMode
 - P2 待补：需在本地实例面板生成系统访问令牌（users.access_token）后，一次 GET /api/status/update 即可断言 403 pat_not_allowed
 - P3 渠道侧挂 deepseek-v4.1-flash 仍由用户自行处理；P1 回滚演练已按用户裁定关闭
 - 可选（另开任务）：评估 hints 惰性字段是否清理、MAINTENANCE.md:261 的 setting/reasoning/suffix.go 过时引用、以及 normalize_version 是否收紧为仅剥 v+数字
+
+
+## Session 96: 实例数据目录迁入工作区：/root/data → ./data（含重启存活验证与旧目录删除）
+<!-- trellis-session: v=2 fp=604b2e65a9629960 -->
+
+**Date**: 2026-10-23
+**Task**: 实例数据目录迁入工作区：/root/data → ./data（含重启存活验证与旧目录删除）
+**Branch**: `main`
+
+### Summary
+
+本地实例 new-api 的数据目录从工作区外 /root/data 迁到工作区内 /root/new-api-own/data，按 README 的 ./data:/data 形态重建；零数据丢失、停机约 19 秒；重启存活验证后按用户裁定删除旧目录。
+
+### Main Changes
+
+- 容器 new-api 停→复制→删→按原参数重建，唯一配置差异是 bind 宿主路径；镜像仍 v0.0.45，其余参数逐项一致
+- 复制 gate：53 文件逐个 sha256 清单一致、属主权限一致、one-api.db sha256 551941…b5283 两侧相同
+- 业务计数 users 1→1、tokens 1→1、options 14→14、定价相关 5→5；写入落点证明旧目录冻结、新库持续增长
+- 重启存活验证：docker restart 后仍 running/restarts=0/新挂载/200 + v0.0.45（StartedAt 16:59:25 → 17:03:45）
+- 按用户裁定删除 /root/data：四条删前校验（新库健康/新目录非空/realpath 确认/旧库 sha256 冻结值）全 PASS 后才以字面绝对路径删除
+- 数据不入库：git check-ignore 命中 .gitignore:27 的 /data/；工作区 data/ 未被跟踪
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5b1624b` | chore(task): 实例数据目录迁入工作区（含迁移与删除证据） [task:move-instance-data-into-workspace] |
+
+### Testing
+
+- [OK] [OK] Lead 独立复核（迁移后）：mount=/root/new-api-own/data:/data、restarts=0、200 + X-New-Api-Version v0.0.45
+- [OK] [OK] Lead 独立复核（删除后）：/root/data 不存在、工作区 data 6.9M 完好、容器仍 200、其它 8 容器全 Up、卷 40 未变
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 回滚点已按裁定消失，data/ 成为唯一数据源——建议另开任务建立定时快照备份（需用户授权）
+- 可选：清理悬空卷与旧镜像标签；对齐 README 部署段落与本次绝对路径表述
