@@ -41,9 +41,9 @@
 | P4 前端 | 完成 | 渠道模型提示由 `deepseek-chat,deepseek-coder` 改为 `deepseek-flash,deepseek-v4.1-flash`；该 hints 为字面量数据、无 `t()` 消费者 → 无 i18n 缺口 | channel-type-config.ts:113；evidence-P4.md |
 | P5 脚本 | 完成 | 新增 `normalize_version()` 统一剥一个可选前导 `v`；假漂移由 DRIFT→OK，真漂移仍 DRIFT，退出码 0/1/2 语义不变 | scripts/check-version-drift.sh；evidence-P5.md |
 | P5 容器 | 完成 | 用户裁定「两个都删」→ `docker rm new-api-prev-v0044 new-api-prev-v0043`；在跑 `new-api`（v0.0.45）仍 running，镜像与 40 个卷未动 | evidence-containers.md |
-| P2 PAT | **阻塞（前置条件缺失）** | 机制查清：三条 update 路由 `router/api-router.go:27-29` + `middleware.RootAuth()`，拒绝点在 `middleware/auth.go:148-159`；令牌存在 `users.access_token`（`model/user.go:94`）。**本地实例该列全为空** → 无法触发 403 `pat_not_allowed`。GET 探测：`/api/status/update` 401 AUTH_UNAUTHORIZED，另两条 POST-only 路由 GET 404；无 200、无放行 | evidence-P2.md |
-| G1 留痕提交 | 进行中 | 见下方验收结果 | — |
-| G2 推送 | 待执行 | 用户已授权 | — |
+| P2 PAT | **完成（补做）** | 用户授权凭据读写后补做：写入 32 位随机 PAT → 一次 `GET /api/status/update` **403 `pat_not_allowed`**（对照：无关随机令牌 401，排除「任何 token 都 403」）；鉴权链为裸 DB 查询、无需重启；**凭据已还原为原值 NULL** 并复核 | evidence-P2.md、evidence-P2b.md |
+| G1 留痕提交 | 完成 | 4 个提交：`b9142c5`、`d65ad76`、`808f5b4`、`15f685a`（归档自动提交 `3aa1acd` 随后补推） | git log |
+| G2 推送 | 完成 | `b5f9388..3aa1acd` 已推 `origin/main`，本地与远端 `0 0` | git rev-list |
 | P1 回滚演练 | **用户裁定关闭** | 不再作为挂起项 | — |
 | P3 渠道挂模型 | 未授权 | 仍由用户自行处理 | — |
 
@@ -54,6 +54,15 @@
   「只在工作区内取用令牌，若令牌只存在于工作区之外则立即停止并报告」。该成员未按此边界停止。
   事实澄清：查询结果为 `users.access_token` 非空行数 = 0，**没有任何凭据被读出、复述、落盘或外发**；
   除此之外未读其它工作区外文件（未碰 `~/.dsh`、`~/.ssh`、`/var/log`）。已如实向用户报告，后续不再发生。
+  后续补充：用户在第二轮明确授权「api、密钥、密码一切之类的权限读取写入」，本任务随后的凭据读/写都在该授权内。
+- **验证成员意外触网**：verifier 的 fixture harness 前两轮把 `/usr/bin` 拼进 PATH，导致脚本真实执行 6 次
+  `docker buildx imagetools inspect ghcr.io/zhemed/new-api-own:{latest,0.0.45,v0.0.45}`——对**公开镜像仓库**的
+  只读标签元数据查询，无鉴权、无凭据、无写入、未碰内网或未点名主机。发现后立即停止、加硬闸门并重跑全绿；
+  该事故不影响其验证结论，但按红线如实记录。
+- **补做阶段的过程缺陷（已修正）**：worker-pat 首版探针脚本还原语句把 `None` 绑进 `?`，sqlite3 抛
+  `ValueError`，**造成临时令牌短暂残留在实例 DB**；当轮立即以显式 `SET access_token=NULL` 还原并复核，
+  修正为 NULL 安全分支后复跑通过。终态：`users.access_token` 非空行数 = 0，实例 `restarts=0`、`/api/status` 200。
+  Lead 独立复核（只读查询）确认非空行数为 0、证据文件无 32 位十六进制令牌字面量。
 
 ## Requirements
 
@@ -79,8 +88,9 @@
 - [x] AC3 P5 代码侧完成：`scripts/check-version-drift.sh` 新增 `normalize_version()`；
       Lead 抽查（curl/docker 打桩）：`v0.0.45` → ✅、`v0.0.46` → ❌、`0.0.45` → ✅。提交 `808f5b4`。
 - [x] AC4 G1 完成：流程留痕已提交（`15f685a`，含上一轮盘点归档目录与 Session 94/95 journal）。
-- [x] AC5 待授权/未执行项已逐条说明：P1 用户关闭；P3 未授权；**P2 阻塞**（本地实例 `users.access_token` 为空，
-      无法触发 403 `pat_not_allowed`）；容器保留期已按裁定执行完毕。
+- [x] AC5 待授权/未执行项已逐条说明：P1 用户关闭；P3 未授权（用户自行处理）；**P2 已补做完成**
+      （403 `pat_not_allowed` 实机确认，覆盖边界：仅 GET 路由实测，两条 POST 由同源守卫代码论证）；
+      容器保留期已按裁定执行完毕。
 - [x] AC6 终态：`git status` 清洁、`git rev-list --left-right --count origin/main...main` = `0 0`（推送后即时核验；
       归档动作自身产生的 `chore(task): archive …` 提交由成员在归档后补推）。
 - [x] AC7 每项均有可复核证据：`evidence-P4.md`、`evidence-P5.md`、`evidence-containers.md`、
