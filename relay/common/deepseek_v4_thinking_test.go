@@ -98,9 +98,10 @@ func TestApplyDeepSeekV4OpenAIThinkingSuffixMapsMaxSuffix(t *testing.T) {
 	assert.Equal(t, "deepseek-v4-flash", info.UpstreamModelName)
 }
 
-// deepseek 家族（任何 deepseek 前缀）都必须支持 -none / -max 档位与无后缀默认 high：
-// deepseek-flash 是用户挂在渠道上的名字，deepseek-v4.1-flash 是默认模板，
-// deepseek-v4-flash 作为既有参照，三者同后缀结果必须逐项一致。
+// 三条路径的统一锚点（这里是最先落地的 OpenAI Chat 路径）：deepseek-flash（实际挂在渠道上
+// 的名字）与 deepseek-v4.1-flash（默认模板）× 三档（无后缀 / -max / -none）都必须与既有
+// deepseek-v4-flash 同后缀逐项一致；每一格同时另锁一份绝对期望值——只对照另一个模型
+// 会掩盖"两边一起错"。
 func TestApplyDeepSeekV4OpenAIThinkingSuffixCoversDeepSeekFamily(t *testing.T) {
 	cases := []struct {
 		suffix        string
@@ -113,15 +114,14 @@ func TestApplyDeepSeekV4OpenAIThinkingSuffixCoversDeepSeekFamily(t *testing.T) {
 		{suffix: "-none", thinkingType: "disabled", requestEffort: "", infoEffort: "none"},
 	}
 
-	models := []string{"deepseek-flash", "deepseek-v4.1-flash", "deepseek-v4-flash"}
-	for _, model := range models {
+	for _, model := range []string{"deepseek-flash", "deepseek-v4.1-flash"} {
 		for _, tc := range cases {
 			t.Run(model+tc.suffix, func(t *testing.T) {
 				info := &RelayInfo{ChannelMeta: &ChannelMeta{UpstreamModelName: model + tc.suffix}}
 				request := &dto.GeneralOpenAIRequest{Model: model + tc.suffix}
 				require.NoError(t, ApplyDeepSeekV4OpenAIThinkingSuffix(info, request))
 
-				// 档位后缀被剥掉后落到基名；无后缀时保持原名。
+				// 绝对期望值：档位后缀被剥掉后落到基名；无后缀时保持原名。
 				assert.Equal(t, model, request.Model)
 				assert.Equal(t, model, info.UpstreamModelName)
 				assert.Equal(t, tc.requestEffort, request.ReasoningEffort)
@@ -132,14 +132,115 @@ func TestApplyDeepSeekV4OpenAIThinkingSuffixCoversDeepSeekFamily(t *testing.T) {
 					assert.Equal(t, `{"type":"`+tc.thinkingType+`"}`, string(request.THINKING))
 				}
 
-				// 与既有 v4-flash 的同后缀结果一致（只是基名不同）。
+				// 参照模型 deepseek-v4-flash 跑同一格：先确认参照自身归一正确，再逐项对照。
 				refInfo := &RelayInfo{ChannelMeta: &ChannelMeta{UpstreamModelName: "deepseek-v4-flash" + tc.suffix}}
 				refRequest := &dto.GeneralOpenAIRequest{Model: "deepseek-v4-flash" + tc.suffix}
 				require.NoError(t, ApplyDeepSeekV4OpenAIThinkingSuffix(refInfo, refRequest))
 
+				assert.Equal(t, "deepseek-v4-flash", refRequest.Model)
+				assert.Equal(t, "deepseek-v4-flash", refInfo.UpstreamModelName)
 				assert.Equal(t, refRequest.ReasoningEffort, request.ReasoningEffort)
 				assert.Equal(t, refInfo.ReasoningEffort, info.ReasoningEffort)
 				assert.Equal(t, string(refRequest.THINKING), string(request.THINKING))
+			})
+		}
+	}
+}
+
+// Claude 路径的同一套锚点：ApplyDeepSeekV4ClaudeThinkingSuffix 只做"档位后缀 →
+// thinking / output_config"改写，不负责补默认档位——无后缀时补 high 由
+// relay/claude_handler.go:131 的守卫负责，所以本函数在无后缀格必须保持 Thinking=nil、
+// OutputConfig 为空、info.ReasoningEffort 为空。
+func TestApplyDeepSeekV4ClaudeThinkingSuffixCoversDeepSeekFamily(t *testing.T) {
+	cases := []struct {
+		suffix           string
+		wantThinkingType string
+		wantOutputConfig string
+		wantInfoEffort   string
+	}{
+		{suffix: "", wantThinkingType: "", wantOutputConfig: "", wantInfoEffort: ""},
+		{suffix: "-max", wantThinkingType: "enabled", wantOutputConfig: `{"effort":"max"}`, wantInfoEffort: "max"},
+		// -none 禁用 thinking；本函数把 info.ReasoningEffort 留空（OpenAI/Responses 路径记 "none"）。
+		// 这是既有行为，本测试固化现状，不做"顺手统一"。
+		{suffix: "-none", wantThinkingType: "disabled", wantOutputConfig: "", wantInfoEffort: ""},
+	}
+
+	for _, model := range []string{"deepseek-flash", "deepseek-v4.1-flash"} {
+		for _, tc := range cases {
+			t.Run(model+tc.suffix, func(t *testing.T) {
+				info := &RelayInfo{ChannelMeta: &ChannelMeta{UpstreamModelName: model + tc.suffix}}
+				request := &dto.ClaudeRequest{Model: model + tc.suffix}
+				require.NoError(t, ApplyDeepSeekV4ClaudeThinkingSuffix(info, request))
+
+				// 绝对期望值。
+				assert.Equal(t, model, request.Model)
+				assert.Equal(t, model, info.UpstreamModelName)
+				assert.Equal(t, tc.wantInfoEffort, info.ReasoningEffort)
+				if tc.wantThinkingType == "" {
+					assert.Nil(t, request.Thinking, "无后缀不得凭空写 thinking；补 high 由 claude_handler 的守卫负责")
+				} else {
+					require.NotNil(t, request.Thinking)
+					assert.Equal(t, tc.wantThinkingType, request.Thinking.Type)
+				}
+				assert.Equal(t, tc.wantOutputConfig, string(request.OutputConfig))
+
+				// 参照模型 deepseek-v4-flash 跑同一格：先确认参照自身归一正确，再逐项对照。
+				refInfo := &RelayInfo{ChannelMeta: &ChannelMeta{UpstreamModelName: "deepseek-v4-flash" + tc.suffix}}
+				refRequest := &dto.ClaudeRequest{Model: "deepseek-v4-flash" + tc.suffix}
+				require.NoError(t, ApplyDeepSeekV4ClaudeThinkingSuffix(refInfo, refRequest))
+
+				assert.Equal(t, "deepseek-v4-flash", refRequest.Model)
+				assert.Equal(t, "deepseek-v4-flash", refInfo.UpstreamModelName)
+				assert.Equal(t, refInfo.ReasoningEffort, info.ReasoningEffort)
+				assert.Equal(t, string(refRequest.OutputConfig), string(request.OutputConfig))
+				if refRequest.Thinking == nil {
+					assert.Nil(t, request.Thinking)
+				} else {
+					require.NotNil(t, request.Thinking)
+					assert.Equal(t, refRequest.Thinking.Type, request.Thinking.Type)
+				}
+			})
+		}
+	}
+}
+
+// Responses 路径的同一套锚点：无后缀补 high、-max 传 max、-none 传 none（禁用思考），
+// 模型名同样在后缀存在时归一到基名。
+func TestApplyDeepSeekV4ResponsesThinkingSuffixCoversDeepSeekFamily(t *testing.T) {
+	cases := []struct {
+		suffix         string
+		wantEffort     string
+		wantInfoEffort string
+	}{
+		{suffix: "", wantEffort: "high", wantInfoEffort: "high"},
+		{suffix: "-max", wantEffort: "max", wantInfoEffort: "max"},
+		{suffix: "-none", wantEffort: "none", wantInfoEffort: "none"},
+	}
+
+	for _, model := range []string{"deepseek-flash", "deepseek-v4.1-flash"} {
+		for _, tc := range cases {
+			t.Run(model+tc.suffix, func(t *testing.T) {
+				info := &RelayInfo{ChannelMeta: &ChannelMeta{UpstreamModelName: model + tc.suffix}}
+				request := &dto.OpenAIResponsesRequest{Model: model + tc.suffix}
+				ApplyDeepSeekV4ResponsesThinkingSuffix(info, request)
+
+				// 绝对期望值：档位后缀被剥掉后落到基名；无后缀时保持原名。
+				assert.Equal(t, model, request.Model)
+				assert.Equal(t, model, info.UpstreamModelName)
+				require.NotNil(t, request.Reasoning)
+				assert.Equal(t, tc.wantEffort, request.Reasoning.Effort)
+				assert.Equal(t, tc.wantInfoEffort, info.ReasoningEffort)
+
+				// 参照模型 deepseek-v4-flash 跑同一格：先确认参照自身归一正确，再逐项对照。
+				refInfo := &RelayInfo{ChannelMeta: &ChannelMeta{UpstreamModelName: "deepseek-v4-flash" + tc.suffix}}
+				refRequest := &dto.OpenAIResponsesRequest{Model: "deepseek-v4-flash" + tc.suffix}
+				ApplyDeepSeekV4ResponsesThinkingSuffix(refInfo, refRequest)
+
+				assert.Equal(t, "deepseek-v4-flash", refRequest.Model)
+				assert.Equal(t, "deepseek-v4-flash", refInfo.UpstreamModelName)
+				require.NotNil(t, refRequest.Reasoning)
+				assert.Equal(t, refRequest.Reasoning.Effort, request.Reasoning.Effort)
+				assert.Equal(t, refInfo.ReasoningEffort, info.ReasoningEffort)
 			})
 		}
 	}
