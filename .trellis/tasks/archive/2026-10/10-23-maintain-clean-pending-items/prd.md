@@ -70,16 +70,28 @@
 - R7 红线不变：不读工作区外文件、不访问未点名主机与内网实例、不碰凭据、不做未授权写入。
 - R8 交付按完整版（全局规则第 9/10 条），逐项给「做了什么 / 证据 / 待授权」。
 
-## Acceptance Criteria
+## Acceptance Criteria（收尾回填 2026-10-24）
 
-- [ ] AC1 口径确认完成：8 项清单与用户所指一致（或已按用户口径更正并记录）。
-- [ ] AC2 P4 完成：`MAINTENANCE.md:318` 的 `-none` 描述订正为实际行为（Claude 实际记空），
-      且 `web/src/features/channels/lib/channel-type-config.ts:113` 的渠道模型提示与当前默认表一致。
-- [ ] AC3 P5 代码侧完成：`scripts/check-version-drift.sh` 的实例比对剥掉 `v` 前缀，且不破坏现有语义。
-- [ ] AC4 G1 完成：本轮与上次盘点的流程留痕已提交，提交消息带 `[task:maintain-clean-pending-items]`。
-- [ ] AC5 待授权项（P1/P2/P3/G2/P5 保留期）逐条给出「未执行 + 原因 + 需要什么授权」，不静默跳过。
-- [ ] AC6 终态：`git status` 无未提交的流程留痕（授权项未做则说明其导致的残留）。
-- [ ] AC7 每项改动都有可复核证据（命令 + 输出摘要 + 文件路径）。
+- [x] AC1 口径确认完成：用户裁定「回滚演练归档，不用了。剩下的选1」→ P1 关闭，其余按 5 项 + 3 提交处理；
+      授权范围由用户勾选定稿（含推送、PAT、容器保留期）。
+- [x] AC2 P4 完成：`MAINTENANCE.md:318-322` 按真实行为订正（chat/Responses 记 "none"，Claude 留空）；
+      `channel-type-config.ts:113` 同步为 `deepseek-flash,deepseek-v4.1-flash`。提交 `b9142c5`、`d65ad76`。
+- [x] AC3 P5 代码侧完成：`scripts/check-version-drift.sh` 新增 `normalize_version()`；
+      Lead 抽查（curl/docker 打桩）：`v0.0.45` → ✅、`v0.0.46` → ❌、`0.0.45` → ✅。提交 `808f5b4`。
+- [x] AC4 G1 完成：流程留痕已提交（`15f685a`，含上一轮盘点归档目录与 Session 94/95 journal）。
+- [x] AC5 待授权/未执行项已逐条说明：P1 用户关闭；P3 未授权；**P2 阻塞**（本地实例 `users.access_token` 为空，
+      无法触发 403 `pat_not_allowed`）；容器保留期已按裁定执行完毕。
+- [x] AC6 终态：`git status` 清洁、`git rev-list --left-right --count origin/main...main` = `0 0`（推送后即时核验；
+      归档动作自身产生的 `chore(task): archive …` 提交由成员在归档后补推）。
+- [x] AC7 每项均有可复核证据：`evidence-P4.md`、`evidence-P5.md`、`evidence-containers.md`、
+      `evidence-P2.md`、`evidence-verify.md`。
+
+## 独立验证结论（task-6，verifier）
+
+**接受**。三条改动全部独立复现成立、无夹带；`bash -n` + `shellcheck` 0 发现；
+自造 fixture 34 项断言全绿（含 `normalize_version` 九个边界值）；`web typecheck` / `i18n:check` / `oxlint`、
+`go build ./...` 与相关 Go 单测均通过；被验证文件 blob 哈希在复跑门禁前后一致。
+详见 `evidence-verify.md`。
 
 ## Notes
 
