@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/config"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
@@ -49,6 +50,42 @@ func TestGetUpdateStatusEndpointReportsDisabledWithoutFetching(t *testing.T) {
 	require.Contains(t, body, `"state":"disabled"`)
 	require.Contains(t, body, `"latest_version":""`)
 	require.Contains(t, body, `"has_update":null`)
+	// 回滚入口可用性：测试环境没有 <exe>.prev，必须是明确 false（前端据此禁用按钮）。
+	require.Contains(t, body, `"rollback_available":false`)
+}
+
+// 所有对外错误都必须带稳定 code（前端按 code 映射文案；缺 code 会退化成展示 message）。
+func TestUpdateErrorResponsesCarryStableCode(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	testCases := []struct {
+		code   string
+		status int
+	}{
+		{code: service.UpdateApplyCodeSignatureMismatch, status: http.StatusBadGateway},
+		{code: service.UpdateApplyCodeBackupFailed, status: http.StatusInternalServerError},
+		{code: service.UpdateApplyCodeNoRollbackPoint, status: http.StatusConflict},
+		{code: service.UpdateApplyCodeRollbackPointInvalid, status: http.StatusInternalServerError},
+		{code: service.UpdateApplyCodeRollbackFailed, status: http.StatusInternalServerError},
+		{code: "disabled", status: http.StatusForbidden},
+		{code: "not_newer", status: http.StatusConflict},
+		{code: "checksum_mismatch", status: http.StatusBadGateway},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.code, func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(recorder)
+
+			writeUpdateApplyError(c, &service.UpdateApplyError{
+				Code: testCase.code, Message: "message", HTTPStatus: testCase.status,
+			})
+
+			require.Equal(t, testCase.status, recorder.Code)
+			require.Contains(t, recorder.Body.String(), `"code":"`+testCase.code+`"`)
+			require.Contains(t, recorder.Body.String(), `"success":false`)
+		})
+	}
 }
 
 func TestApplyUpdateEndpointRejectsWhenDisabled(t *testing.T) {

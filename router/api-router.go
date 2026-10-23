@@ -22,8 +22,11 @@ func SetApiRouter(router *gin.Engine) {
 		apiRouter.GET("/setup", controller.GetSetup)
 		apiRouter.POST("/setup", anonymousRequestBodyLimit, controller.PostSetup)
 		apiRouter.GET("/status", controller.GetStatus)
-		apiRouter.GET("/status/update", middleware.AdminAuth(), controller.GetUpdateStatus)
-		apiRouter.POST("/status/update/apply", middleware.AdminAuth(), controller.ApplyUpdate)
+		// 自更新 = 替换本机二进制（等价 root 能力）：路由要求 root 会话，
+		// handler 内再用 middleware.RequireSessionCredential 拒绝系统访问令牌（PAT）。
+		apiRouter.GET("/status/update", middleware.RootAuth(), controller.GetUpdateStatus)
+		apiRouter.POST("/status/update/apply", middleware.RootAuth(), controller.ApplyUpdate)
+		apiRouter.POST("/status/update/rollback", middleware.RootAuth(), controller.RollbackUpdate)
 		apiRouter.GET("/uptime/status", controller.GetUptimeKumaStatus)
 		apiRouter.GET("/models", middleware.UserAuth(), controller.DashboardListModels)
 		apiRouter.GET("/status/test", middleware.AdminAuth(), controller.TestStatus)

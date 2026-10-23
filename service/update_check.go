@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -32,6 +34,9 @@ const (
 
 	// UpdateAssetNameSHA256Sums 是更新源必须提供的校验和资产名。
 	UpdateAssetNameSHA256Sums = "SHA256SUMS"
+	// UpdateAssetNameSHA256SumsSig 是 SHA256SUMS 的 ed25519 分离签名资产名（CI 产出，一行文本）。
+	// 签名对象是 SHA256SUMS 文件的**原始字节**；缺失或验签失败一律拒绝替换。
+	UpdateAssetNameSHA256SumsSig = "SHA256SUMS.sig"
 )
 
 // UpdateAssetNameForArch 返回本机架构对应的二进制资产名（Release 资产命名约定）。
@@ -78,17 +83,49 @@ type httpDoer interface {
 //   - Enabled：等价于 CheckEnabled 的兼容字段（旧调用方使用），新代码请用 CheckEnabled。
 //
 // HasUpdate 为三态：true=有更新、false=已最新、nil=未知（未开启/检查失败/版本无法比较）。
+//
+// RollbackAvailable 报告本机是否存在可用的回滚点（<exe>.prev 且像 Linux ELF 可执行文件）。
+// 前端据此决定回滚入口是否可用：false = 明确没有/无法判定 → 禁用并解释；
+// 该字段只看本地文件，与 CheckEnabled / ApplyEnabled 开关无关。
 type UpdateCheckStatus struct {
-	Enabled        bool   `json:"enabled"`
-	CheckEnabled   bool   `json:"check_enabled"`
-	ApplyEnabled   bool   `json:"apply_enabled"`
-	State          string `json:"state"`
-	CurrentVersion string `json:"current_version"`
-	LatestVersion  string `json:"latest_version"`
-	HasUpdate      *bool  `json:"has_update"`
-	ReleaseURL     string `json:"release_url,omitempty"`
-	PublishedAt    string `json:"published_at,omitempty"`
-	CheckedAt      int64  `json:"checked_at,omitempty"`
+	Enabled           bool   `json:"enabled"`
+	CheckEnabled      bool   `json:"check_enabled"`
+	ApplyEnabled      bool   `json:"apply_enabled"`
+	RollbackAvailable bool   `json:"rollback_available"`
+	State             string `json:"state"`
+	CurrentVersion    string `json:"current_version"`
+	LatestVersion     string `json:"latest_version"`
+	HasUpdate         *bool  `json:"has_update"`
+	ReleaseURL        string `json:"release_url,omitempty"`
+	PublishedAt       string `json:"published_at,omitempty"`
+	CheckedAt         int64  `json:"checked_at,omitempty"`
+}
+
+// updateStatusExecutable 是"当前可执行文件"的来源，测试可替换；生产为 os.Executable。
+var updateStatusExecutable = os.Executable
+
+// RollbackAvailable 报告本机是否存在可用回滚点（只读本地文件，不做任何下载/外呼）。
+// 任何无法判定的情况（拿不到路径、stat 失败、不是 ELF）都返回 false：
+// 前端把 false 当作"没有回滚点"，由点击后的 no_rollback_point 兜底说明。
+func RollbackAvailable() bool {
+	return rollbackAvailableFrom(updateStatusExecutable)
+}
+
+func rollbackAvailableFrom(currentExecutable func() (string, error)) bool {
+	executablePath, err := currentExecutable()
+	if err != nil || strings.TrimSpace(executablePath) == "" {
+		return false
+	}
+	resolved, err := filepath.EvalSymlinks(executablePath)
+	if err != nil {
+		return false
+	}
+	previousPath := resolved + updatePreviousBinarySuffix
+	info, err := os.Lstat(previousPath)
+	if err != nil || !info.Mode().IsRegular() || info.Size() == 0 {
+		return false
+	}
+	return requireELFExecutable(previousPath) == nil
 }
 
 // UpdateChecker 负责更新检查的超时、缓存与失败退避；数据源由 ReleaseFetcher 注入。
@@ -319,8 +356,10 @@ func defaultUpdateChecker() *UpdateChecker {
 func GetUpdateStatus(ctx context.Context) UpdateCheckStatus {
 	checkEnabled := setting.IsUpdateCheckEnabled()
 	applyEnabled := setting.IsUpdateApplyEnabled()
+
+	var status UpdateCheckStatus
 	if !checkEnabled {
-		return UpdateCheckStatus{
+		status = UpdateCheckStatus{
 			Enabled:        false,
 			CheckEnabled:   false,
 			ApplyEnabled:   applyEnabled,
@@ -328,8 +367,12 @@ func GetUpdateStatus(ctx context.Context) UpdateCheckStatus {
 			CurrentVersion: common.Version,
 			HasUpdate:      nil,
 		}
+	} else {
+		status = defaultUpdateChecker().Check(ctx)
 	}
-	return defaultUpdateChecker().Check(ctx)
+	// 回滚入口的可用性只取决于本机回滚点，与检查/更新开关无关。
+	status.RollbackAvailable = RollbackAvailable()
+	return status
 }
 
 // sanitizePublicURL 剥掉 URL 里的 userinfo，保证对外响应/日志里不会回显任何凭据或令牌。

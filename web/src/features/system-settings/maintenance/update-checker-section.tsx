@@ -26,6 +26,8 @@ import { Button } from '@/components/ui/button'
 import { useIsAdmin } from '@/hooks/use-admin'
 import { getBuildRevision } from '@/lib/build-metadata'
 import { formatTimestamp } from '@/lib/format'
+import { ROLE } from '@/lib/roles'
+import { useAuthStore } from '@/stores/auth-store'
 
 import { SettingsSection } from '../components/settings-section'
 import {
@@ -33,7 +35,7 @@ import {
   shouldWatchAfterApply,
   watchForRestartAndReload,
 } from './restart-watcher'
-import { applyUpdate } from './update-api'
+import { applyUpdate, rollbackUpdate } from './update-api'
 import { useUpdateStatus } from './use-update-status'
 
 type UpdateCheckerSectionProps = {
@@ -66,20 +68,54 @@ export function UpdateCheckerSection({
 }: UpdateCheckerSectionProps) {
   const { t } = useTranslation()
   const isAdmin = useIsAdmin()
-  const { latestVersion, availability, applyEnabled, checking, refresh } =
-    useUpdateStatus(currentVersion)
+  // Applying an update is a root-only action on the server (RootAuth, and the
+  // system access token is refused), so a plain admin must never see a button
+  // that could only answer 403.
+  const isRoot = useAuthStore(
+    (state) => state.auth.user?.role === ROLE.SUPER_ADMIN
+  )
+  const {
+    latestVersion,
+    availability,
+    applyEnabled,
+    persistenceHint: statusHint,
+    rollbackAvailable,
+    checking,
+    refresh,
+  } = useUpdateStatus(currentVersion)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [applying, setApplying] = useState(false)
+  const [rollbackConfirmOpen, setRollbackConfirmOpen] = useState(false)
+  const [rollingBack, setRollingBack] = useState(false)
+  // Which action owns the shared restart dialog: the copy differs.
+  const [flow, setFlow] = useState<'apply' | 'rollback'>('apply')
   // `restarting` keeps a persistent hint on screen (a toast would vanish before
   // the restart even starts); `timed-out` hands the reload back to the operator.
   const [phase, setPhase] = useState<'idle' | 'restarting' | 'timed-out'>(
     'idle'
   )
+  // Server-authored persistence warning from the last apply; when present it
+  // replaces our local wording everywhere the warning is shown.
+  const [serverHint, setServerHint] = useState<string | null>(null)
 
   const uptime = startTime ? formatTimestamp(startTime) : t('Unknown')
   const version = currentVersion || t('Unknown')
   const updateConfirmed = availability === 'update-available'
-  const canApplyUpdate = isAdmin && updateConfirmed && applyEnabled
+  const canApplyUpdate = isRoot && updateConfirmed && applyEnabled
+  const applyIsRootOnly = isAdmin && updateConfirmed && applyEnabled && !isRoot
+  // Rollback replaces the same binary through the same root-only route, so it
+  // follows the same gate. `rollbackAvailable === false` means the server told
+  // us there is no rollback point; `null` means it did not say.
+  const canRollback = isRoot && applyEnabled
+  const rollbackKnownMissing = canRollback && rollbackAvailable === false
+  // Prefer whatever the server said — first from the apply response, then from
+  // the status payload — and only fall back to our own sentence.
+  const persistenceHint =
+    serverHint ??
+    statusHint ??
+    t(
+      'This replaces the binary inside the running container. Recreating the container falls back to the version baked into the image.'
+    )
 
   let statusText: string
   if (availability === 'check-disabled') {
@@ -109,6 +145,7 @@ export function UpdateCheckerSection({
         if (!shouldWatchAfterApply(result)) return
         // The dialog stays open: the restart progress belongs in it, otherwise
         // the operator sees the dialog vanish and the page reload "by itself".
+        setServerHint(result.hint)
         setPhase('restarting')
         const outcome = await (postUpdateWatch ?? watchForRestartAndReload)({
           previousVersion: currentVersion ?? '',
@@ -140,6 +177,18 @@ export function UpdateCheckerSection({
         detail = t('This platform does not support in-panel updates.')
       } else if (result.reason === 'too_large') {
         detail = t('The update package is larger than the server allows.')
+      } else if (result.reason === 'signature_mismatch') {
+        detail = t(
+          'The update signature did not match the published checksum, so the replacement was refused.'
+        )
+      } else if (result.reason === 'pat_not_allowed') {
+        detail = t(
+          'System access tokens cannot install updates. Sign in as the root account instead.'
+        )
+      } else if (result.reason === 'rollback_unavailable') {
+        detail = t('No previous version is available to roll back to.')
+      } else if (result.reason === 'rollback_failed') {
+        detail = t('Rolling back failed. Check the server logs for details.')
       } else if (result.reason === 'replace_failed') {
         detail = t(
           'The server could not replace its own files. Check the container permissions.'
@@ -156,6 +205,47 @@ export function UpdateCheckerSection({
     }
   }
 
+  const handleConfirmRollback = async () => {
+    setRollingBack(true)
+    try {
+      const result = await rollbackUpdate()
+      if (result.ok) {
+        setFlow('rollback')
+        setServerHint(result.hint)
+        setPhase('restarting')
+        const outcome = await (postUpdateWatch ?? watchForRestartAndReload)({
+          previousVersion: currentVersion ?? '',
+          readStatus: readFreshStatus,
+          sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+          now: () => Date.now(),
+          reload: () => window.location.reload(),
+        })
+        if (outcome.status === 'timeout') {
+          setPhase('timed-out')
+        }
+        return
+      }
+      let detail = result.message
+      if (result.reason === 'rollback_unavailable') {
+        detail = t('No previous version is available to roll back to.')
+      } else if (result.reason === 'rollback_point_invalid') {
+        detail = t('The rollback point is unusable, so nothing was replaced.')
+      } else if (result.reason === 'rollback_failed') {
+        detail = t('Rolling back failed. Check the server logs for details.')
+      } else if (result.reason === 'pat_not_allowed') {
+        detail = t(
+          'System access tokens cannot install updates. Sign in as the root account instead.'
+        )
+      } else if (!detail) {
+        detail = t('Update failed. Check the server logs for details.')
+      }
+      toast.error(detail)
+    } finally {
+      setRollingBack(false)
+    }
+  }
+
+  let flowLabel = ''
   let dialogTitle = t('Update to {{version}}?', {
     version: latestVersion ?? '',
   })
@@ -177,14 +267,19 @@ export function UpdateCheckerSection({
 
   if (phase === 'restarting') {
     dialogTitle = t('Restarting the service…')
+    flowLabel =
+      flow === 'rollback'
+        ? t(
+            'The rollback was applied. The service is restarting and this page reloads automatically once it answers.'
+          )
+        : t(
+            'The update was applied. The service is restarting and this page reloads automatically once the new version answers — usually within a few seconds, at most about 90.'
+          )
     confirmText = t('Restarting…')
     dialogDesc = (
       <div className='space-y-2' data-testid='update-restart-progress'>
-        <p>
-          {t(
-            'The update was applied. The service is restarting and this page reloads automatically once the new version answers — usually within a few seconds, at most about 90.'
-          )}
-        </p>
+        <p>{flowLabel}</p>
+        <p data-testid='update-restart-persistence'>{persistenceHint}</p>
       </div>
     )
   } else if (phase === 'timed-out') {
@@ -197,6 +292,7 @@ export function UpdateCheckerSection({
             'The update may already be finished. Reload this page manually to check the new version.'
           )}
         </p>
+        <p data-testid='update-timeout-persistence'>{persistenceHint}</p>
       </div>
     )
   }
@@ -273,6 +369,51 @@ export function UpdateCheckerSection({
                 </Button>
               )}
             </div>
+            {canRollback && (
+              <Button
+                variant='outline'
+                data-testid='rollback-update'
+                disabled={
+                  rollingBack ||
+                  rollbackKnownMissing ||
+                  applying ||
+                  phase === 'restarting'
+                }
+                onClick={() => setRollbackConfirmOpen(true)}
+              >
+                {rollingBack
+                  ? t('Rolling back...')
+                  : t('Roll back to the previous version')}
+              </Button>
+            )}
+            {rollbackKnownMissing && (
+              <p
+                data-testid='rollback-unavailable-note'
+                className='text-muted-foreground text-xs'
+              >
+                {t(
+                  'No rollback point exists on this server yet — it is created by an in-panel update.'
+                )}
+              </p>
+            )}
+            {canApplyUpdate && (
+              <p
+                data-testid='update-not-persistent-hint'
+                className='text-muted-foreground text-xs'
+              >
+                {persistenceHint}
+              </p>
+            )}
+            {applyIsRootOnly && (
+              <p
+                data-testid='apply-root-only-note'
+                className='text-muted-foreground text-xs'
+              >
+                {t(
+                  'Only the root account can install updates from this panel. Use the image upgrade steps in the README instead.'
+                )}
+              </p>
+            )}
             {updateConfirmed && !applyEnabled && (
               <p
                 data-testid='apply-disabled-note'
@@ -307,6 +448,36 @@ export function UpdateCheckerSection({
           </div>
         </div>
       </SettingsSection>
+
+      <ConfirmDialog
+        open={rollbackConfirmOpen}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen && phase === 'restarting') return
+          setRollbackConfirmOpen(nextOpen)
+        }}
+        title={
+          phase === 'restarting'
+            ? t('Restarting the service…')
+            : t('Roll back to the previous version?')
+        }
+        desc={
+          <div className='space-y-2'>
+            <p>
+              {t(
+                'The running binary is swapped back to the local rollback point. No old version is downloaded.'
+              )}
+            </p>
+            <p data-testid='rollback-persistence'>{persistenceHint}</p>
+          </div>
+        }
+        confirmText={
+          phase === 'restarting' ? t('Restarting…') : t('Roll back now')
+        }
+        destructive
+        isLoading={rollingBack || phase === 'restarting'}
+        disabled={phase === 'restarting'}
+        handleConfirm={handleConfirmRollback}
+      />
 
       <ConfirmDialog
         open={confirmOpen}

@@ -29,6 +29,7 @@ import { api } from '@/lib/api'
  */
 const UPDATE_STATUS_PATH = '/api/status/update'
 const UPDATE_APPLY_PATH = '/api/status/update/apply'
+const UPDATE_ROLLBACK_PATH = '/api/status/update/rollback'
 
 /** What the server reports about the running build vs the published release. */
 export type ServerUpdateStatus = {
@@ -40,6 +41,18 @@ export type ServerUpdateStatus = {
   latestVersion: string | null
   /** `apply_enabled`; `null` when a server omits the field. */
   applyEnabled: boolean | null
+  /**
+   * `persistent === false` means the new binary lives only inside the running
+   * container. `null` keeps "the server did not say" distinct from "it said yes".
+   */
+  persistent: boolean | null
+  /** Server-authored persistence warning; preferred over our local copy. */
+  hint: string | null
+  /**
+   * Whether a local rollback point exists. `null` when the server does not
+   * report it — the panel then lets the operator try and explains the refusal.
+   */
+  rollbackAvailable: boolean | null
 }
 
 /** Failure categories the panel can explain in translated copy. */
@@ -60,9 +73,28 @@ type UpdateFailureReason =
   | 'too_large'
   /** Replacing the running binary failed. */
   | 'replace_failed'
+  /** The downloaded artifact failed signature verification, so it was refused. */
+  | 'signature_mismatch'
+  /** The caller authenticated with a system access token instead of root. */
+  | 'pat_not_allowed'
+  /** No `.prev` artifact exists, so there is nothing to roll back to. */
+  | 'rollback_unavailable'
+  /** The rollback itself failed. */
+  | 'rollback_failed'
+  /** The rollback point exists but is not a usable executable. */
+  | 'rollback_point_invalid'
+  /** The tree could not be backed up before replacing. */
+  | 'backup_failed'
 
 export type ApplyUpdateResult =
-  | { ok: true; version: string | null }
+  | {
+      ok: true
+      version: string | null
+      /** Server view of whether the new binary survives a container recreate. */
+      persistent: boolean | null
+      /** Server-authored persistence warning, when it sent one. */
+      hint: string | null
+    }
   | {
       ok: false
       /** Classified failure, or `null` when only `message` is available. */
@@ -88,6 +120,32 @@ const FAILURE_CODES: Record<string, UpdateFailureReason> = {
   temp_file_failed: 'replace_failed',
   executable_unknown: 'replace_failed',
   config_invalid: 'replace_failed',
+  signature_mismatch: 'signature_mismatch',
+  signature_invalid: 'signature_mismatch',
+  signature_verify_failed: 'signature_mismatch',
+  pat_not_allowed: 'pat_not_allowed',
+  token_not_allowed: 'pat_not_allowed',
+  rollback_unavailable: 'rollback_unavailable',
+  no_previous_version: 'rollback_unavailable',
+  no_rollback_point: 'rollback_unavailable',
+  rollback_point_invalid: 'rollback_point_invalid',
+  rollback_failed: 'rollback_failed',
+  backup_failed: 'backup_failed',
+}
+
+export type RollbackUpdateResult =
+  | { ok: true; persistent: boolean | null; hint: string | null }
+  | {
+      ok: false
+      reason: UpdateFailureReason | null
+      message: string
+    }
+
+type RollbackEnvelope = {
+  success?: unknown
+  message?: unknown
+  code?: unknown
+  data?: { rolled_back?: unknown; persistent?: unknown; hint?: unknown }
 }
 
 type UpdateStatusEnvelope = {
@@ -97,6 +155,9 @@ type UpdateStatusEnvelope = {
     apply_enabled?: unknown
     state?: unknown
     latest_version?: unknown
+    persistent?: unknown
+    hint?: unknown
+    rollback_available?: unknown
   }
 }
 
@@ -104,7 +165,7 @@ type ApplyEnvelope = {
   success?: unknown
   message?: unknown
   code?: unknown
-  data?: { version?: unknown }
+  data?: { version?: unknown; persistent?: unknown; hint?: unknown }
 }
 
 function readString(value: unknown): string | null {
@@ -140,6 +201,43 @@ function readThrownDetail(error: unknown): {
 }
 
 /**
+ * Ask the server to swap the running binary back to its local rollback point.
+ *
+ * Never throws, for the same reason as `applyUpdate`: the panel must always be
+ * able to describe what happened, including "there was nothing to roll back to".
+ */
+export async function rollbackUpdate(): Promise<RollbackUpdateResult> {
+  try {
+    const res = await api.post<RollbackEnvelope>(
+      UPDATE_ROLLBACK_PATH,
+      {},
+      { skipBusinessError: true, skipErrorHandler: true }
+    )
+    const payload = res.data ?? {}
+    if (payload.success !== true || payload.data?.rolled_back !== true) {
+      const code = readString(payload.code)
+      return {
+        ok: false,
+        reason: code ? (FAILURE_CODES[code] ?? null) : null,
+        message: readString(payload.message) ?? '',
+      }
+    }
+    return {
+      ok: true,
+      persistent: readBoolean(payload.data.persistent),
+      hint: readString(payload.data.hint),
+    }
+  } catch (error) {
+    const detail = readThrownDetail(error)
+    return {
+      ok: false,
+      reason: detail.code ? (FAILURE_CODES[detail.code] ?? null) : null,
+      message: detail.message,
+    }
+  }
+}
+
+/**
  * Read the server-side update status.
  *
  * Resolves `null` when the endpoint cannot be reached or answers unusably: the
@@ -162,6 +260,9 @@ export async function fetchUpdateStatus(): Promise<ServerUpdateStatus | null> {
       latestVersion: readString(data.latest_version),
       // `null` keeps "the server did not say" distinct from "the server said no".
       applyEnabled: readBoolean(data.apply_enabled),
+      persistent: readBoolean(data.persistent),
+      hint: readString(data.hint),
+      rollbackAvailable: readBoolean(data.rollback_available),
     }
   } catch {
     return null
@@ -193,7 +294,12 @@ export async function applyUpdate(): Promise<ApplyUpdateResult> {
         message: readString(payload.message) ?? '',
       }
     }
-    return { ok: true, version: readString(payload.data?.version) }
+    return {
+      ok: true,
+      version: readString(payload.data?.version),
+      persistent: readBoolean(payload.data?.persistent),
+      hint: readString(payload.data?.hint),
+    }
   } catch (error) {
     const detail = readThrownDetail(error)
     return {

@@ -32,6 +32,10 @@ export type UpdateStatusState = {
   availability: UpdateAvailability
   /** Whether the server allows applying updates from the panel. */
   applyEnabled: boolean
+  /** Server-authored persistence warning from the status payload, if any. */
+  persistenceHint: string | null
+  /** `null` when the server does not report whether a rollback point exists. */
+  rollbackAvailable: boolean | null
   /** A status request is in flight. */
   checking: boolean
   /** Re-read the server's update status. */
@@ -54,6 +58,9 @@ export function useUpdateStatus(
     serverState: string | null
     latestVersion: string | null
     applyEnabled: boolean | null
+    persistent: boolean | null
+    hint: string | null
+    rollbackAvailable: boolean | null
   } | null>(null)
   const [checking, setChecking] = useState(false)
 
@@ -84,6 +91,9 @@ export function useUpdateStatus(
     // "enabled" and the apply endpoint re-checks the switch on every call, so
     // a payload that omits the field must not hide the feature.
     applyEnabled: status?.applyEnabled ?? true,
+    /** Server-authored persistence warning from the status payload, if any. */
+    persistenceHint: status?.hint ?? null,
+    rollbackAvailable: status?.rollbackAvailable ?? null,
     checking,
     refresh,
   }

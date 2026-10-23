@@ -71,8 +71,31 @@ describe('fetchUpdateStatus', () => {
       serverState: 'update_available',
       latestVersion: 'v0.0.7',
       applyEnabled: null,
+      // A payload that stays silent must not be read as "persistent".
+      persistent: null,
+      hint: null,
+      rollbackAvailable: null,
     })
     assert.deepEqual(calls, [{ method: 'GET', url: '/api/status/update' }])
+  })
+
+  test('reads the rollback availability the server reports', async () => {
+    stubGet(() => ({
+      data: {
+        success: true,
+        data: {
+          check_enabled: true,
+          apply_enabled: true,
+          state: 'update_available',
+          latest_version: 'v0.0.7',
+          rollback_available: false,
+        },
+      },
+    }))
+
+    const status = await fetchUpdateStatus()
+
+    assert.equal(status?.rollbackAvailable, false)
   })
 
   test('prefers the new check_enabled/apply_enabled fields when present', async () => {
@@ -143,10 +166,60 @@ describe('applyUpdate', () => {
 
     const result = await applyUpdate()
 
-    assert.deepEqual(result, { ok: true, version: '0.0.7' })
+    assert.deepEqual(result, {
+      ok: true,
+      version: '0.0.7',
+      persistent: null,
+      hint: null,
+    })
     assert.deepEqual(calls, [
       { method: 'POST', url: '/api/status/update/apply' },
     ])
+  })
+
+  test('reads the persistence warning the server sent with the result', async () => {
+    stubPost(() => ({
+      data: {
+        success: true,
+        data: {
+          applied: true,
+          version: '0.0.7',
+          persistent: false,
+          hint: 'inside the container only',
+        },
+      },
+    }))
+
+    const result = await applyUpdate()
+
+    assert.deepEqual(result, {
+      ok: true,
+      version: '0.0.7',
+      persistent: false,
+      hint: 'inside the container only',
+    })
+  })
+
+  test('classifies the root-only and signature refusals', async () => {
+    for (const [code, reason] of [
+      ['pat_not_allowed', 'pat_not_allowed'],
+      ['signature_mismatch', 'signature_mismatch'],
+      ['rollback_unavailable', 'rollback_unavailable'],
+    ] as const) {
+      stubPost(() => {
+        throw {
+          response: {
+            status: 403,
+            data: { success: false, code, message: '' },
+          },
+        }
+      })
+
+      const result = await applyUpdate()
+
+      assert.equal(result.ok, false)
+      assert.equal(result.ok === false ? result.reason : null, reason)
+    }
   })
 
   test('maps the server error code onto a readable reason', async () => {

@@ -136,6 +136,28 @@ func GetSessionAuthIdentity(c *gin.Context) (service.AuthIdentity, bool) {
 	return identity, true
 }
 
+// CodePATNotAllowed 是"系统访问令牌不允许执行该动作"的稳定错误码，便于面板与脚本分支。
+const CodePATNotAllowed = "pat_not_allowed"
+
+// RequireSessionCredential 拒绝用系统访问令牌（PAT）发起的请求，写入稳定错误码 pat_not_allowed。
+//
+// 用于自更新这类"等价 root 能力"的动作：替换本机二进制必须由"人 + 浏览器登录会话"执行；
+// PAT 常被脚本/第三方集成持有，权限边界模糊，一旦泄露即可拿下整个容器。
+// 判定依据是鉴权链路写入的 use_access_token（middleware.setDashboardAuthContext）；
+// 返回 false 时已写回响应，调用方必须立即 return。不影响其它路由（只有显式调用它的 handler 生效）。
+func RequireSessionCredential(c *gin.Context) bool {
+	if !c.GetBool("use_access_token") {
+		return true
+	}
+	c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+		"success": false,
+		"code":    CodePATNotAllowed,
+		"message": "自更新只能由管理员登录会话触发，系统访问令牌（PAT）不被允许。" +
+			" Self-update requires an admin login session; personal access tokens are not allowed.",
+	})
+	return false
+}
+
 func authenticateDashboardRequest(c *gin.Context) (*model.UserBase, service.AuthIdentity, bool, error) {
 	user, identity, credentialKind, err := classifyDashboardCredential(c)
 	if err != nil {

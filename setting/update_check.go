@@ -62,4 +62,6 @@ const (
 	UpdateApplyMaxBinaryBytes = 256 << 20
 	// UpdateApplyMaxChecksumBytes SHA256SUMS 体积上限。
 	UpdateApplyMaxChecksumBytes = 64 << 10
+	// UpdateApplyMaxSignatureBytes SHA256SUMS.sig 体积上限（一行 base64/hex，留足余量）。
+	UpdateApplyMaxSignatureBytes = 8 << 10
 )

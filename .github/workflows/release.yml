@@ -173,6 +173,57 @@ jobs:
           cat SHA256SUMS
           ls -l
 
+      # Detached ed25519 signature over the RAW BYTES of dist/SHA256SUMS.
+      # Contract (mirrored in the panel verifier and docs/release-signing.md):
+      #   * message = the exact bytes of the SHA256SUMS asset — Ed25519 signs the
+      #     message itself (openssl `-rawin`), so the verifier must call
+      #     ed25519.Verify(pub, sha256sumsBytes, sig) with no re-hashing;
+      #   * SHA256SUMS.sig = one line, base64 (RFC 4648, padded) of the 64-byte
+      #     signature, followed by a single '\n';
+      #   * public key = raw 32-byte ed25519 key, standard base64 — the constant
+      #     below is the trust anchor also embedded in the panel.
+      # The private key lives only in the UPDATE_SIGNING_KEY repository secret
+      # (PKCS#8 PEM, ed25519). It is written to $RUNNER_TEMP for this step and
+      # removed by the EXIT trap; it is never echoed.
+      - name: Sign SHA256SUMS (ed25519)
+        env:
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+          UPDATE_SIGNING_PUBLIC_KEY: 'Jpj2LFm38b+U4HM/jK+4H1jJqsdiPBqw5kLx6Ihj2r8='
+        run: |
+          set -euo pipefail
+          if [ -z "${UPDATE_SIGNING_KEY:-}" ]; then
+            echo "::error::UPDATE_SIGNING_KEY is not set; refusing to publish an unsigned release."
+            exit 1
+          fi
+
+          key_file="$RUNNER_TEMP/update-signing-key.pem"
+          sig_bin="$RUNNER_TEMP/SHA256SUMS.sig.bin"
+          pub_b64="$RUNNER_TEMP/update-signing-pub.b64"
+          trap 'rm -f "$key_file" "$sig_bin" "$pub_b64" "$RUNNER_TEMP/update-signing-pub.pem"' EXIT
+          umask 077
+
+          printf '%s\n' "$UPDATE_SIGNING_KEY" > "$key_file"
+
+          # Refuse to publish unless the secret matches the key the panel trusts.
+          openssl pkey -in "$key_file" -pubout -outform DER | tail -c 32 | base64 -w0 > "$pub_b64"
+          if [ "$(cat "$pub_b64")" != "$UPDATE_SIGNING_PUBLIC_KEY" ]; then
+            echo "::error::UPDATE_SIGNING_KEY does not match the public key embedded in the panel; refusing to publish."
+            exit 1
+          fi
+
+          # -rawin signs the message bytes directly (Ed25519 hashes internally).
+          openssl pkeyutl -sign -rawin -inkey "$key_file" -in dist/SHA256SUMS -out "$sig_bin"
+
+          # Self-check the signature we are about to publish (same op the panel
+          # performs: verify over the raw SHA256SUMS bytes).
+          openssl pkey -in "$key_file" -pubout -out "$RUNNER_TEMP/update-signing-pub.pem"
+          openssl pkeyutl -verify -rawin -pubin -inkey "$RUNNER_TEMP/update-signing-pub.pem" \
+            -in dist/SHA256SUMS -sigfile "$sig_bin"
+
+          base64 -w0 "$sig_bin" > dist/SHA256SUMS.sig
+          printf '\n' >> dist/SHA256SUMS.sig
+          echo "SHA256SUMS.sig: $(cat dist/SHA256SUMS.sig)"
+
       # Single publish implementation, shared by both entry points.
       - name: Publish release
         env:
@@ -182,7 +233,7 @@ jobs:
           set -euo pipefail
 
           VERSION="${TAG#v}"
-          ASSETS="dist/new-api-linux-amd64 dist/new-api-linux-arm64 dist/SHA256SUMS"
+          ASSETS="dist/new-api-linux-amd64 dist/new-api-linux-arm64 dist/SHA256SUMS dist/SHA256SUMS.sig"
 
           # `/releases/latest` is driven by the repository's "latest" flag, which
           # defaults to true for every newly published release. Without a guard, a
@@ -232,17 +283,17 @@ jobs:
           # version-suffixed names and those are intentionally left alone.
           PRESENT="$(gh release view "$TAG" --json assets --jq '.assets[].name' | sort)"
           echo "$PRESENT"
-          for want in SHA256SUMS new-api-linux-amd64 new-api-linux-arm64; do
+          for want in SHA256SUMS SHA256SUMS.sig new-api-linux-amd64 new-api-linux-arm64; do
             if ! printf '%s\n' "$PRESENT" | grep -qx -- "$want"; then
               echo "::error::release $TAG is missing required updater asset '$want'"
               exit 1
             fi
           done
-          # Anything that is not one of the three fixed names is flagged. Using an
+          # Anything that is not one of the four fixed names is flagged. Using an
           # allow-list (rather than a pattern for version-suffixed names) also
           # catches spellings like `new-api-arm64-v0.0.5`, which a simple
           # `-<digits>.<digits>` pattern would miss.
-          EXTRA="$(printf '%s\n' "$PRESENT" | grep -vxE 'SHA256SUMS|new-api-linux-amd64|new-api-linux-arm64' || true)"
+          EXTRA="$(printf '%s\n' "$PRESENT" | grep -vxE 'SHA256SUMS|SHA256SUMS\.sig|new-api-linux-amd64|new-api-linux-arm64' || true)"
           if [ -n "$EXTRA" ]; then
             echo "::warning::release $TAG also carries unexpected asset(s): $(printf '%s' "$EXTRA" | tr '\n' ' ')—the updater expects only the fixed names above. Legacy assets on old releases are intentionally left untouched."
           fi

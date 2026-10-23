@@ -119,6 +119,15 @@ function signInAsAdmin(): void {
   })
 }
 
+/** Applying an update is root-only on the server. */
+function signInAsRoot(): void {
+  useAuthStore.getState().auth.setUser({
+    id: 2,
+    username: 'root',
+    role: ROLE.SUPER_ADMIN,
+  })
+}
+
 /** Canned answer for `GET /api/status/update`. */
 function stubUpdateStatus(statusData: Record<string, unknown> | null): void {
   api.get = (async (url: string) => {
@@ -179,6 +188,12 @@ function textOf(container: HTMLElement, testId: string): string {
 
 function applyButton(container: HTMLElement): HTMLElement | null {
   return container.querySelector<HTMLElement>('[data-testid="apply-update"]')
+}
+
+function rollbackButton(container: HTMLElement): HTMLButtonElement | null {
+  return container.querySelector<HTMLButtonElement>(
+    '[data-testid="rollback-update"]'
+  )
 }
 
 const AVAILABLE = {
@@ -254,11 +269,48 @@ describe('update checker states', () => {
 })
 
 describe('update checker apply flow', () => {
-  test('offers the apply button to an admin when the server confirmed an update', async () => {
-    signInAsAdmin()
+  // Applying is root-only on the server (RootAuth, and system access tokens are
+  // refused), so a plain admin must not be offered a button that only 403s.
+  test('offers the apply button to the root account', async () => {
+    signInAsRoot()
     const container = await renderUpdateChecker()
 
     assert.notEqual(applyButton(container), null)
+    assert.equal(textOf(container, 'apply-root-only-note'), '')
+  })
+
+  test('hides the apply button from a non-root admin and explains why', async () => {
+    signInAsAdmin()
+    const container = await renderUpdateChecker()
+
+    assert.equal(applyButton(container), null)
+    assert.equal(
+      textOf(container, 'apply-root-only-note'),
+      en[
+        'Only the root account can install updates from this panel. Use the image upgrade steps in the README instead.'
+      ]
+    )
+  })
+
+  test('a status-provided warning also wins over the local copy', async () => {
+    signInAsRoot()
+    const container = await renderUpdateChecker({
+      status: { ...AVAILABLE, persistent: false, hint: 'STATUS HINT' },
+    })
+
+    assert.equal(textOf(container, 'update-not-persistent-hint'), 'STATUS HINT')
+  })
+
+  test('the non-persistence warning sits next to the button before applying', async () => {
+    signInAsRoot()
+    const container = await renderUpdateChecker()
+
+    assert.equal(
+      textOf(container, 'update-not-persistent-hint'),
+      en[
+        'This replaces the binary inside the running container. Recreating the container falls back to the version baked into the image.'
+      ]
+    )
   })
 
   test('hides the apply button from an operator without admin rights', async () => {
@@ -287,7 +339,7 @@ describe('update checker apply flow', () => {
   })
 
   test('asks for confirmation, warning about the restart and image fallback', async () => {
-    signInAsAdmin()
+    signInAsRoot()
     const container = await renderUpdateChecker()
 
     await clickButton(applyButton(container))
@@ -319,7 +371,7 @@ describe('update checker apply flow', () => {
   })
 
   test('applies the update on our own backend after confirmation', async () => {
-    signInAsAdmin()
+    signInAsRoot()
     stubApplyUpdate(() => ({
       data: { success: true, data: { applied: true, version: '0.0.7' } },
     }))
@@ -351,7 +403,7 @@ describe('update checker apply flow', () => {
   })
 
   test('a successful apply keeps the dialog open showing restart progress', async () => {
-    signInAsAdmin()
+    signInAsRoot()
     stubApplyUpdate(() => ({
       data: { success: true, data: { applied: true, version: '0.0.7' } },
     }))
@@ -395,7 +447,7 @@ describe('update checker apply flow', () => {
   })
 
   test('after the restart timeout the dialog asks for a manual refresh and closes cleanly', async () => {
-    signInAsAdmin()
+    signInAsRoot()
     stubApplyUpdate(() => ({
       data: { success: true, data: { applied: true, version: '0.0.7' } },
     }))
@@ -418,7 +470,7 @@ describe('update checker apply flow', () => {
   })
 
   test('a failed apply never starts the restart watch', async () => {
-    signInAsAdmin()
+    signInAsRoot()
     stubApplyUpdate(() => ({
       data: { success: false, code: 'not_newer', message: 'same build' },
     }))
@@ -447,7 +499,7 @@ describe('update checker apply flow', () => {
   })
 
   test('explains a refused apply with the reason the server classified', async () => {
-    signInAsAdmin()
+    signInAsRoot()
     stubApplyUpdate(() => {
       throw {
         response: {
@@ -464,8 +516,119 @@ describe('update checker apply flow', () => {
     assert.equal(latestToastTitle(), APPLY_DISABLED_NOTE)
   })
 
+  test('explains a refused system-token call', async () => {
+    signInAsRoot()
+    stubApplyUpdate(() => {
+      throw {
+        response: {
+          status: 403,
+          data: { success: false, code: 'pat_not_allowed', message: '' },
+        },
+      }
+    })
+    const container = await renderUpdateChecker()
+
+    await clickButton(applyButton(container))
+    await clickButton(confirmButton())
+
+    assert.equal(
+      latestToastTitle(),
+      en[
+        'System access tokens cannot install updates. Sign in as the root account instead.'
+      ]
+    )
+  })
+
+  test('explains a signature mismatch instead of a generic failure', async () => {
+    signInAsRoot()
+    stubApplyUpdate(() => ({
+      data: { success: false, code: 'signature_mismatch', message: '' },
+    }))
+    const container = await renderUpdateChecker()
+
+    await clickButton(applyButton(container))
+    await clickButton(confirmButton())
+
+    assert.equal(
+      latestToastTitle(),
+      en[
+        'The update signature did not match the published checksum, so the replacement was refused.'
+      ]
+    )
+  })
+
+  test('ends the dialog with the persistence warning after a successful apply', async () => {
+    signInAsRoot()
+    stubApplyUpdate(() => ({
+      data: { success: true, data: { applied: true, version: '0.0.7' } },
+    }))
+    let release: (() => void) | undefined
+    await renderUpdateChecker({
+      postUpdateWatch: async () => {
+        await new Promise<void>((resolve) => {
+          release = resolve
+        })
+        return { status: 'timeout' }
+      },
+    })
+
+    const container = document.body as unknown as HTMLElement
+    await clickButton(applyButton(container))
+    await clickButton(confirmButton())
+
+    assert.equal(
+      textOf(container, 'update-restart-persistence'),
+      en[
+        'This replaces the binary inside the running container. Recreating the container falls back to the version baked into the image.'
+      ]
+    )
+
+    await act(async () => {
+      release?.()
+      for (let tick = 0; tick < 8; tick++) await Promise.resolve()
+    })
+  })
+
+  test('prefers the server-authored warning over the local copy', async () => {
+    signInAsRoot()
+    stubApplyUpdate(() => ({
+      data: {
+        success: true,
+        data: {
+          applied: true,
+          version: '0.0.7',
+          persistent: false,
+          hint: 'SERVER-AUTHORED HINT',
+        },
+      },
+    }))
+    let release: (() => void) | undefined
+    await renderUpdateChecker({
+      postUpdateWatch: async () => {
+        await new Promise<void>((resolve) => {
+          release = resolve
+        })
+        return { status: 'timeout' }
+      },
+    })
+
+    const container = document.body as unknown as HTMLElement
+    await clickButton(applyButton(container))
+    await clickButton(confirmButton())
+
+    assert.equal(
+      textOf(container, 'update-restart-persistence'),
+      'SERVER-AUTHORED HINT'
+    )
+
+    await act(async () => {
+      release?.()
+      for (let tick = 0; tick < 8; tick++) await Promise.resolve()
+    })
+  })
+
   test('falls back to the server message for an unclassified failure', async () => {
-    signInAsAdmin()
+    signInAsRoot()
     stubApplyUpdate(() => ({
       data: { success: false, message: 'checksum mismatch' },
     }))
@@ -479,15 +642,15 @@ describe('update checker apply flow', () => {
 })
 
 /** The confirm button lives in a portal, outside the component's container. */
-function confirmButton(): HTMLElement {
+function confirmButton(label: string = en['Update now']): HTMLElement {
   const content = document.body.querySelector(
     '[data-slot="alert-dialog-content"]'
   )
   if (!content) throw new Error('confirm dialog did not open')
   for (const button of content.querySelectorAll('button')) {
-    if (button.textContent?.trim() === en['Update now']) return button
+    if (button.textContent?.trim() === label) return button
   }
-  throw new Error('confirm button was not rendered')
+  throw new Error(`confirm button was not rendered: ${label}`)
 }
 
 function dialogContent(): HTMLElement | null {
@@ -517,3 +680,102 @@ async function clickButton(button: HTMLElement | null) {
     for (let tick = 0; tick < 12; tick++) await Promise.resolve()
   })
 }
+
+describe('update checker rollback entry', () => {
+  test('offers rollback to the root account only', async () => {
+    signInAsRoot()
+    const rootContainer = await renderUpdateChecker()
+    assert.notEqual(rollbackButton(rootContainer), null)
+    assert.equal(rollbackButton(rootContainer)?.disabled, false)
+
+    signInAsAdmin()
+    const adminContainer = await renderUpdateChecker()
+    assert.equal(rollbackButton(adminContainer), null)
+  })
+
+  test('disables rollback and explains when the server reports no rollback point', async () => {
+    signInAsRoot()
+    const container = await renderUpdateChecker({
+      status: { ...AVAILABLE, rollback_available: false },
+    })
+
+    assert.equal(rollbackButton(container)?.disabled, true)
+    assert.equal(
+      textOf(container, 'rollback-unavailable-note'),
+      en[
+        'No rollback point exists on this server yet — it is created by an in-panel update.'
+      ]
+    )
+  })
+
+  test('hides rollback when in-panel updates are turned off', async () => {
+    signInAsRoot()
+    const container = await renderUpdateChecker({
+      status: { ...AVAILABLE, apply_enabled: false },
+    })
+
+    assert.equal(rollbackButton(container), null)
+  })
+
+  test('rolls back after a second confirmation and keeps the persistence warning', async () => {
+    signInAsRoot()
+    stubApplyUpdate(() => ({
+      data: {
+        success: true,
+        data: {
+          rolled_back: true,
+          restart_mode: 'exec',
+          persistent: false,
+          hint: 'ROLLBACK HINT',
+        },
+      },
+    }))
+    let release: (() => void) | undefined
+    await renderUpdateChecker({
+      postUpdateWatch: async () => {
+        await new Promise<void>((resolve) => {
+          release = resolve
+        })
+        return { status: 'timeout' }
+      },
+    })
+
+    const container = document.body as unknown as HTMLElement
+    await clickButton(rollbackButton(container))
+    assert.equal(
+      textOf(container, 'rollback-persistence'),
+      en[
+        'This replaces the binary inside the running container. Recreating the container falls back to the version baked into the image.'
+      ]
+    )
+    await clickButton(confirmButton(en['Roll back now']))
+
+    assert.deepEqual(calls.at(-1), {
+      method: 'POST',
+      url: '/api/status/update/rollback',
+    })
+    assert.equal(textOf(container, 'rollback-persistence'), 'ROLLBACK HINT')
+
+    await act(async () => {
+      release?.()
+      for (let tick = 0; tick < 8; tick++) await Promise.resolve()
+    })
+  })
+
+  test('explains a refused rollback when there is nothing to roll back to', async () => {
+    signInAsRoot()
+    stubApplyUpdate(() => ({
+      data: { success: false, code: 'no_rollback_point', message: '' },
+    }))
+    await renderUpdateChecker()
+    const container = document.body as unknown as HTMLElement
+
+    await clickButton(rollbackButton(container))
+    await clickButton(confirmButton(en['Roll back now']))
+
+    assert.equal(
+      latestToastTitle(),
+      en['No previous version is available to roll back to.']
+    )
+  })
+})

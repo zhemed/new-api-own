@@ -5,6 +5,8 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -429,4 +431,43 @@ func TestGithubReleaseFetcherRejectsPrereleaseAndErrors(t *testing.T) {
 			require.Contains(t, err.Error(), tt.wantErrMsg)
 		})
 	}
+}
+
+// rollback_available 只看本机回滚点：没有 .prev、或 .prev 不像 ELF 都是 false；
+// 存在合法 .prev 才是 true。前端据此决定回滚入口是否可用。
+func TestRollbackAvailableReflectsLocalRollbackPoint(t *testing.T) {
+	executable := filepath.Join(t.TempDir(), "new-api")
+	require.NoError(t, os.WriteFile(executable, []byte("current-binary"), 0o755))
+
+	previousExecutable := updateStatusExecutable
+	updateStatusExecutable = func() (string, error) { return executable, nil }
+	t.Cleanup(func() { updateStatusExecutable = previousExecutable })
+
+	require.False(t, RollbackAvailable(), "没有 <exe>.prev 时必须为 false")
+
+	require.NoError(t, os.WriteFile(executable+updatePreviousBinarySuffix, []byte("not-an-elf"), 0o755))
+	require.False(t, RollbackAvailable(), "回滚点不是 ELF 时必须为 false")
+
+	require.NoError(t, os.WriteFile(executable+updatePreviousBinarySuffix, append([]byte("\x7fELF"), []byte("previous-binary")...), 0o755))
+	require.True(t, RollbackAvailable(), "存在合法回滚点时必须为 true")
+}
+
+// 状态负载必须带上 rollback_available；即使"检查更新"关闭也要回填（前端需要它决定回滚入口）。
+func TestGetUpdateStatusReportsRollbackAvailability(t *testing.T) {
+	setUpdateSetting(t, false, false)
+
+	executable := filepath.Join(t.TempDir(), "new-api")
+	require.NoError(t, os.WriteFile(executable, []byte("current-binary"), 0o755))
+	previousExecutable := updateStatusExecutable
+	updateStatusExecutable = func() (string, error) { return executable, nil }
+	t.Cleanup(func() { updateStatusExecutable = previousExecutable })
+
+	status := GetUpdateStatus(context.Background())
+	require.Equal(t, UpdateCheckStateDisabled, status.State)
+	require.False(t, status.RollbackAvailable)
+
+	require.NoError(t, os.WriteFile(executable+updatePreviousBinarySuffix, append([]byte("\x7fELF"), []byte("previous")...), 0o755))
+
+	status = GetUpdateStatus(context.Background())
+	require.True(t, status.RollbackAvailable)
 }
