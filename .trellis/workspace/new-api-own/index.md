@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 91
+- **Total Sessions**: 92
 - **Last Active**: 2026-10-23
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~1061 | Active |
+| `journal-2.md` | ~1095 | Active |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 92 | 2026-10-23 | 自升级口径确认（GET 仅 root）与回滚演练安排（下次发布补做） | `18775a5` | `main` |
 | 91 | 2026-10-23 | 自升级改进交付：权限收紧/资产签名/不持久提示/回滚点，发 v0.0.43 并两端升级 | `813d5c4` | `main` |
 | 90 | 2026-10-22 | 发 v0.0.42：峰谷定价做成代码默认值，两端实例升级并复核一致 | `8e7acb8` | `main` |
 | 89 | 2026-10-22 | 生产配置 SSH 密钥/补装 sqlite3/同步峰谷计费；委派代码线把峰谷定价做成默认值 | `f20cd44` | `main` |

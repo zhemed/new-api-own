@@ -1059,3 +1059,37 @@ v0.0.27 升级后 logout 返回 200 但会话未撤销。调查：AuthLogout 的
 ### Next Steps
 
 - 下次发布演练：更新生成 .prev → rollback_available=true → 回滚成功（前后版本+哈希对比）；如需非 root 也能看更新状态，可把 GET 单独降回 AdminAuth（待用户定口径）
+
+
+## Session 92: 自升级口径确认（GET 仅 root）与回滚演练安排（下次发布补做）
+<!-- trellis-session: v=2 fp=1896eba0efbbe7f9 -->
+
+**Date**: 2026-10-23
+**Task**: 自升级口径确认（GET 仅 root）与回滚演练安排（下次发布补做）
+**Branch**: `main`
+
+### Summary
+
+v0.0.43 交付后用户裁定：①普通管理员查看更新状态——保持现状（三条 update 路由均 RootAuth，GET 也 403，前端已按 root 隐藏入口，无需改动）；②回滚演练——下次发布（v0.0.44）自动补做。已把演练清单写入任务记录：面板更新后检查 /new-api.prev 生成与 rollback_available=true → 执行 rollback 断言 rolled_back 与版本回退到 v0.0.43 且哈希一致 → 再次更新回 v0.0.44 → 另用系统访问令牌实测 pat_not_allowed（补上本轮因账号未配置系统访问令牌而未完成的 PAT 实机验证）。当前状态：本地与生产均 v0.0.43，latest=v0.0.43，v0.0.43 资产含 SHA256SUMS.sig。
+
+### Main Changes
+
+- 口径固定：自升级仅 root 会话可用（含查看状态）；回滚演练待 v0.0.44
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `18775a5` | chore(task): archive 10-23-improve-self-update |
+
+### Testing
+
+- [OK] 无代码改动（仅决策留痕）
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 下次发布时按任务记录的四步演练清单执行，并把结果写入该任务的 prd
