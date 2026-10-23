@@ -4,13 +4,10 @@ import (
 	"github.com/QuantumNous/new-api/types"
 )
 
-// 官方缓存命中价 ÷ 未命中价 = 0.02 / 1.00 = 0.02（低谷），与 defaultModelRatio 同族。
+// 官方缓存命中价 ÷ 未命中价 = 0.02 / 1.00 = 0.02（低谷），与 defaultModelRatio 的默认模板同族。
 var defaultCacheRatio = map[string]float64{
 	"deepseek-flash":      0.02,
-	"deepseek-v4-flash":   0.02,
 	"deepseek-v4.1-flash": 0.02,
-	"deepseek-chat":       0.02,
-	"deepseek-reasoner":   0.02,
 }
 
 // 目录裁剪后没有需要单独计缓存写入价的模型，缓存写入倍率表为空。

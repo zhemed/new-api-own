@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// 默认目录（2026-10-22 起）只保留 deepseek 家族：deepseek-flash 及其别名。
+// 默认目录（2026-10-23 起）只保留两个 deepseek 模板：deepseek-flash 与 deepseek-v4.1-flash。
 // 价格按 DeepSeek 官方人民币低谷价：缓存命中 ¥0.02 / 未命中 ¥1.00 / 输出 ¥4.00（每 1M tokens）。
 // 换算：显示值（每 1M）= 2 × model_ratio × 显示汇率，默认显示 ¥ + 汇率 1.0。
 const (
@@ -21,7 +21,7 @@ const (
 func TestDeepSeekFlashDefaultPricing(t *testing.T) {
 	InitRatioSettings()
 
-	for _, name := range []string{"deepseek-flash", "deepseek-v4-flash", "deepseek-v4.1-flash", "deepseek-chat", "deepseek-reasoner"} {
+	for _, name := range []string{"deepseek-flash", "deepseek-v4.1-flash"} {
 		t.Run(name, func(t *testing.T) {
 			modelRatio, ok, _ := GetModelRatio(name)
 			require.True(t, ok, "%s 必须带默认倍率", name)
@@ -36,24 +36,24 @@ func TestDeepSeekFlashDefaultPricing(t *testing.T) {
 	}
 
 	// deepseek 渠道的模型列表带 -none / -max 思考档位后缀（relay/channel/deepseek/constants.go），
-	// FormatMatchingModelName 会把它归一到基名（含带次版本号的 deepseek-v4.1-flash），价格必须仍然命中。
+	// FormatMatchingModelName 会把它归一到基名，价格必须仍然命中。
 	for _, name := range []string{
-		"deepseek-v4-flash-none", "deepseek-v4-flash-max",
+		"deepseek-flash-none", "deepseek-flash-max",
 		"deepseek-v4.1-flash-none", "deepseek-v4.1-flash-max",
 	} {
 		modelRatio, ok, _ := GetModelRatio(name)
-		require.True(t, ok, "%s 必须能归一到别名倍率", name)
+		require.True(t, ok, "%s 必须能归一到基名倍率", name)
 		assert.Equal(t, deepSeekOffPeakModelRatio, modelRatio)
 	}
 }
 
-// "与 deepseek-flash 同价"必须是可执行断言：五个默认模型的三项数值两两相等，
+// "同价"必须是可执行断言：两个默认模板的三项数值两两相等，
 // 且都走同一条峰谷表达式（逐字符相同），而不是各写一份"看似相同"的配置。
 func TestDeepSeekFamilySharesOnePricing(t *testing.T) {
 	InitRatioSettings()
 
-	family := []string{"deepseek-flash", "deepseek-v4-flash", "deepseek-v4.1-flash", "deepseek-chat", "deepseek-reasoner"}
-	require.Len(t, family, 5, "家族清单是本测试的基准，调整默认目录时必须同步")
+	family := []string{"deepseek-flash", "deepseek-v4.1-flash"}
+	require.Len(t, family, 2, "模板清单是本测试的基准，调整默认目录时必须同步")
 
 	baselineRatio, ok, _ := GetModelRatio("deepseek-flash")
 	require.True(t, ok, "deepseek-flash 必须带默认倍率")
@@ -98,6 +98,8 @@ func TestDefaultCatalogNoLongerPricesFormerModels(t *testing.T) {
 		"gpt-4o", "gpt-4", "gpt-5", "o3", "claude-sonnet-4-20250514", "gemini-2.5-pro",
 		"ERNIE-4.0-8K", "glm-4", "qwen-plus", "grok-3-beta", "command-r",
 		"deepseek-v4-pro", "deepseek-coder", "deepseek-ai/DeepSeek-V3.1",
+		// 2026-10-23 默认模板裁剪后不再带默认价的 deepseek 家族成员
+		"deepseek-v4-flash", "deepseek-chat", "deepseek-reasoner",
 		"dall-e-3", "gpt-image-1", "sora-2", "gpt-4o-mini-tts",
 		// 音频模型与功能动作计费键（2026-10-22 起由运营自行配置）
 		"tts-1", "tts-1-hd", "tts-1-1106", "tts-1-hd-1106", "whisper-1",
@@ -144,10 +146,10 @@ func TestDefaultTablesOnlyContainDeepSeekFamily(t *testing.T) {
 func TestDefaultCatalogSizeStaysPruned(t *testing.T) {
 	InitRatioSettings()
 
-	assert.Len(t, GetModelRatioCopy(), 5)
+	assert.Len(t, GetModelRatioCopy(), 2)
 	assert.Empty(t, GetModelPriceCopy())
-	assert.Len(t, GetCompletionRatioCopy(), 5)
-	assert.Len(t, GetCacheRatioCopy(), 5)
+	assert.Len(t, GetCompletionRatioCopy(), 2)
+	assert.Len(t, GetCacheRatioCopy(), 2)
 	assert.Empty(t, GetCreateCacheRatioCopy())
 	assert.Empty(t, GetImageRatioCopy())
 	assert.Empty(t, GetAudioRatioCopy())

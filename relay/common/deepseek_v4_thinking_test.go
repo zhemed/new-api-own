@@ -98,9 +98,10 @@ func TestApplyDeepSeekV4OpenAIThinkingSuffixMapsMaxSuffix(t *testing.T) {
 	assert.Equal(t, "deepseek-v4-flash", info.UpstreamModelName)
 }
 
-// deepseek-v4.1-flash 与 deepseek-v4-flash 同族：带次版本号的基名必须同样被识别，
-// -max / -none 都归一到基名，且除基名本身外与既有 v4-flash 行为逐项一致。
-func TestApplyDeepSeekV4OpenAIThinkingSuffixCoversV41Family(t *testing.T) {
+// deepseek 家族（任何 deepseek 前缀）都必须支持 -none / -max 档位与无后缀默认 high：
+// deepseek-flash 是用户挂在渠道上的名字，deepseek-v4.1-flash 是默认模板，
+// deepseek-v4-flash 作为既有参照，三者同后缀结果必须逐项一致。
+func TestApplyDeepSeekV4OpenAIThinkingSuffixCoversDeepSeekFamily(t *testing.T) {
 	cases := []struct {
 		suffix        string
 		thinkingType  string
@@ -112,30 +113,34 @@ func TestApplyDeepSeekV4OpenAIThinkingSuffixCoversV41Family(t *testing.T) {
 		{suffix: "-none", thinkingType: "disabled", requestEffort: "", infoEffort: "none"},
 	}
 
-	for _, tc := range cases {
-		t.Run("deepseek-v4.1-flash"+tc.suffix, func(t *testing.T) {
-			v41Info := &RelayInfo{ChannelMeta: &ChannelMeta{UpstreamModelName: "deepseek-v4.1-flash" + tc.suffix}}
-			v41Request := &dto.GeneralOpenAIRequest{Model: "deepseek-v4.1-flash" + tc.suffix}
-			require.NoError(t, ApplyDeepSeekV4OpenAIThinkingSuffix(v41Info, v41Request))
+	models := []string{"deepseek-flash", "deepseek-v4.1-flash", "deepseek-v4-flash"}
+	for _, model := range models {
+		for _, tc := range cases {
+			t.Run(model+tc.suffix, func(t *testing.T) {
+				info := &RelayInfo{ChannelMeta: &ChannelMeta{UpstreamModelName: model + tc.suffix}}
+				request := &dto.GeneralOpenAIRequest{Model: model + tc.suffix}
+				require.NoError(t, ApplyDeepSeekV4OpenAIThinkingSuffix(info, request))
 
-			assert.Equal(t, "deepseek-v4.1-flash", v41Request.Model)
-			assert.Equal(t, "deepseek-v4.1-flash", v41Info.UpstreamModelName)
-			assert.Equal(t, tc.requestEffort, v41Request.ReasoningEffort)
-			assert.Equal(t, tc.infoEffort, v41Info.ReasoningEffort)
-			if tc.thinkingType == "" {
-				assert.Empty(t, v41Request.THINKING)
-			} else {
-				assert.Equal(t, `{"type":"`+tc.thinkingType+`"}`, string(v41Request.THINKING))
-			}
+				// 档位后缀被剥掉后落到基名；无后缀时保持原名。
+				assert.Equal(t, model, request.Model)
+				assert.Equal(t, model, info.UpstreamModelName)
+				assert.Equal(t, tc.requestEffort, request.ReasoningEffort)
+				assert.Equal(t, tc.infoEffort, info.ReasoningEffort)
+				if tc.thinkingType == "" {
+					assert.Empty(t, request.THINKING)
+				} else {
+					assert.Equal(t, `{"type":"`+tc.thinkingType+`"}`, string(request.THINKING))
+				}
 
-			// 与既有 v4-flash 的结果一致（只是基名不同）。
-			v4Info := &RelayInfo{ChannelMeta: &ChannelMeta{UpstreamModelName: "deepseek-v4-flash" + tc.suffix}}
-			v4Request := &dto.GeneralOpenAIRequest{Model: "deepseek-v4-flash" + tc.suffix}
-			require.NoError(t, ApplyDeepSeekV4OpenAIThinkingSuffix(v4Info, v4Request))
+				// 与既有 v4-flash 的同后缀结果一致（只是基名不同）。
+				refInfo := &RelayInfo{ChannelMeta: &ChannelMeta{UpstreamModelName: "deepseek-v4-flash" + tc.suffix}}
+				refRequest := &dto.GeneralOpenAIRequest{Model: "deepseek-v4-flash" + tc.suffix}
+				require.NoError(t, ApplyDeepSeekV4OpenAIThinkingSuffix(refInfo, refRequest))
 
-			assert.Equal(t, v4Request.ReasoningEffort, v41Request.ReasoningEffort)
-			assert.Equal(t, v4Info.ReasoningEffort, v41Info.ReasoningEffort)
-			assert.Equal(t, string(v4Request.THINKING), string(v41Request.THINKING))
-		})
+				assert.Equal(t, refRequest.ReasoningEffort, request.ReasoningEffort)
+				assert.Equal(t, refInfo.ReasoningEffort, info.ReasoningEffort)
+				assert.Equal(t, string(refRequest.THINKING), string(request.THINKING))
+			})
+		}
 	}
 }

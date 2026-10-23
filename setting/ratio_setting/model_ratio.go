@@ -16,7 +16,8 @@ const (
 	RMB     = USD / USD2RMB
 )
 
-// 默认模型目录（2026-10-22 起）：**只保留 deepseek 家族**（deepseek-flash 及其别名）。
+// 默认模型目录（2026-10-23 起）：**只保留 deepseek 家族的两个默认模板**：
+// deepseek-flash 与 deepseek-v4.1-flash（与实例面板上的模板一致）。
 // 音频模型与功能动作计费键不再随代码发货，由运营在实例侧自行配置。
 // 定价来源：DeepSeek 官方中文定价页 https://api-docs.deepseek.com/zh-cn/quick_start/pricing
 //
@@ -30,14 +31,11 @@ const (
 // 历史口径：1 === $0.002 / 1K tokens；1 === ￥0.014 / 1k tokens
 
 var defaultModelRatio = map[string]float64{
-	// deepseek 家族别名：deepseek-v4-flash 被 deepseek 渠道的 ModelList
-	// （relay/channel/deepseek/constants.go）与 FormatMatchingModelName 的 -none/-max
-	// 后缀处理引用；deepseek-chat / deepseek-reasoner 是官方 API 名称，同一价格。
+	// 默认模板：这两个模型同时被 deepseek 渠道的 ModelList
+	// （relay/channel/deepseek/constants.go）与 FormatMatchingModelName 的
+	// -none/-max 后缀处理引用，四张默认表（倍率/输出/缓存/tiered）必须口径一致。
 	"deepseek-flash":      0.5,
-	"deepseek-v4-flash":   0.5,
 	"deepseek-v4.1-flash": 0.5,
-	"deepseek-chat":       0.5,
-	"deepseek-reasoner":   0.5,
 }
 
 // 产品口径（2026-10-22）：默认表只含 deepseek 家族。功能动作计费键（Midjourney/Suno 动作、
@@ -59,10 +57,7 @@ var completionRatioMap = types.NewRWMap[string, float64]()
 // deepseek 家族：官方输出价 ÷ 输入价 = 4.00 / 1.00 = 4。
 var defaultCompletionRatio = map[string]float64{
 	"deepseek-flash":      4,
-	"deepseek-v4-flash":   4,
 	"deepseek-v4.1-flash": 4,
-	"deepseek-chat":       4,
-	"deepseek-reasoner":   4,
 }
 
 // InitRatioSettings initializes all model related settings maps
@@ -488,8 +483,8 @@ func FormatMatchingModelName(name string) string {
 		name = handleThinkingBudgetModel(name, "gemini-2.5-pro", "gemini-2.5-pro-thinking-*")
 	}
 
-	// deepseek-v4 family thinking effort suffix: deepseek-v4-flash-max / deepseek-v4.1-flash-none
-	if reasoning.IsDeepSeekV4Model(name) {
+	// deepseek family thinking effort suffix: deepseek-flash-max / deepseek-v4.1-flash-none
+	if reasoning.IsDeepSeekModel(name) {
 		if strings.HasSuffix(name, "-none") {
 			name = strings.TrimSuffix(name, "-none")
 		} else if strings.HasSuffix(name, "-max") {

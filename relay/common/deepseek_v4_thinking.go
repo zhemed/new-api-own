@@ -8,9 +8,10 @@ import (
 	"github.com/QuantumNous/new-api/relaykit/relayconvert/reasoning"
 )
 
-// ApplyDeepSeekV4ClaudeThinkingSuffix maps DeepSeek V4 thinking suffixes
-// (-max / -none) to Anthropic Messages thinking / output_config so pass-through
-// channels (for example newapi relay) behave like the official DeepSeek channel.
+// ApplyDeepSeekV4ClaudeThinkingSuffix maps DeepSeek family (any "deepseek"
+// prefix) thinking suffixes (-max / -none) to Anthropic Messages thinking /
+// output_config so pass-through channels (for example newapi relay) behave like
+// the official DeepSeek channel.
 func ApplyDeepSeekV4ClaudeThinkingSuffix(info *RelayInfo, request *dto.ClaudeRequest) error {
 	modelName := request.Model
 	if info != nil && info.ChannelMeta != nil && info.UpstreamModelName != "" {
@@ -42,8 +43,9 @@ func ApplyDeepSeekV4ClaudeThinkingSuffix(info *RelayInfo, request *dto.ClaudeReq
 	return nil
 }
 
-// ApplyDeepSeekV4OpenAIThinkingSuffix maps DeepSeek V4 thinking suffixes to
-// OpenAI Chat Completions thinking / reasoning_effort fields.
+// ApplyDeepSeekV4OpenAIThinkingSuffix maps DeepSeek family (any "deepseek"
+// prefix) thinking suffixes to OpenAI Chat Completions thinking /
+// reasoning_effort fields.
 func ApplyDeepSeekV4OpenAIThinkingSuffix(info *RelayInfo, request *dto.GeneralOpenAIRequest) error {
 	modelName := request.Model
 	if info != nil && info.ChannelMeta != nil && info.UpstreamModelName != "" {
@@ -78,8 +80,9 @@ func ApplyDeepSeekV4OpenAIThinkingSuffix(info *RelayInfo, request *dto.GeneralOp
 	return nil
 }
 
-// ApplyDeepSeekV4ResponsesThinkingSuffix maps DeepSeek V4 thinking suffixes to
-// OpenAI Responses reasoning effort (none disables thinking mode).
+// ApplyDeepSeekV4ResponsesThinkingSuffix maps DeepSeek family (any "deepseek"
+// prefix) thinking suffixes to OpenAI Responses reasoning effort (none disables
+// thinking mode).
 func ApplyDeepSeekV4ResponsesThinkingSuffix(info *RelayInfo, request *dto.OpenAIResponsesRequest) {
 	modelName := request.Model
 	if info != nil && info.ChannelMeta != nil && info.UpstreamModelName != "" {
@@ -99,7 +102,7 @@ func ApplyDeepSeekV4ResponsesThinkingSuffix(info *RelayInfo, request *dto.OpenAI
 			info.UpstreamModelName = baseModel
 		}
 	}
-	if !ok && reasoning.IsDeepSeekV4Model(modelName) {
+	if !ok && reasoning.IsDeepSeekModel(modelName) {
 		if request.Reasoning == nil {
 			request.Reasoning = &dto.Reasoning{}
 		}
@@ -113,9 +116,10 @@ func ApplyDeepSeekV4ResponsesThinkingSuffix(info *RelayInfo, request *dto.OpenAI
 }
 
 // applyDeepSeekV4OpenAIDefaultEffort records the default thinking effort (high)
-// for suffix-less DeepSeek V4 chat requests unless thinking is explicitly disabled.
+// for suffix-less DeepSeek family (any "deepseek" prefix) chat requests unless
+// thinking is explicitly disabled.
 func applyDeepSeekV4OpenAIDefaultEffort(info *RelayInfo, modelName string, request *dto.GeneralOpenAIRequest) {
-	if request == nil || request.ReasoningEffort != "" || !reasoning.IsDeepSeekV4Model(modelName) {
+	if request == nil || request.ReasoningEffort != "" || !reasoning.IsDeepSeekModel(modelName) {
 		return
 	}
 	disabled := false

@@ -18,7 +18,7 @@ const expectedDeepSeekPeakOffPeakExpr = `(weekday("Asia/Shanghai") >= 1 && weekd
 const deepSeekPeakCondition = `(weekday("Asia/Shanghai") >= 1 && weekday("Asia/Shanghai") <= 5 && ((hour("Asia/Shanghai") >= 9 && hour("Asia/Shanghai") < 12) || (hour("Asia/Shanghai") >= 14 && hour("Asia/Shanghai") < 18)))`
 
 func TestDefaultTieredBillingCoversDeepSeekFamily(t *testing.T) {
-	for _, model := range []string{"deepseek-flash", "deepseek-v4-flash", "deepseek-v4.1-flash", "deepseek-chat", "deepseek-reasoner"} {
+	for _, model := range []string{"deepseek-flash", "deepseek-v4.1-flash"} {
 		t.Run(model, func(t *testing.T) {
 			assert.Equal(t, BillingModeTieredExpr, GetBillingMode(model))
 
@@ -27,6 +27,10 @@ func TestDefaultTieredBillingCoversDeepSeekFamily(t *testing.T) {
 			assert.Equal(t, expectedDeepSeekPeakOffPeakExpr, expr)
 		})
 	}
+
+	// 默认模板只剩这两个模型；多留一个键必须是有意为之（与目录锁同口径）。
+	require.Len(t, GetBillingModeCopy(), 2)
+	require.Len(t, GetBillingExprCopy(), 2)
 
 	// 目录外的模型不受影响，仍走比率计费且没有表达式。
 	assert.Equal(t, BillingModeRatio, GetBillingMode("gpt-4o"))

@@ -35,20 +35,16 @@ func ParseOpenAIReasoningEffortFromModelSuffix(modelName string) (string, string
 	return effort, baseModel
 }
 
-// IsDeepSeekV4Model reports whether modelName belongs to the DeepSeek V4 family
-// (deepseek-v4-flash / deepseek-v4-pro / deepseek-v4.1-flash ...): the models that
-// accept the -none/-max thinking suffixes and think by default.
-func IsDeepSeekV4Model(modelName string) bool {
-	if strings.HasPrefix(modelName, "deepseek-v4-") {
-		return true
-	}
-	rest, ok := strings.CutPrefix(modelName, "deepseek-v4.")
-	return ok && rest != "" && rest[0] >= '0' && rest[0] <= '9'
+// IsDeepSeekModel reports whether modelName belongs to the DeepSeek family
+// (any name starting with "deepseek", matched case-sensitively): these models
+// accept the -none/-max thinking-effort suffixes and think by default.
+func IsDeepSeekModel(modelName string) bool {
+	return strings.HasPrefix(modelName, "deepseek")
 }
 
 func ParseDeepSeekV4ThinkingSuffix(modelName string) (baseModel string, thinkingType string, effort string, ok bool) {
 	baseModel, suffix, ok := TrimEffortSuffixWithSuffixes(modelName, DeepSeekV4EffortSuffixes)
-	if !ok || !IsDeepSeekV4Model(baseModel) {
+	if !ok || !IsDeepSeekModel(baseModel) {
 		return modelName, "", "", false
 	}
 	switch suffix {
