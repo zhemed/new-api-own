@@ -59,23 +59,42 @@
 3. 再更新一次回到 v0.0.44（重建回滚点）；
 4. 用**系统访问令牌**（PAT）调三个 update 端点，实测返回 `pat_not_allowed`。
 
-## Acceptance Criteria
+## 验收结果（2026-10-23 结项）
 
-- [ ] AC1 `deepseek-v4.1-flash` 在 `GetModelRatio` / `GetCompletionRatio` / `GetCacheRatio` 上分别返回
-      0.5 / 4 / 0.02，且 `GetBillingMode` 为 `tiered_expr`、表达式与 `deepseek-flash` 逐字符相同（表驱动断言）。
-- [ ] AC2 五个带默认价的模型（deepseek-flash、deepseek-v4-flash、deepseek-v4.1-flash、deepseek-chat、
-      deepseek-reasoner）三项数值两两相等（由测试断言，非口头结论）。
-- [ ] AC3 `deepseek-v4.1-flash-max` / `-none` 能归一到基名并命中同一价；`deepseek-v4-flash-*`、
-      `deepseek-v4-pro-*` 的既有行为不变（回归断言）。
-- [ ] AC4 `deepseek` 渠道 `ModelList` 含新模型三个条目。
-- [ ] AC5 `GOWORK=off go vet ./...`、`GOWORK=off go build ./...`、`make test`、
-      `cd relaykit && GOWORK=off go build ./...` 全部通过。
-- [ ] AC6 目录锁测试（键数 4→5）与家族断言更新后通过；无其它默认表被带入新键。
-- [ ] AC7 tag `v0.0.44` 已推送；镜像 `v0.0.44` / `0.0.44` / `latest` 同摘要；
-      Release 资产含 `SHA256SUMS`、`SHA256SUMS.sig`、两个 Linux 二进制；`check-version-drift.sh` 一致。
-- [ ] AC8 本地实例 v0.0.44，且演练四步各有可复核证据（`.prev` 存在 + `rollback_available` +
-      回滚前后版本与 sha256 + 再升级版本 + PAT 三端点返回码）。
-- [ ] AC9 全部改动只落在本任务声明的写作用域内；提交消息带 `[task:deepseek-v41-flash-pricing]` 锚点。
+- [x] AC1 `deepseek-v4.1-flash` 三项数值 0.5 / 4 / 0.02，`GetBillingMode` = `tiered_expr`，表达式与
+      `deepseek-flash` 逐字符相同 —— Lead 抽查 + verify-pricing 独立复跑（含金额级求值：P=1M→1e6、
+      C=1M→4e6、CR=1M→20000，与官方 ¥1.00/¥4.00/¥0.02 吻合）。
+- [x] AC2 五个模型三项数值两两相等 —— 由 `TestDeepSeekFamilySharesOnePricing` 断言；mutation（0.5→0.9）
+      实测能让断言变红（verify-pricing 复现并还原，md5 一致）。
+- [x] AC3 `-max` / `-none` 归一到基名并命中同一价，且与 `deepseek-v4-flash-*` 逐项一致；
+      `deepseek-v4-pro*`、`gpt-4o` 行为不变（回归对照 HEAD 与当前源码抽取，差异只有新增键）。
+- [x] AC4 deepseek 渠道 `ModelList` 含新模型三件套（11 条 = HEAD 8 + 新 3）。
+- [x] AC5 `go vet` / `go build` / `make test` / relaykit 独立构建全部通过；抽查包用 `-count=1`
+      复跑通过（verify-pricing 另做根模块 86 包 `-count=1 -p 1` 全绿）。
+- [x] AC6 目录锁 4→5，家族断言更新后通过；其余默认表仍为空。
+- [x] AC7 tag v0.0.44 已推送；镜像 `latest` / `v0.0.44` / `0.0.44` 同摘要
+      `sha256:92d066b505ae98ecb0515ed7ae64008a1d62ef6f575d57f2da1e2b82fbe6b83f`；
+      Release 资产含 `new-api-linux-amd64` / `new-api-linux-arm64` / `SHA256SUMS` / `SHA256SUMS.sig`。
+- [ ] **AC8 未达成**：回滚演练经用户当轮裁定跳过（面板登录凭据不匹配 → 用户选"算了，跳过演练"），
+      `.prev` / `rollback_available` / rollback 哈希比对 / PAT 实测**均未执行**；作为替代，本地实例改用
+      镜像方式升到 v0.0.44（容器参数逐项保留，旧容器 `new-api-prev-v0043` 留作回滚路径）。
+- [x] AC9 改动落在 13 个文件内（11 代码/测试 + `VERSION` + `MAINTENANCE.md`；后者是 verify-pricing 报告的
+      文档漂移，由 Lead 裁定纳入并同步更新 design 之外的声明），提交消息带
+      `[task:deepseek-v41-flash-pricing]` 锚点，闸门放行。
+
+## 遗留与后续（本轮发现，未处理）
+
+1. **实例侧定价遮蔽**：本地实例的定价来自 DB 选项（2026-10-22 清成只剩 `deepseek-flash`），
+   `/api/pricing` 只返回 1 条 → `deepseek-v4.1-flash` 在该实例上**尚未定价**；需在面板加模型或
+   "重置比率"才生效。代码默认值只对新部署/重置后生效。
+2. **check-version-drift 既有缺陷**：`scripts/check-version-drift.sh` 的实例比对是字面比较
+   （实例报 `v0.0.44`，VERSION 是 `0.0.44`），未剥 `v` 前缀 → 带 `--instance` 必然报 DRIFT
+   （blame 8be8ba3f，2026-10-06 起既有，非本轮引入）。
+3. **测试门禁口径**：`make test` 会命中缓存（verifier 实测 43 条 ok 全是 `(cached)`），
+   建议门禁改用 `-count=1`（必要时 `-p 1`）。
+4. **model 包既有 flake**：`TestLogPayloadTrimIsSingleFlight` 在无缓存并行全量跑时偶发失败，
+   `-p 1` 串行全绿；与本次 diff 无关（本轮未动 `model/`）。
+5. **go fmt 历史债**：9 个 `relay/channel/**` 文件在 HEAD 即未格式化，本轮按裁定不清理。
 
 ## Non-goals
 
