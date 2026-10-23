@@ -315,7 +315,11 @@ LOG_SQL_DSN='sqlite:/dev/shm/newapi-logs.db?_pragma=journal_mode(WAL)&_pragma=sy
 
 ### 已处理（第二批，2026-08-18 全面处理）
 - **A2**：`relay/compatible_handler.go` 转换前统一把客户端显式 `reasoning_effort` 同步到 info（覆盖 deepseek/newapi 透传、OpenRouter 清空、chat→Claude、Gemini 等全部 OpenAI 兼容渠道，后缀派生值优先覆盖）。
-- **A3**：`-none` 三路径统一记录 "none"（Claude/chat 路径在 `deepseek_v4_thinking.go` 补 disabled 分支；Responses 路径原有）。
+- **A3（2026-10-23 订正）**：`-none` 的 `other.reasoning_effort` **不是「三路径统一记 "none"」**，按路径分别是——
+  OpenAI 兼容 chat：`ApplyDeepSeekV4OpenAIThinkingSuffix` 的 disabled 分支（`relay/common/deepseek_v4_thinking.go:74-78`）写 `info.ReasoningEffort = "none"` → 日志记 `"none"`；
+  Responses：`ApplyDeepSeekV4ResponsesThinkingSuffix`（同文件 `:93-95`、`:113-115`）把 effort 兜底成 `"none"` → 日志记 `"none"`；
+  Claude：`ApplyDeepSeekV4ClaudeThinkingSuffix`（同文件 `:41`）与 `relay/claude_handler.go:110-134` 只写 `thinking.type=disabled` 并清空 `output_config`，`info.ReasoningEffort` 保持空 → `service/log_info_generate.go:83-84` 不写该键，**日志里 `reasoning_effort` 字段缺失**。
+  原提交 `fd5d5c8` 只给 chat 分支补了 disabled → `"none"`（提交信息写的是 Claude/chat，实际未含 Claude）；Claude 留空属既有行为，已由 `relay/common/deepseek_v4_thinking_test.go:161-166` 固化现状。
 - **B1**：`-max/-none` 挂到公共路径——chat 在 `compatible_handler.go`、Responses 在 `responses_handler.go` 对所有非 Gemini/Anthropic 的 OpenAI 兼容渠道生效（deepseek/newapi 原有调用幂等）；Gemini 渠道在 `ApplyThinkingConfig` 新增 DeepSeek V4 分支（`-none` → ThinkingBudget=0、`-max` → ThinkingLevel=high，修复原 TrimEffortSuffix 把 "max" 当 Gemini level 的静默丢语义）。
 - **B2**：8 个倍率/限流查询函数（GetModelPrice/GetModelRatio/GetCompletionRatio/GetCompletionRatioInfo/GetAudioRatio/GetAudioCompletionRatio/ContainsAudioRatio/ContainsAudioCompletionRatio）先查原样名（带后缀独立定价条目直接命中），miss 再归一化。
 - **B5**：已核对上游——`max` 是 DeepSeek V4 官方支持的 effort 值（vLLM PR #40982、DeepSeek API Thinking Mode 文档、litellm #27439），保持透传，无需映射。
