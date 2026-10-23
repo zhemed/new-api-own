@@ -1093,3 +1093,55 @@ v0.0.43 交付后用户裁定：①普通管理员查看更新状态——保持
 ### Next Steps
 
 - 下次发布时按任务记录的四步演练清单执行，并把结果写入该任务的 prd
+
+
+## Session 93: deepseek 定价与家族判定两条线：发 v0.0.44 / v0.0.45，实例定价校正与镜像升级
+<!-- trellis-session: v=2 fp=90e607550d4445f0 -->
+
+**Date**: 2026-10-23
+**Task**: deepseek 定价与家族判定两条线：发 v0.0.44 / v0.0.45，实例定价校正与镜像升级
+**Branch**: `main`
+
+### Summary
+
+本轮两条线：(1) 用户要求"添加 deepseek-v4.1-flash 定价跟 deepseek-flash 一样"，先按完整接入交付并发 v0.0.44；(2) 用户随后裁定把思考档位判定从 deepseek-v4- 前缀放宽为 deepseek 前缀、默认模板裁到两个模型，再发 v0.0.45。
+
+v0.0.44（提交 401f13c，tag v0.0.44）：deepseek-v4.1-flash 进三张价表（0.5/4/0.02）与峰谷表达式，deepseek 渠道 ModelList 收 base/-none/-max；顺手把 V4 家族前缀判定收敛为单一谓词（宿主走 setting/reasoning 垫片）并补边界单测。用户随后指出这属于"瞎改"——原话只要一个模型的价格，最小改动应是 2 个文件，实际动了 13 个；且代码默认表对已装实例不追溯生效。
+
+实例侧插曲：升级 v0.0.44 后用户发现面板只有 1 条定价（实例 DB 选项整表覆盖代码默认，types/rw_map.go:86 先 make 再反序列化），点"重置价格"后变成 5 条（出厂默认表就是 4 键 + 新模型）；用户要求"改回你要的样子"，遂用面板 API 把实例定价改成 deepseek-flash + deepseek-v4.1-flash 两条（三项数值 + 同一表达式逐字符复用），并删掉多出的三条。用户明确：面板这两行就是默认模板。
+
+v0.0.45（提交 b5f9388，tag v0.0.45）：IsDeepSeekV4Model → IsDeepSeekModel（单一 deepseek 前缀，大小写敏感），档位识别与"无后缀补 effort=high"两条一起放宽（用户选定，含副作用知情）；四张默认表裁到 deepseek-flash + deepseek-v4.1-flash；deepseek 渠道 ModelList 裁到 6 条。追加提交 09b1af1 固化 Claude/Responses 两条路径的 parity 单测（此前只有 OpenAI 路径）。
+
+实例：本地用镜像方式升到 v0.0.45（参数逐项保留，prev-v0044/prev-v0043 停作回滚点），实例侧定价配置随重建完整保留。
+
+流程：两个 Trellis 任务，第一个（10-23-deepseek-v41-flash-pricing）已归档；每轮实现与验证都由不同成员承担，Lead 复核 diff、跑最终门禁并署名发布。回滚演练经用户裁定跳过（面板凭据不匹配），AC8 如实记为未达成。
+
+### Main Changes
+
+- v0.0.44：deepseek-v4.1-flash 与 deepseek-flash 同价（0.5/4/0.02 + 同一条峰谷表达式），进 deepseek 渠道 ModelList；V4 家族前缀判定收敛为单一谓词
+- v0.0.45：判定放宽为 deepseek 前缀（含无后缀补 high），四张默认表与渠道 ModelList 裁到 deepseek-flash + deepseek-v4.1-flash（6 条）
+- 实例：定价由 1→5（重置拉回出厂默认）→2（用户指定模板）；本地镜像方式升到 v0.0.45，旧容器留作回滚点
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `401f13c` | feat(pricing): 新增 deepseek-v4.1-flash（与 deepseek-flash 同价）[task:deepseek-v41-flash-pricing] |
+| `b5f9388` | feat(reasoning): deepseek 家族判定放宽到前缀匹配，默认模板裁到两个模型 [task:deepseek-family-match-and-trim] |
+| `09b1af1` | test(reasoning): 固化 deepseek 家族三条路径的档位 parity 单测 [task:deepseek-family-match-and-trim] |
+
+### Testing
+
+- [OK] v0.0.44：go vet/build、make test 43 包 ok、relaykit 独立构建；verifier mutation 与回归面全绿
+- [OK] v0.0.45：全量无缓存 -count=1（根 36 ok + relaykit）、三条路径 × 三档端到端 parity、目录锁 2、ModelList 6 条
+- [OK] parity 单测 18 子测试 PASS；verifier 逐格比对独立推导一致 + 2 格翻转活性；实例 /api/status=v0.0.45、日志无 error
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 渠道侧挂 deepseek-v4.1-flash（用户自行）：能力驱动 /api/pricing，未挂则只出 deepseek-flash
+- 可选：修正 MAINTENANCE.md:318「-none 三路径统一记 none」（Claude 实际记空）；同步前端 channel-type-config.ts:113 的渠道模型提示
+- 待定：两个回滚容器（prev-v0044/prev-v0043）的保留期限；check-version-drift.sh 实例比对未剥 v 前缀的既有缺陷
