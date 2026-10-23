@@ -1310,3 +1310,45 @@ v0.0.45（提交 b5f9388，tag v0.0.45）：IsDeepSeekV4Model → IsDeepSeekMode
 
 - 备份策略仍缺位（./data 单点、无异地副本）——用户本轮未选，建议后续独立立项
 - 可选：Build Cache 约 24.22GB 可回收（需新授权）；MAINTENANCE 三处口径互链
+
+
+## Session 98: 清理 Build Cache 24.13GB；新增 trellis-wrapup.sh 固化「归档后补推」为一条命令
+<!-- trellis-session: v=2 fp=4a0735a85c514dff -->
+
+**Date**: 2026-10-23
+**Task**: 清理 Build Cache 24.13GB；新增 trellis-wrapup.sh 固化「归档后补推」为一条命令
+**Branch**: `main`
+
+### Summary
+
+按用户点名授权清 Docker Build Cache（回收 24.13GB，达成目标的 99.6%，磁盘 114G→92G 已用）；新增 scripts/trellis-wrapup.sh 把 finish→archive→push→校验 固化为一条命令，并在闸门指南记录标准收尾序列，替代此前三次使用的「临时任务过闸门」土办法。
+
+### Main Changes
+
+- Build Cache：docker builder prune -f（默认语义，未加 --all）回收 24121233408 B；归属查清为 buildx default builder；剩余 25.75GB 是与在用镜像共享层的记录，--all 额外收益上界仅 85.79MB 故未执行
+- 新增 scripts/trellis-wrapup.sh：7 类守卫（非 git 仓库/无 origin/detached HEAD/跟踪文件未提交/任务不存在或已归档/非 in_progress/远端预检失败）+ --dry-run + 四阶段输出
+- 闸门指南新增第 9 节：标准收尾序列与「为什么必须在同一次调用内完成」；把「建临时任务过闸门、推完删掉」记为不推荐历史做法（审计链断裂）
+- 研究结论：闸门在工具调用边界检查，故 finish→archive→push 放在同一次调用即可整体通过；仓库层 hook 对纯 .trellis 归档提交放行（/tmp 对照实验 T9a/T9b 证明 hook 真实生效）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `30f393a` | chore(flow): 新增 trellis-wrapup.sh 并固化归档后补推流程 [task:build-cache-and-wrapup-flow] |
+| `532433c` | chore(task): Build Cache 清理与 wrapup 流程证据 [task:build-cache-and-wrapup-flow] |
+
+### Testing
+
+- [OK] [OK] /tmp 端到端测试（含 bare remote + 真实 .githooks）：9 场景 46 断言全 PASS，含 happy path、脏树拒绝零改动、任务不存在、非 in_progress、dry-run 零改动、无 origin、远端预检失败、名字歧义、闸门对照
+- [OK] [OK] bash -n 与 shellcheck -S warning 均 exit 0；Lead 实跑 --dry-run 正确拒绝未提交的 guide 改动（守卫生效）
+- [OK] [OK] 清理后核验：8 容器全 Up、new-api 200 + v0.0.45、镜像 2 标签同 ID、卷 3 个、data/ 55 文件；Build Cache 可回收 24.22GB → 85.79MB
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 本轮收尾用 trellis-wrapup.sh 真实执行，验证会话层闸门是否放行（唯一未验证项），结果回填
+- 备份策略仍未做（./data 单点、无异地副本）——用户连续两轮未选，建议后续单独确认
+- 可选：镜像侧 12.47GB 可回收需删旧镜像（需单独授权）；MAINTENANCE 补一行指向 wrapup 脚本
