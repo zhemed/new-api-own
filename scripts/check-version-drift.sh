@@ -6,7 +6,10 @@
 #   1) 仓库 VERSION 文件
 #   2) 最新 git tag（v 前缀可有可无）
 #   3) ghcr 上 latest / <版本> / v<版本> 三个标签的镜像摘要（三者必须同摘要）
-#   4) 可选：运行实例 /api/status 的 version（--instance <url>）
+#   4) 可选：运行实例 /api/status 的 version（--instance <url>，v 前缀可有可无）
+#
+# 所有版本比对（tag / 实例 vs 仓库 VERSION）都先经 normalize_version 剥掉一个可选的
+# `v` 前缀再比较，因此 v0.0.45 与 0.0.45 视为同一版本；版本号本体不同照旧判为 drift。
 #
 # 退出码：0 = 全部一致 / 1 = 发现不一致（drift）/ 2 = 无法判定（查不到、网络不可用、命令缺失）
 # **任何"查不到"一律按 2 处理，绝不当成"一致"。**
@@ -91,6 +94,14 @@ with_timeout() {
 	fi
 }
 
+# 所有版本比对统一在这里归一化：只剥掉一个可选的 `v` 前缀（tag 与镜像标签惯用 v，
+# VERSION 文件与实例 /api/status 不一定带），避免 v0.0.45 与 0.0.45 被误判为漂移。
+# 归一化只影响前缀，不改变版本号本体 —— 真漂移（0.0.46 vs 0.0.45）仍然报出。
+normalize_version() {
+	local v="${1:-}"
+	printf '%s' "${v#v}"
+}
+
 DRIFT=0
 UNKNOWN=0
 CHECKED=0
@@ -113,6 +124,7 @@ if [[ -n "${VERSION_OVERRIDE}" ]]; then
 	echo "• 仓库 VERSION=${REPO_VERSION}（本次用 --version ${VERSION_OVERRIDE} 覆盖参与比对）"
 	REPO_VERSION="${VERSION_OVERRIDE}"
 fi
+REPO_VERSION="$(normalize_version "${REPO_VERSION}")"
 if [[ -z "${REPO_VERSION}" ]]; then
 	echo "❌ VERSION 文件为空，无法判定"
 	exit 2
@@ -132,7 +144,7 @@ if [[ -z "${LATEST_TAG}" ]]; then
 	UNKNOWN=1
 	SKIPPED=$((SKIPPED + 1))
 else
-	TAG_VERSION="${LATEST_TAG#v}"
+	TAG_VERSION="$(normalize_version "${LATEST_TAG}")"
 	CHECKED=$((CHECKED + 1))
 	if [[ "${TAG_VERSION}" == "${REPO_VERSION}" ]]; then
 		echo "✅ 仓库: VERSION=${REPO_VERSION} == 最新 tag ${LATEST_TAG}"
@@ -246,6 +258,7 @@ else
 			SKIPPED=$((SKIPPED + 1))
 		else
 			CHECKED=$((CHECKED + 1))
+			instance_version="$(normalize_version "${instance_version}")"
 			if [[ "${instance_version}" == "${REPO_VERSION}" ]]; then
 				echo "✅ 实例: ${STATUS_URL} version=${instance_version} == VERSION=${REPO_VERSION}"
 			else
