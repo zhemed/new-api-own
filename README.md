@@ -43,7 +43,8 @@ docker run -d --name new-api --restart always \
   ghcr.io/zhemed/new-api-own:latest
 ```
 
-- 默认使用 SQLite，数据保存在 `./data` 目录
+- 默认使用 SQLite，数据保存在 `./data` 目录。**该目录必须位于本仓库工作区内**（不要挂工作区外的绝对路径）：
+  `.gitignore:27` 已忽略 `/data/`，数据不入库；迁目录 / 换挂载见下面[数据目录（必须在工作区内）](#数据目录必须在工作区内)
 - 上面四条 `LOG_*` 就是**当前在用的日志模式**：日志放内存（体积上限 **200MB**、保留 **7 天**、
   写入时按字节裁剪，**没有定时清理任务**）——省磁盘写入，代价是**日志重启即丢**；
   想回到落盘模式，去掉 `LOG_SQL_DSN=memory` 重建即可。详见 [MAINTENANCE.md](./MAINTENANCE.md)
@@ -52,6 +53,36 @@ docker run -d --name new-api --restart always \
 - 部署完成后访问 `http://localhost:3000`
 - 自建镜像时（需要仓库访问权限）先 `docker build -t new-api-own .`，再把上面的镜像名换成
   `new-api-own` —— **命令形态不变**，这不是第二种部署方式
+
+### 数据目录（必须在工作区内）
+
+`-v ./data:/data` 里的 `./data` 就是实例数据目录（SQLite 库、日志、上传文件），**必须位于本仓库工作区内**：
+
+- `.gitignore:27` 的 `/data/` 只匹配仓库根下的 `data/`——数据（凭据、用户与用量、日志）因此**不会进 Git**；
+  挂到工作区外则不受这条规则保护，也不随工作区备份走。
+- 维护会话（含 AI agent）的可读写范围**只有工作区**：数据在工作区内，文件数、sha256、SQLite 计数这些
+  只读盘点可以直接做；放到区外，同一次盘点就成了越界读取，只能靠人工在主机上做。
+
+换数据目录（或从别处迁入）按这个顺序，别跳步：
+
+```bash
+docker stop new-api                                # 1. 先停容器，别删（留着 docker inspect 对照参数）
+mkdir -p ./data && cp -a <旧数据目录>/. ./data/     # 2. 复制，不要 mv（旧目录先当回滚点）
+( cd <旧数据目录> && find . -type f | wc -l ) ; ( cd ./data && find . -type f | wc -l )   # 3. 文件数须相等
+( cd <旧数据目录> && find . -type f -exec sha256sum {} + | sort | sha256sum )
+( cd ./data        && find . -type f -exec sha256sum {} + | sort | sha256sum )            # 3. 两条摘要须一致
+docker rm new-api                                  # 4. 删容器：不要带 -v
+# 5. 照抄上面「部署命令（无需源码）」原样重建，只把 -v 的源改成 ./data
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3000/api/status   # 6. 期望 200
+```
+
+- 第 3 步的 `find` 必须在**各自数据目录内部**执行（上面的子 shell `cd` 就是为此）：在仓库根直接跑
+  `find . -type f` 会把整个仓库算进去，文件数与 sha256 摘要都不对。
+- **必须先停容器再复制**：SQLite 的 `-wal` / `-shm` 在运行中与主库不一致，边跑边拷会拿到损坏的库。
+- 确认新挂载真的生效：
+  `docker inspect -f '{{range .Mounts}}{{.Source}}{{"\n"}}{{end}}' new-api` 的输出应等于当前目录下的 `data`。
+- 旧目录是回滚点：等实例 200、版本与业务计数（用户 / 渠道 / 日志条数）都对上再删——
+  删掉之后 `./data` 就是唯一副本，误挂载或误删都没有第二条退路。
 
 ### 升级 / 回滚（照做不会停在旧版）
 
