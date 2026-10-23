@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 96
+- **Total Sessions**: 97
 - **Last Active**: 2026-10-23
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~1269 | Active |
+| `journal-2.md` | ~1312 | Active |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 97 | 2026-10-23 | 清理 12 个旧镜像标签与 37 个匿名悬空卷；把「数据目录在工作区内」写进 README 与 spec | `309a795`, `2181b51` | `main` |
 | 96 | 2026-10-23 | 实例数据目录迁入工作区：/root/data → ./data（含重启存活验证与旧目录删除） | `5b1624b` | `main` |
 | 95 | 2026-10-23 | 清理未完成事项：-none 记述订正 + 版本比对假漂移修复 + 回滚容器删除；PAT 受前置条件阻塞 | `b9142c5`, `d65ad76`, `808f5b4` | `main` |
 | 94 | 2026-10-23 | 盘点工作区未完成任务：无遗留活动任务，archive 161 个全部 completed | - | `main` |

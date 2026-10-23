@@ -1267,3 +1267,46 @@ v0.0.45（提交 b5f9388，tag v0.0.45）：IsDeepSeekV4Model → IsDeepSeekMode
 
 - 回滚点已按裁定消失，data/ 成为唯一数据源——建议另开任务建立定时快照备份（需用户授权）
 - 可选：清理悬空卷与旧镜像标签；对齐 README 部署段落与本次绝对路径表述
+
+
+## Session 97: 清理 12 个旧镜像标签与 37 个匿名悬空卷；把「数据目录在工作区内」写进 README 与 spec
+<!-- trellis-session: v=2 fp=eb8c2b442f73569c -->
+
+**Date**: 2026-10-23
+**Task**: 清理 12 个旧镜像标签与 37 个匿名悬空卷；把「数据目录在工作区内」写进 README 与 spec
+**Branch**: `main`
+
+### Summary
+
+按用户点名授权清理磁盘与对齐文档：new-api 镜像标签 14→2（latest 重指向 v0.0.45）、37 个匿名悬空卷逐个显式删除、回收约 2.36GiB；README 与 spec 固化「实例数据目录必须在工作区内」及迁移姿势。备份策略用户本轮未选，仍为单点风险。
+
+### Main Changes
+
+- 镜像：按仓库:标签逐个 rmi 删除 12 个旧标签（不按镜像 ID 删，避免动共享层）；docker tag v0.0.45 latest；清 5 个悬空镜像
+- 卷：按 Lead 裁定走显式名单，逐个 docker volume rm 37 个匿名悬空卷（failed=0，未用 prune）；两个命名卷 halo-gradle-cache / picsur_picsur-data 属其它应用，保留不动
+- 文档：README 新增「数据目录（必须在工作区内）」章节（换挂载 6 步 + 三条提醒）；spec 的 deployment-single-method.md 追加同名约定节（规则/理由/迁移表/反例）
+- 过程留痕：Lead 侦察初查卷列表只看前 30 条便误判「39 个全匿名」（实为 37 匿名 + 2 命名），执行成员按 R3 停手并回报，避免了误删其它应用数据；PRD 与证据已更正口径
+- 打回一次：README/spec 迁移步骤原写 find . 会被误读成在仓库根执行（实测整仓 125204 文件 vs 数据目录 55），已改为子 shell cd 形式并补警告
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `309a795` | docs(deploy): 数据目录必须在工作区内（README 章节 + spec 约定） [task:cleanup-volumes-images-and-docs] |
+| `2181b51` | chore(task): 镜像/卷清理证据与任务记录 [task:cleanup-volumes-images-and-docs] |
+
+### Testing
+
+- [OK] [OK] Lead 复核：docker images 仅 v0.0.45 与 latest（同 ID e114b17532f1）；卷 3 个（dangling 2 为保留的命名卷）；8 容器全 Up
+- [OK] [OK] Lead 复核：new-api running、restarts=0、挂载 /root/new-api-own/data:/data、/api/status 200 + v0.0.45；data/ 55 文件完好
+- [OK] [OK] 成员实测：df 已用 116G→114G（-2537910272 B）；镜像 122→110；本地卷 40 个/1.86GB→3 个/996.9MB
+- [OK] [OK] 门禁：scripts/forbid-extra-deploy-methods.sh 复跑通过；文档渲染安全自查通过（无成对美元符号、围栏配平）
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 备份策略仍缺位（./data 单点、无异地副本）——用户本轮未选，建议后续独立立项
+- 可选：Build Cache 约 24.22GB 可回收（需新授权）；MAINTENANCE 三处口径互链
