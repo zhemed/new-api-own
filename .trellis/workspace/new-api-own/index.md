@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 112
+- **Total Sessions**: 113
 - **Last Active**: 2026-10-24
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~1925 | Active |
+| `journal-2.md` | ~1968 | Active |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 113 | 2026-10-24 | 清 59 个导出死符号（deadcode 144→85）；发 v0.0.49 并升级实例；新增 lint CI 首次运行即绿 | `f78a6c9`, `eddee29`, `899ed48` | `main` |
 | 112 | 2026-10-24 | 清 36 个未导出死符号；装 deadcode 出导出符号清单；文档示例版本号统一；CI 加 gofmt/shellcheck | `f552dc0`, `42d3f3a`, `0837c7c`, `f882ccf` | `main` |
 | 111 | 2026-10-24 | 技术债清扫（一轮）：gofmt 9 文件、清 2 个死 i18n key、脚本守卫；产出 TODO/死代码/版本引用清单 | `7408647`, `9666713` | `main` |
 | 110 | 2026-10-24 | 修两处既有 flaky（日志预算测试隔离、内存限流器复位）；全仓 -count=3 首次全绿；latest 对齐 v0.0.48 | `3e8dd7b`, `077c3fd` | `main` |

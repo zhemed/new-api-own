@@ -1923,3 +1923,46 @@ v0.0.45（提交 b5f9388，tag v0.0.45）：IsDeepSeekV4Model → IsDeepSeekMode
 - 导出符号待办：62 个「可删」可分批清（同样每批全测试）；82 个「需确认」需 owner 决策（relaykit 独立模块、common 公共工具面）
 - logKeyCol 若要彻底清零，需同时改 AGENTS.md 与 backend spec 的跨库列描述（文档改动）；relay/channel/volcengine/adaptor.go 的注释块仍引用已删的 detectImageMimeType（整块是注释掉的旧实现，未动）
 - 首次 CI 运行需在推送后观察 lint.yml 两个 job 是否绿（runner 的 shellcheck 版本可能与本地 0.10.0 不同）
+
+
+## Session 113: 清 59 个导出死符号（deadcode 144→85）；发 v0.0.49 并升级实例；新增 lint CI 首次运行即绿
+<!-- trellis-session: v=2 fp=8e5a1c5578c42530 -->
+
+**Date**: 2026-10-24
+**Task**: 清 59 个导出死符号（deadcode 144→85）；发 v0.0.49 并升级实例；新增 lint CI 首次运行即绿
+**Branch**: `main`
+
+### Summary
+
+技术债第二轮：62 个「可删」导出候选中删 59 个（口径：57 个导出函数 + 2 个 relaykit 非导出重复副本，另 2 个局部结构体字段随函数删除）+ 2 个空壳文件（middleware/recover.go 的 RelayPanicRecover、controller/image.go 的 GetImage，二者从未接线），3 个按规则保留；deadcode 144→85、级联新增不可达 0、unused 仍 1。随后发 v0.0.49（三个 workflow 全绿，含新增 lint CI 首次真实运行）并升级本机实例。
+
+### Main Changes
+
+- 删除 59 个导出死符号：controller 3、middleware 5、model 26、relay 3、service 20（含 authz 1）、relaykit 内部 2；41 文件（39 改 + 2 整文件删除），-805/+3 行
+- 保留 3 个：resolveTextConverterID（被保留符号调用）、ClaudeErrorWrapper（backend spec 点名）、Message.String（fmt.Stringer 防御性保留）
+- 顺带清理：失效 import 6 处、点名已删符号的注释 3 处、router/api-router.go 一行注释掉的旧路由
+- 发版 v0.0.49：VERSION + 附注 tag；Publish image 40069015095 / Publish release 40069015023 / lint 40069013081 三绿；四资产含 SHA256SUMS.sig；实例升 v0.0.49（2 秒就绪），v0.0.46-48 镜像保留作回滚点；latest 对齐
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f78a6c9` | chore: 删除 59 个导出死符号与 2 个空壳文件，清理失效引用 [task:exported-deadcode-and-v0049] |
+| `eddee29` | chore(release): 版本提升到 0.0.49 [task:exported-deadcode-and-v0049] |
+| `899ed48` | chore(task): 导出符号清理与 v0.0.49 发版证据 [task:exported-deadcode-and-v0049] |
+
+### Testing
+
+- [OK] [OK] 门禁：build/vet/relaykit GOWORK=off/全仓 36 包测试/gofmt 空/unused 恰 1/deadcode 85
+- [OK] [OK] 独立验证（task-48）：接受；59 符号全量核对删除前引用全在删除行内、删除后零残留；非 Go 位置零引用；两整文件符号无路由/中间件/测试引用；新增不可达 0
+- [OK] [OK] 运行面：8 容器全 running、实例 200 + v0.0.49、5 个真实 GET 端点全 200（0 个 5xx）、定价两行仍 tiered_expr 且表达式同 sha
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 发现既有问题（未修）：全仓没有挂载 panic recovery 中间件（gin.New 无 gin.Recovery），被删的 RelayPanicRecover 从未接线；生产环境 handler panic 会让请求连接被直接断开、无 500 响应，建议单开任务评估补上
+- 剩余「需确认」79 个导出 API（common/relaykit/types/pkg/oauth/setting）需按包/owner 分「补调用 / 删符号+改文档 / 保留」三堆再小批处理
+- logKeyCol 若要清零需同步改 AGENTS.md 与 backend spec；回滚镜像 v0.0.45-48 待观察后清理；data/ 仍无异地备份
