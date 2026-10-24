@@ -422,10 +422,10 @@ x-opencode-session and cannot be routed efficiently
 - 公开镜像可直接拉取，无需 `docker login`
 - 部署前确保 Docker 为标准版本（29.7.2 + v5.4.0）
 
-## 发版流程（版本号第三位递增：0.0.2 → 0.0.3 → 0.0.4 …）
+## 发版流程（版本号第三位递增：0.0.47 → 0.0.48 → 0.0.49 …）
 
 1. 更新 `VERSION`（与即将打的 tag 一致，**不带** `v`），提交到 `main`
-2. 打注释 tag 并推送（`<版本>` 为刚提交的版本号，如 `0.0.6`）：
+2. 打注释 tag 并推送（`<版本>` 为刚提交的版本号，如 `0.0.48`）：
 
    ```bash
    git tag -a v<版本> -m "v<版本>"
@@ -472,7 +472,7 @@ x-opencode-session and cannot be routed efficiently
 **关键认知：重启容器不会换镜像。** `docker restart new-api`、`--restart always` 触发的自动重启、
 甚至重启宿主机，都只是把**同一个镜像**再跑一遍——版本当然不变。升级必须**删掉容器、用新镜像重建**。
 
-升级三步（`<版本>` 换成目标 tag，如 `0.0.6`；**在原来的部署目录执行**，`./data` 是相对路径，换目录＝换了数据目录）：
+升级三步（`<版本>` 换成目标 tag，如 `0.0.48`；**在原来的部署目录执行**，`./data` 是相对路径，换目录＝换了数据目录）：
 
 ```bash
 docker pull ghcr.io/zhemed/new-api-own:<版本>     # 1. 先拉新镜像
@@ -488,10 +488,10 @@ docker run -d --name new-api --restart always \
   ghcr.io/zhemed/new-api-own:<版本>               # 3. 用新镜像重建
 ```
 
-回滚同理，只换 tag（registry 保留每个历史 tag：`0.0.5`、`0.0.4`…）：
+回滚同理，只换 tag（registry 保留每个历史 tag：`0.0.47`、`0.0.46`…）：
 
 ```bash
-docker pull ghcr.io/zhemed/new-api-own:0.0.5
+docker pull ghcr.io/zhemed/new-api-own:0.0.47
 docker rm -f new-api
 docker run -d --name new-api --restart always \
   --network host \
@@ -501,7 +501,7 @@ docker run -d --name new-api --restart always \
   -e LOG_MEMORY_MAX_BYTES=200MB \
   -e LOG_MEMORY_MAX_ROWS=200000 \
   -e LOG_CLEANUP_RETENTION_DAYS=7 \
-  ghcr.io/zhemed/new-api-own:0.0.5
+  ghcr.io/zhemed/new-api-own:0.0.47
 ```
 
 > **回滚注意**：上面四条 `LOG_*` 需要支持内存日志的版本（`LOG_SQL_DSN=memory` 自 `v0.0.4` 起，
@@ -524,9 +524,9 @@ docker run -d --name new-api --restart always \
 
 | # | 查哪里 | 命令 | 期望 |
 |---|---|---|---|
-| 1 | **运行实例**（唯一真相）| `curl -s http://127.0.0.1:3000/api/status \| grep -o '"version":"[^"]*"'` | `"version":"v0.0.6"` |
-| 2 | **registry 清单摘要** | `docker buildx imagetools inspect ghcr.io/zhemed/new-api-own:0.0.6 --format '{{.Manifest.Digest}}'` | 与 `:latest`、与本地镜像摘要一致 |
-| 3 | **仓库源头** | `cat VERSION`；`git tag --sort=-v:refname \| head -1` | `0.0.6`；`v0.0.6`（VERSION 不带 v，tag 带 v）|
+| 1 | **运行实例**（唯一真相）| `curl -s http://127.0.0.1:3000/api/status \| grep -o '"version":"[^"]*"'` | `"version":"v0.0.48"` |
+| 2 | **registry 清单摘要** | `docker buildx imagetools inspect ghcr.io/zhemed/new-api-own:0.0.48 --format '{{.Manifest.Digest}}'` | 与 `:latest`、与本地镜像摘要一致 |
+| 3 | **仓库源头** | `cat VERSION`；`git tag --sort=-v:refname \| head -1` | `0.0.48`；`v0.0.48`（VERSION 不带 v，tag 带 v）|
 
 > 等价写法：第 1 行也可用 `curl -s <实例>/api/status | jq -r .data.version`，或直接看**面板页脚**的版本号；
 > 第 3 行也可用 `git tag | sort -V | tail -1`。
@@ -550,15 +550,15 @@ docker buildx imagetools inspect ghcr.io/zhemed/new-api-own:latest --format '{{.
 
 两条摘要不一致 = 本地标签陈旧 → `docker pull ghcr.io/zhemed/new-api-own:latest` 后重建容器，或改用固定 tag。
 
-> ⚠️ **别用 `docker images | grep 0.0.5` 判断"本机有没有某个版本"**：不带仓库名会命中**别的项目**的同号 tag，
-> 而且 `grep` 里 `.` 是通配符（`0.0.5` 也会匹配 `…09035…` 这类无关行）。过滤一律带完整仓库名
+> ⚠️ **别用 `docker images | grep 0.0.48` 判断"本机有没有某个版本"**：不带仓库名会命中**别的项目**的同号 tag，
+> 而且 `grep` 里 `.` 是通配符（`0.0.48` 也会匹配 `…09048…` 这类无关行）。过滤一律带完整仓库名
 > `ghcr.io/zhemed/new-api-own`；要 grep 就写 `grep 'ghcr\.io/zhemed/new-api-own'`。
 
 镜像自带版本标签，**不启动容器**也能确认某份镜像的版本：
 
 ```bash
-docker image inspect ghcr.io/zhemed/new-api-own:0.0.6 \
-  --format '{{index .Config.Labels "org.opencontainers.image.version"}}'    # → v0.0.6
+docker image inspect ghcr.io/zhemed/new-api-own:0.0.48 \
+  --format '{{index .Config.Labels "org.opencontainers.image.version"}}'    # → v0.0.48
 ```
 
 ## 面板内更新（self-update）

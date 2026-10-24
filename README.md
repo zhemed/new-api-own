@@ -89,7 +89,7 @@ curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3000/api/status   # 6.
 > **关键认知：重启容器不会换镜像。** `docker restart`（或 `--restart always` 自动重启）只是把
 > **同一个镜像**再跑一遍，版本当然不变。升级必须**删掉容器、用新镜像重建**。
 
-升级三步（`<版本>` 换成目标 tag，如 `0.0.6`；**在原来的部署目录执行**，`./data` 是相对路径）：
+升级三步（`<版本>` 换成目标 tag，如 `0.0.48`；**在原来的部署目录执行**，`./data` 是相对路径）：
 
 ```bash
 docker pull ghcr.io/zhemed/new-api-own:<版本>   # 1. 先拉新镜像
@@ -108,7 +108,7 @@ docker run -d --name new-api --restart always \
 回滚同理，只把 tag 换成上一个版本（registry 保留每个历史 tag）：
 
 ```bash
-docker pull ghcr.io/zhemed/new-api-own:0.0.5
+docker pull ghcr.io/zhemed/new-api-own:0.0.47
 docker rm -f new-api
 docker run -d --name new-api --restart always \
   --network host \
@@ -118,7 +118,7 @@ docker run -d --name new-api --restart always \
   -e LOG_MEMORY_MAX_BYTES=200MB \
   -e LOG_MEMORY_MAX_ROWS=200000 \
   -e LOG_CLEANUP_RETENTION_DAYS=7 \
-  ghcr.io/zhemed/new-api-own:0.0.5
+  ghcr.io/zhemed/new-api-own:0.0.47
 ```
 
 > **回滚注意**：上面四条 `LOG_*` 需要支持内存日志的版本（`LOG_SQL_DSN=memory` 自 `v0.0.4` 起，
@@ -133,18 +133,18 @@ docker run -d --name new-api --restart always \
 **为什么显式 `docker pull`、为什么不建议用 `:latest`**：`:latest` 是**本地标签**——
 `docker run …:latest` 不会去远端比对更新，本地有就直接用；本地标签陈旧时就会"升级了却还是旧版"
 （2026-10-06 本机 `latest` 曾停在 `0.0.3`，当日已刷新；**任何机器的本地标签都可能陈旧**）。所以升级用
-**固定 tag**（`0.0.6` 与 `v0.0.6` 指向同一份多架构清单）；非要用 `:latest`，必须先
+**固定 tag**（`0.0.48` 与 `v0.0.48` 指向同一份多架构清单）；非要用 `:latest`，必须先
 `docker pull ghcr.io/zhemed/new-api-own:latest` 再重建。
 
 > 判断本机镜像是否已刷新：`docker images ghcr.io/zhemed/new-api-own --digests`。
-> **过滤必须带完整仓库名**——`docker images | grep 0.0.5` 会命中别的项目的同号 tag，
+> **过滤必须带完整仓库名**——`docker images | grep 0.0.48` 会命中别的项目的同号 tag，
 > 而且 `grep` 里 `.` 是通配符，会给出错误结论。
 
 升级后确认版本（实例自身报告的才是真相）：
 
 ```bash
 curl -s http://127.0.0.1:3000/api/status | grep -o '"version":"[^"]*"'
-# 预期："version":"v0.0.6"；对不上就按 MAINTENANCE.md「版本与升级（每次维护必做）」逐处比对
+# 预期："version":"v0.0.48"；对不上就按 MAINTENANCE.md「版本与升级（每次维护必做）」逐处比对
 # 有本仓库源码时，一条命令核对四项（仓库 VERSION / 最新 tag / registry 摘要 / 实例版本）：
 #   make check-version INSTANCE=http://127.0.0.1:3000
 ```
@@ -184,11 +184,11 @@ cd new-api-own
 trellis init --dsh -u <你的开发名> -s -y   # 生成 00-join-<开发名> 接入任务，不覆盖仓库文件
 ```
 
-发版：把 `VERSION` 递增（0.0.3、0.0.4 …）提交后打 tag：
+发版：把 `VERSION` 递增（0.0.48 → 0.0.49 …）提交后打 tag：
 
 ```bash
-git tag -a v0.0.3 -m "v0.0.3"
-git push origin main v0.0.3
+git tag -a v0.0.49 -m "v0.0.49"
+git push origin main v0.0.49
 ```
 
 推 tag **只自动触发镜像构建**：向 `ghcr.io/zhemed/new-api-own` 发布 `v<版本>`、`<版本>` 与 `:latest`
