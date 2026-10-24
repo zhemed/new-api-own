@@ -173,3 +173,41 @@
 
 - 观察一个运行周期后可按「当前+上一版」清理 v0.0.48（需单独点头）；data/ 仍无异地备份
 - 面板「立即更新」真机演练可在下一版本窗口闭环（v0.0.50 是目前最新，点击只会提示已是最新）
+
+
+## Session 118: 档位名：措辞改为高峰时段/空闲时段，并把翻译补齐到日志与模型详情（发 v0.0.51）
+<!-- trellis-session: v=2 fp=ab062af4fdc9a742 -->
+
+**Date**: 2026-10-24
+**Task**: 档位名：措辞改为高峰时段/空闲时段，并把翻译补齐到日志与模型详情（发 v0.0.51）
+**Branch**: `main`
+
+### Summary
+
+用户指出两点：① 档位名的正确中文措辞是「高峰时段/空闲时段」（我先前用了高峰/低谷、更早还用过峰值）；② 用量日志里仍显示 offpeak，说明 v0.0.50 只翻译了定价面板一处。本版按 4 个展示入口全部接入同一 helper（定价面板/日志列表/日志详情/模型详情），措辞改为高峰时段与空闲时段（zh/zh-TW），表达式与历史数据不动、翻译在渲染时发生。用户点名要求立即发版生效。
+
+### Main Changes
+
+- web/src/i18n/locales/zh.json、zh-TW.json：Peak hours→高峰时段/高峰時段，Off-peak hours→空闲时段/空閒時段
+- 日志列表 common-logs-columns.tsx、日志详情 details-dialog.tsx、模型详情 model-details.tsx 改用 getTierDisplayLabel
+- 新增/更新测试：两处入口渲染断言、未知标签原样、空标签默认、反向测试（高亮仍按原始标签）；旧措辞断言同步更新
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `61f9e2e` | fix(web): 档位名中文措辞改为高峰时段/空闲时段，并补齐日志列表/日志详情/模型详情三处翻译 [task:tier-label-display-other-surfaces] |
+| `d84f45a` | chore(task): 4 个展示入口翻译与措辞修正的证据 [task:tier-label-display-other-surfaces] |
+| `ab0dfa3` | chore(release): 版本提升到 0.0.51 [task:tier-label-display-other-surfaces] |
+
+### Testing
+
+- [OK] [OK] 前端门禁：typecheck、i18n:check（4197 键 ×7 语言）、oxlint 0/0、format:check；相关 31 项测试与全量 427 项测试全绿
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- v0.0.51 发布并升级本机实例后，用户在日志与面板都能看到「空闲时段/高峰时段」

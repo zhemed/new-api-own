@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-3.md`
-- **Total Sessions**: 117
+- **Total Sessions**: 118
 - **Last Active**: 2026-10-24
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-3.md` | ~175 | Active |
+| `journal-3.md` | ~213 | Active |
 | `journal-2.md` | ~1968 | Archived |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
@@ -31,6 +31,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 118 | 2026-10-24 | 档位名：措辞改为高峰时段/空闲时段，并把翻译补齐到日志与模型详情（发 v0.0.51） | `61f9e2e`, `d84f45a`, `ab0dfa3` | `main` |
 | 117 | 2026-10-24 | 发布 v0.0.50：panic recovery 加固、档位名中文显示、死代码清理、lint CI 一并带出 | `0920671`, `11d0678` | `main` |
 | 116 | 2026-10-24 | 删 5 个孤儿导出类型、2 个失效 locale 键；relaykit 收敛 17 项并补公开 API 政策 | `7f334e2`, `26749d3`, `6cb7eb6`, `714e8f7` | `main` |
 | 115 | 2026-10-24 | 档位名显示层翻译（peak/offpeak→高峰/低谷）；清 28 个内部面导出符号 + B 堆接线 | `4714e01`, `9752a5e`, `5bbedbb`, `8ad544b`, `4db0809` | `main` |
