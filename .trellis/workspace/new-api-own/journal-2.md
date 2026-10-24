@@ -1352,3 +1352,44 @@ v0.0.45（提交 b5f9388，tag v0.0.45）：IsDeepSeekV4Model → IsDeepSeekMode
 - 本轮收尾用 trellis-wrapup.sh 真实执行，验证会话层闸门是否放行（唯一未验证项），结果回填
 - 备份策略仍未做（./data 单点、无异地副本）——用户连续两轮未选，建议后续单独确认
 - 可选：镜像侧 12.47GB 可回收需删旧镜像（需单独授权）；MAINTENANCE 补一行指向 wrapup 脚本
+
+
+## Session 99: 只读盘点镜像侧 12.47GB 可回收量（全属其它项目）；补 wrapup 脚本的文档互链
+<!-- trellis-session: v=2 fp=55ba105bfc26686d -->
+
+**Date**: 2026-10-24
+**Task**: 只读盘点镜像侧 12.47GB 可回收量（全属其它项目）；补 wrapup 脚本的文档互链
+**Branch**: `main`
+
+### Summary
+
+盘点结论：本项目 ghcr.io/zhemed/new-api-own 已无镜像可清（唯一镜像被 new-api 使用）；12.47GB 全部属于其它项目（komari/komari-agent/picsur/litepan/postgres/本地测试标签/基础镜像），按四桶给出分步授权建议，本轮未删除任何镜像。文档侧把 trellis-wrapup.sh 补进 MAINTENANCE 与闸门指南自证清单。
+
+### Main Changes
+
+- 盘点：候选 102 个（有标签无容器引用，dangling=0），UNIQUE 合计 12.52GB 与 docker system df 的 RECLAIMABLE 12.47GB 互相印证（差 0.4%）
+- 分桶：A 本项目 0 个；B 在用项目旧版本 66 个/7.59GB unique；C 无容器项目与一次性测试标签 22 个/3.86GB unique；D 基础与工具镜像 14 个/1.07GB unique
+- 归属细节：picsur 容器用 allinone 而非 latest；litepan 候选 0.0.50 比在用 0.0.49 新（待部署）；postgres 旧大版本；3 个 none 行是 digest 引用而非悬空镜像
+- 文档：MAINTENANCE 流程闸门段加一行指向 scripts/trellis-wrapup.sh；闸门指南第 6 节自证清单加 --dry-run；并修正第 9 节守卫行漏写的「名字匹配到多个目录」分支
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `07385d3` | docs(flow): MAINTENANCE 指向 trellis-wrapup.sh + 自证清单补 --dry-run [task:image-reclaim-inventory-and-doc-links] |
+| `02cbebc` | chore(task): 镜像侧可回收量盘点证据与任务记录 [task:image-reclaim-inventory-and-doc-links] |
+
+### Testing
+
+- [OK] [OK] 只读自证：盘点前后 Images 110/Containers 8/Volumes 3/Build Cache 429/标签行 146/悬空镜像 0 逐项一致；未执行任何删除命令
+- [OK] [OK] Lead 抽查：docker system df（110/17.96GB/12.47GB）、docker images 的 new-api-own 仅 2 行同 ID e114b17532f1、各项计数与证据一致
+- [OK] [OK] 上轮真实收尾已证实会话层闸门在调用边界检查：trellis-wrapup.sh 一次调用完成 finish→archive→push→校验，exit 0
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 镜像删除待用户按桶点名授权（建议先 C 桶，再对 B 桶各项目分别点头；D 桶建议保留）
+- 备份策略仍未做（./data 单点、无异地副本）——连续三轮未选，建议尽快确认
