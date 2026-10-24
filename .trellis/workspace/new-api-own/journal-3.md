@@ -135,3 +135,41 @@
 
 - 用户已裁定 relaykit 不独立发布；NewResponseStreamStateByID 当前零引用但按公开面内省入口保留，后续可再评估
 - 仍未发版（用户要求不频繁发版）：main 已累积 panic recovery 加固、档位名翻译、多轮死代码清理，等下次发版一起带出
+
+
+## Session 117: 发布 v0.0.50：panic recovery 加固、档位名中文显示、死代码清理、lint CI 一并带出
+<!-- trellis-session: v=2 fp=4f49e9666e9ab0ae -->
+
+**Date**: 2026-10-24
+**Task**: 发布 v0.0.50：panic recovery 加固、档位名中文显示、死代码清理、lint CI 一并带出
+**Branch**: `main`
+
+### Summary
+
+用户点名发一版带上全部累积改动。三个 workflow 全绿（Publish image 40076787622 / Publish release 40076787630 / lint 40076785799），四资产含 SHA256SUMS.sig；实例升级到 v0.0.50（2 秒就绪，restarts=0，200），v0.0.49/v0.0.48 保留作回滚点，latest 已对齐。真机复核：运行实例服务出的 JS 含 Peak hours/高峰/低谷（旧键 Peak/Off-peak 0 命中）；计费配置未变（两行 tiered_expr、表达式同 sha）；二进制含 panic_recovery 实现。
+
+### Main Changes
+
+- VERSION 0.0.50 + 附注 tag（注解即 Release 正文，列明四类改动）
+- 实例：docker pull → rm -f → 原参数重建（host/always/json-file 10m×3/四个 LOG_*/工作区挂载），仅镜像 tag 变化
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0920671` | chore(release): 版本提升到 0.0.50 [task:release-v0050] |
+| `11d0678` | chore(task): v0.0.50 发版与升级证据 [task:release-v0050] |
+
+### Testing
+
+- [OK] [OK] 三 CI 全绿 + Release 四资产 + manifest 多架构就位
+- [OK] [OK] 真机复核：/api/status 200 + v0.0.50；8 容器全 Up；卷 3；data 59→60（新日志）；运行实例 JS 内 Peak hours/高峰/低谷 命中、旧键 0；billing_setting 两行 tiered_expr 且表达式 sha 与历史基线一致
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 观察一个运行周期后可按「当前+上一版」清理 v0.0.48（需单独点头）；data/ 仍无异地备份
+- 面板「立即更新」真机演练可在下一版本窗口闭环（v0.0.50 是目前最新，点击只会提示已是最新）
