@@ -1,13 +1,13 @@
 package jimeng
 
 import (
-	"github.com/QuantumNous/new-api/common"
 	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/QuantumNous/new-api/common"
 	"io"
 	"net/http"
 	"net/url"

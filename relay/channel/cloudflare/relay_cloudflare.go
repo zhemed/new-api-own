@@ -1,8 +1,8 @@
 package cloudflare
 
 import (
-	"github.com/QuantumNous/new-api/common"
 	"bufio"
+	"github.com/QuantumNous/new-api/common"
 	"io"
 	"net/http"
 	"strings"

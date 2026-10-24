@@ -1,10 +1,10 @@
 package minimax
 
 import (
-	"github.com/QuantumNous/new-api/common"
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/QuantumNous/new-api/common"
 	"io"
 	"net/http"
 

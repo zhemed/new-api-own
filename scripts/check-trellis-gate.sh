@@ -15,7 +15,8 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-cd "${REPO_ROOT}"
+# cd 失败时后续相对路径都会错位：显式终止（exit 1 与"发现违规"同样让 CI 变红）。
+cd "${REPO_ROOT}" || { echo "无法进入仓库根目录: ${REPO_ROOT}" >&2; exit 1; }
 
 AUDIT_ONLY=0
 [ "${1:-}" = "--audit-only" ] && AUDIT_ONLY=1
