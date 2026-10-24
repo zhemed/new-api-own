@@ -62,6 +62,7 @@ push 时暴露。**不许把 `--no-verify` 当常规手段。**
 - [ ] 任务是在**动手之前**建的（看 `task.json` 的 `createdAt` 与首个改动提交的时间关系）；
 - [ ] 每个改动提交都带 `[task:<slug>]`（`git log --format='%h %s' <起点>..HEAD` 自查）；
 - [ ] `./scripts/check-trellis-gate.sh` 通过；
+- [ ] 收尾前先跑 `./scripts/trellis-wrapup.sh <任务名> --dry-run` 看将要执行的动作（零改动、跳过网络预检），再真跑；
 - [ ] 任务已 `finish` + `archive`，journal 有本次会话记录；
 - [ ] 如果为了排查"只读调查"而没建任务——那是违规，别在 journal 里粉饰成"顺手看的"。
 
@@ -103,7 +104,7 @@ scripts/trellis-wrapup.sh <任务名或slug> --dry-run   # 只打印将要执行
 
 | 阶段 | 动作 | 失败时 |
 |---|---|---|
-| 守卫 | 不在 git 仓库 / 无 `origin` / detached HEAD / 跟踪文件有未提交改动 / 任务不存在或已归档 / `status` 不是 in_progress / 远端预检失败 | 拒绝执行，**零改动**，退出码 1 |
+| 守卫 | 不在 git 仓库 / 无 `origin` / detached HEAD / 跟踪文件有未提交改动 / 任务不存在、已归档或名字匹配到多个目录 / `status` 不是 in_progress / 远端预检失败 | 拒绝执行，**零改动**，退出码 1 |
 | 1 | `task.py finish`（清除当前任务指针） | 任务目录仍在，可修正后重跑 |
 | 2 | `task.py archive <name> --skip-branch-validation`（移入 `tasks/archive/YYYY-MM/` 并自动提交 `chore(task): archive …`） | 同上（重复执行无害） |
 | 3 | `git push origin <当前分支>` | 归档已完成，本地提交仍在；按下方"失败恢复"处理 |

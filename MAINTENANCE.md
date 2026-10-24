@@ -104,6 +104,8 @@ feat: 一句话说明 [task:commit-gate]
 
 规则细节与自证清单见 `.trellis/spec/guides/trellis-gate-guide.md`。
 
+收尾用 `./scripts/trellis-wrapup.sh <任务名>` 一条命令完成 `finish → archive → push → 校验`（避免归档后本会话已无任务、补推被闸门拦下，也不必再建临时任务）；为什么必须同一次调用、守卫与失败恢复见上面的闸门指南第 9 节。
+
 ## 构建与测试
 
 ```bash
