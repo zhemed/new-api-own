@@ -1434,3 +1434,41 @@ v0.0.45（提交 b5f9388，tag v0.0.45）：IsDeepSeekV4Model → IsDeepSeekMode
 - Build Cache 现可回收 13.26GB：一条 docker builder prune -f 即可（只清缓存），需用户点名授权
 - 镜像侧剩余 1.754GB 主要来自 D 桶基础镜像（用户本轮未选）；更早的旧版本已永久删除，回退需重新拉取
 - 备份策略仍未做（./data 单点、无异地副本），已连续四轮未选
+
+
+## Session 101: 第二次清 Build Cache：回收 13.42GB，磁盘治理四连收官（116G→75G）
+<!-- trellis-session: v=2 fp=ee7558324bcd567e -->
+
+**Date**: 2026-10-24
+**Task**: 第二次清 Build Cache：回收 13.42GB，磁盘治理四连收官（116G→75G）
+**Branch**: `main`
+
+### Summary
+
+镜像删除后缓存可回收量升至 13.26GB，用户点名授权后一次 docker builder prune -f 回收 13.42GB（自报 13.17GB，达预期 99%）；镜像清单完全不变、服务零影响。清理四连（旧标签+卷 2.36GB、缓存 24.13GB、镜像 9.43GB、缓存 13.42GB）合计约 49GB。
+
+### Main Changes
+
+- 执行：docker builder prune -f（未加 --all、未用 system prune）；Build Cache 429 条/25.75GB/可回收 13.26GB → 172 条/12.58GB/85.79MB
+- 三口径并列记录：预期 13.26GB / prune 自报 13.17GB / df 实测 13420204032 B（13.42GB），差异属统计口径与块释放的正常差别
+- 镜像清单不变：26 唯一 / 35 标签 / 悬空 0；保留抽样 12 项全部 KEEP OK；残留 12.58GB 中 12.49GB 为与现存镜像共享层，不清镜像动不了，故未加 --all
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `bf4c515` | chore(task): 第二次 Build Cache 清理证据（回收 13.42GB） [task:prune-buildcache-after-image-cleanup] |
+
+### Testing
+
+- [OK] [OK] Lead 独立复核：docker system df（172 条/12.58GB/85.79MB）、df 已用 74.90GB、unique=26 tags=35 dangling=0
+- [OK] [OK] 服务无损：8 容器全 running、new-api running/restarts=0/挂载工作区/200 + v0.0.45、卷 3、data/ 55 文件
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 磁盘治理已到本项目授权边界：剩余可回收仅 D 桶基础镜像（约 1.07GB unique）与两个命名悬空卷（约 814.6MB），均需用户单独点名
+- 备份策略仍未做（./data 单点、无异地副本）——连续四轮未选，仍是最高风险项

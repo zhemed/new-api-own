@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 100
+- **Total Sessions**: 101
 - **Last Active**: 2026-10-24
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~1436 | Active |
+| `journal-2.md` | ~1474 | Active |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 101 | 2026-10-24 | 第二次清 Build Cache：回收 13.42GB，磁盘治理四连收官（116G→75G） | `bf4c515` | `main` |
 | 100 | 2026-10-24 | 按点名清镜像：删 84 个镜像/111 标签，回收 9.43GB；Build Cache 可回收量升至 13.26GB | `e52552b` | `main` |
 | 99 | 2026-10-24 | 只读盘点镜像侧 12.47GB 可回收量（全属其它项目）；补 wrapup 脚本的文档互链 | `07385d3`, `02cbebc` | `main` |
 | 98 | 2026-10-23 | 清理 Build Cache 24.13GB；新增 trellis-wrapup.sh 固化「归档后补推」为一条命令 | `30f393a`, `532433c` | `main` |
