@@ -7,8 +7,8 @@
 ## Current Status
 
 <!-- @@@auto:current-status -->
-- **Active File**: `journal-2.md`
-- **Total Sessions**: 113
+- **Active File**: `journal-3.md`
+- **Total Sessions**: 114
 - **Last Active**: 2026-10-24
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,8 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~1968 | Active |
+| `journal-3.md` | ~49 | Active |
+| `journal-2.md` | ~1968 | Archived |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +31,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 114 | 2026-10-24 | 加固 panic recovery（不回显原文/堆栈日志/已写响应保护）；清旧回滚镜像；分类 85 个导出符号 | `193a409`, `f3a2353` | `main` |
 | 113 | 2026-10-24 | 清 59 个导出死符号（deadcode 144→85）；发 v0.0.49 并升级实例；新增 lint CI 首次运行即绿 | `f78a6c9`, `eddee29`, `899ed48` | `main` |
 | 112 | 2026-10-24 | 清 36 个未导出死符号；装 deadcode 出导出符号清单；文档示例版本号统一；CI 加 gofmt/shellcheck | `f552dc0`, `42d3f3a`, `0837c7c`, `f882ccf` | `main` |
 | 111 | 2026-10-24 | 技术债清扫（一轮）：gofmt 9 文件、清 2 个死 i18n key、脚本守卫；产出 TODO/死代码/版本引用清单 | `7408647`, `9666713` | `main` |
