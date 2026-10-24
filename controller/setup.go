@@ -6,7 +6,6 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/model"
-	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/gin-gonic/gin"
 )
 
@@ -121,32 +120,26 @@ func PostSetup(c *gin.Context) {
 		}
 	}
 
-	// Set operation modes
-	operation_setting.SelfUseModeEnabled = req.SelfUseModeEnabled
-	operation_setting.DemoSiteEnabled = req.DemoSiteEnabled
-
-	// Save operation modes to database for persistence
-	err = model.UpdateOption("SelfUseModeEnabled", boolToString(req.SelfUseModeEnabled))
+	// 保存运营模式到数据库（持久化）。
+	//
+	// 两点约束：
+	//   1) **不得在落库前手工改内存**：内存同步由 model.UpdateOptionsBulk 成功后的
+	//      updateOptionMap 负责（model/option.go 的 SelfUseModeEnabled / DemoSiteEnabled 分支）。
+	//      提前赋值会在写库失败时留下"内存已变、DB 没变"的分叉（历史缺陷）。
+	//   2) 两个键**原子写入**：避免第一个成功、第二个失败造成的半应用状态。
+	err = model.UpdateOptionsBulk(map[string]string{
+		"SelfUseModeEnabled": boolToString(req.SelfUseModeEnabled),
+		"DemoSiteEnabled":    boolToString(req.DemoSiteEnabled),
+	})
 	if err != nil {
 		c.JSON(200, gin.H{
 			"success": false,
-			"message": "保存自用模式设置失败: " + err.Error(),
-		})
-		return
-	}
-
-	err = model.UpdateOption("DemoSiteEnabled", boolToString(req.DemoSiteEnabled))
-	if err != nil {
-		c.JSON(200, gin.H{
-			"success": false,
-			"message": "保存演示站点模式设置失败: " + err.Error(),
+			"message": "保存运营模式设置失败: " + err.Error(),
 		})
 		return
 	}
 
 	// Update setup status
-	constant.Setup = true
-
 	setup := model.Setup{
 		Version:       common.Version,
 		InitializedAt: time.Now().Unix(),
@@ -159,6 +152,9 @@ func PostSetup(c *gin.Context) {
 		})
 		return
 	}
+	// 只有 setups 记录落库成功后才标记内存"已初始化"：否则 Create 失败会让内存谎报已初始化，
+	// 用户重试被「系统已经初始化完成」挡住，而 DB 里并没有记录（与运营模式写入同类的顺序问题）。
+	constant.Setup = true
 
 	c.JSON(200, gin.H{
 		"success": true,
