@@ -252,3 +252,39 @@
 
 - 本机 logs 表无 tiered_expr 记录（本实例未产生该计费用量），用户截图那条日志可能来自另一台实例——那台需同样升级到 v0.0.51 才会显示中文
 - 浏览器可能缓存旧 JS，需硬刷新（Ctrl+Shift+R）才能看到新措辞
+
+
+## Session 120: 残留任务审计：确认工作区无未完成 Trellis 任务
+<!-- trellis-session: v=2 fp=c0a3aaddb5a36edb -->
+
+**Date**: 2026-10-24
+**Task**: 残留任务审计：确认工作区无未完成 Trellis 任务
+**Branch**: `main`
+
+### Summary
+
+用户问「我们工作区现在还有残留的任务吗」。只读审计 .trellis/tasks 非归档目录、归档仓 188 个 task.json、git worktree/stash/branch 与会话绑定：审计前非归档任务 0 个；188 个归档任务全部 status=completed 且 completedAt 齐全；无 worktree/分支/stash 残留。另发现 gitignored 非任务残留（9 个过期 update-check marker、.verify-scratch 23 文件 2.6MB），未处理。审计任务归档时 auto-commit 因目录从未被 git 跟踪而失败，故另建收尾任务补提交归档记录与 journal。
+
+### Main Changes
+
+- 非归档任务审计：审计前 0 个；task.py list 仅审计任务自身（已归档）
+- 归档仓：188/188 status=completed、completedAt 无空值、worktree_path 0、branch 仅 main/空
+- git 残留：单 worktree、无 stash、无 feature 分支；工作区仅审计任务目录（已归档，提交 b5816bc）
+- 非任务残留：update-check marker 9 个（09-18~10-23）、.verify-scratch 23 文件 2.6MB，均 gitignored，未处理
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- [OK] 只读审计：task.py list + archive/task.json 全量脚本 + git worktree/branch/stash/status
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 如需清理非任务残留（过期 marker、.verify-scratch），另建任务执行；本轮未改代码/配置
+- 后续任务若目录未被 git 跟踪，archive auto-commit 会因 pathspec 报错，归档前先让任务目录入库
