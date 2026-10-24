@@ -1756,3 +1756,44 @@ v0.0.45（提交 b5f9388，tag v0.0.45）：IsDeepSeekV4Model → IsDeepSeekMode
 - 调用点表述更正：实际是 5 处调用表达式（setup.go 有两处）、4 个位置
 - 可选后续（不阻塞）：setup.go 在落库前先改内存值（DB 失败会报错但内存已变）；MySQL 错误文本可能带值片段可对外加固；DB 成功但内存同步失败的分叉（需设计）
 - 本修复尚未发版：若要让实例用上，需再发一版（v0.0.48）并镜像升级；等用户点名
+
+
+## Session 109: 修 setup 两处顺序问题（内存先于落库、初始化标记先于落库）并发布 v0.0.48、升级实例
+<!-- trellis-session: v=2 fp=9ce982cd75bad377 -->
+
+**Date**: 2026-10-24
+**Task**: 修 setup 两处顺序问题（内存先于落库、初始化标记先于落库）并发布 v0.0.48、升级实例
+**Branch**: `main`
+
+### Summary
+
+承接底座错误传播修复暴露的两处顺序缺陷：setup 不再在落库前改内存开关（改由 updateOptionMap 成功后同步，两键改 UpdateOptionsBulk 原子写入）；constant.Setup 改为 DB.Create 成功后置位（失败可重试）。独立验证接受；发布 v0.0.48（CI 双绿、四资产含 .sig）并把本机实例升上去。
+
+### Main Changes
+
+- controller/setup.go：删除落库前的两处 operation_setting 手工赋值；两次 UpdateOption 合并为 UpdateOptionsBulk 原子写；constant.Setup 移到 Create 成功之后；清理不再使用的 import
+- controller/setup_test.go（新增）：写失败保持内存/DB 不变、两键原子（另一键失败时首个也不落库）、Create 失败不标记已初始化且重试不被挡、成功路径内存与 DB 一致（t.Cleanup 复位 6 项全局）
+- 发版：VERSION 0.0.48 + 附注 tag；CI 双绿（40061752745 镜像 / 40061752807 Release）；四资产含 SHA256SUMS.sig；镜像 OCI index 就位
+- 升级：本机实例 v0.0.48（停机约 1 秒），参数逐项一致；v0.0.45/46/47 镜像保留作回滚点；上一轮定价修复仍在（两行 mode=tiered_expr、表达式同 sha 5705272e190a）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4f9c0d5` | fix(setup): 内存开关不再先于落库修改；初始化标记改为落库成功后置位（原子写入两键） [task:setup-order-and-v0048] |
+| `819dbb5` | chore(release): 版本提升到 0.0.48 [task:setup-order-and-v0048] |
+| `26c3379` | chore(task): setup 顺序修复的发版与升级证据 [task:setup-order-and-v0048] |
+
+### Testing
+
+- [OK] [OK] Lead 抽查：实例 v0.0.48/running/restarts=0/工作区挂载/200；Release 四资产；DB 两行 mode 与表达式 sha 一致
+- [OK] [OK] 门禁：go build/vet ./...、controller+model 测试、全仓 go test ./... 单跑全绿；独立验证在 /tmp 克隆内复现修复前失败（3 FAIL→4 PASS）
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 既有 flaky（与本次无关）：全仓测试在并发负载下偶发 model 包日志预算两用例翻红（后台裁剪 goroutine 跨用例）；建议单开任务修测试隔离
+- 可选：本机 latest 仍指 v0.0.47（registry 已 v0.0.48），一条 docker tag 可对齐；data/ 仍无异地备份

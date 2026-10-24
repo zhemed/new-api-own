@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 108
+- **Total Sessions**: 109
 - **Last Active**: 2026-10-24
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~1758 | Active |
+| `journal-2.md` | ~1799 | Active |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 109 | 2026-10-24 | 修 setup 两处顺序问题（内存先于落库、初始化标记先于落库）并发布 v0.0.48、升级实例 | `4f9c0d5`, `819dbb5`, `26c3379` | `main` |
 | 108 | 2026-10-24 | 修全站底座：UpdateOption 不再吞 DB 写错误；本机 latest 对齐 v0.0.47 | `174350c`, `12a542b` | `main` |
 | 107 | 2026-10-24 | 修复「重置」只重置倍率：改为恢复整份定价默认；发 v0.0.47 并真机演练验证 | `19ff3b8`, `ef7e1b2` | `main` |
 | 106 | 2026-10-24 | README 面板内更新小节补一行影响提示指针（v0.0.43–v0.0.45 需先镜像升级） | `d7e14ae`, `21a9855` | `main` |
