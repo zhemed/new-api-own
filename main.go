@@ -176,15 +176,10 @@ func main() {
 		common.FatalLog("failed to configure trusted proxies: " + err.Error())
 		return
 	}
-	server.Use(gin.CustomRecovery(func(c *gin.Context, err any) {
-		common.SysLog(fmt.Sprintf("panic detected: %v", err))
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"message": fmt.Sprintf("Panic detected, error: %v. Please submit a issue here: https://github.com/zhemed/new-api-own", err),
-				"type":    "new_api_panic",
-			},
-		})
-	}))
+	// panic recovery 必须在最外层（先于 RequestId 等中间件）：兜住后续所有 handler 的 panic。
+	// 实现见 middleware/panic_recovery.go：客户端只拿通用文案（不回显原文），
+	// 服务端 error 级日志带完整堆栈 + 方法/路径 + request id，且不打印 Authorization/Cookie。
+	server.Use(middleware.PanicRecovery())
 	// This will cause SSE not to work!!!
 	//server.Use(gzip.Gzip(gzip.DefaultCompression))
 	server.Use(middleware.RequestId())
