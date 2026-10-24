@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-3.md`
-- **Total Sessions**: 115
+- **Total Sessions**: 116
 - **Last Active**: 2026-10-24
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-3.md` | ~94 | Active |
+| `journal-3.md` | ~137 | Active |
 | `journal-2.md` | ~1968 | Archived |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
@@ -31,6 +31,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 116 | 2026-10-24 | 删 5 个孤儿导出类型、2 个失效 locale 键；relaykit 收敛 17 项并补公开 API 政策 | `7f334e2`, `26749d3`, `6cb7eb6`, `714e8f7` | `main` |
 | 115 | 2026-10-24 | 档位名显示层翻译（peak/offpeak→高峰/低谷）；清 28 个内部面导出符号 + B 堆接线 | `4714e01`, `9752a5e`, `5bbedbb`, `8ad544b`, `4db0809` | `main` |
 | 114 | 2026-10-24 | 加固 panic recovery（不回显原文/堆栈日志/已写响应保护）；清旧回滚镜像；分类 85 个导出符号 | `193a409`, `f3a2353` | `main` |
 | 113 | 2026-10-24 | 清 59 个导出死符号（deadcode 144→85）；发 v0.0.49 并升级实例；新增 lint CI 首次运行即绿 | `f78a6c9`, `eddee29`, `899ed48` | `main` |

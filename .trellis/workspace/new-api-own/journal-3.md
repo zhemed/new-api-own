@@ -92,3 +92,46 @@
 - 本轮未发版（用户明确不要频繁发版）：这些改动攒在 main，等下次发版一起带出去
 - 可选收尾：4 个孤儿导出类型（pkg/cachex.StringCodec 空壳、pkg/ionet 的 ContainerLogs/LogEntry/LocationAvailability）；GetModelRatioOrPrice（需连 web 注释一起改）；locale 中现已无引用的 Peak/Off-peak 两键
 - relaykit 20 项导出 API 面仍等 owner 决策
+
+
+## Session 116: 删 5 个孤儿导出类型、2 个失效 locale 键；relaykit 收敛 17 项并补公开 API 政策
+<!-- trellis-session: v=2 fp=81df1526cc65b5c2 -->
+
+**Date**: 2026-10-24
+**Task**: 删 5 个孤儿导出类型、2 个失效 locale 键；relaykit 收敛 17 项并补公开 API 政策
+**Branch**: `main`
+
+### Summary
+
+技术债收尾一轮（不发版）：① 删 5 个孤儿导出类型（cachex.StringCodec、ionet 的 ContainerLogs/LogEntry/LocationAvailability/HardwareAvailability）；② 删 2 个失效 locale 键（Peak/Off-peak，档位名翻译已改用 Peak hours/Off-peak hours）；③ 用户拍板 relaykit 定位为「内部拆分、不独立发布」后，收敛 16 个导出函数 + dto.StringValue 类型，同步改写 2 个测试文件 3 处调用（断言零改动），并在 relaykit/README.md 增加「公开 API 政策」并纠正 go get 表述。
+
+### Main Changes
+
+- pkg：cachex/codec.go -2、ionet/types.go -33（5 个类型；其中 HardwareAvailability 是本轮新发现的第 5 个孤儿）
+- locale：7 个语言文件各 -2 行（无重排）；键数 5330→5328、引用数 4197 不变（反证原本无引用）
+- relaykit：删 8 个兼容门面 + kitutil.StringToByteSlice + types.NewFileMeta/NewImageFileMeta + dto.StringValue（类型与 2 方法）+ 3 个仅模块自测用的门面；两条测试改写为直调 internal 实现（用例名/输入/断言未动）
+- relaykit/README.md：新增「公开 API 政策」（公开面/内部面/变更流程），定位改为「当前无 tag、无发布流水线、不可 go get」；保留 4 个注册表与内省入口并列入公开面，依赖实况按验证意见写精确
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7f334e2` | chore: 删除 5 个孤儿导出类型（cachex/ionet） [task:orphan-types-and-relaykit-policy] |
+| `26749d3` | chore(i18n): 删除失效键 Peak / Off-peak（档位名已改用 Peak hours / Off-peak hours） [task:orphan-types-and-relaykit-policy] |
+| `6cb7eb6` | chore(relaykit): 收敛 16 个导出函数 + dto.StringValue，补公开 API 政策（定位为内部拆分） [task:orphan-types-and-relaykit-policy] |
+| `714e8f7` | chore(task): 孤儿类型/locale/relaykit 决策与执行证据 [task:orphan-types-and-relaykit-policy] |
+
+### Testing
+
+- [OK] [OK] 门禁：根模块 build/vet/全仓测试/gofmt 空/unused 恰 1；relaykit GOWORK=off build + 7 包测试全绿；前端 typecheck/i18n:check（4197 键）/bun test src/features/pricing 15 pass
+- [OK] [OK] deadcode：根模块 53 → 37（-16，按符号名比对无新增不可达）；relaykit 模块 109 → 96（-13）
+- [OK] [OK] 独立验证（task-61）：接受；5 类型零引用且无序列化/GORM/反射依赖；locale 键引用核实 7 项全 0；测试改写逐字等价（被删门面原本就是转发同一 internal 函数）；README 表述与 replace/无 tag/无 workflow 结构一致
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 用户已裁定 relaykit 不独立发布；NewResponseStreamStateByID 当前零引用但按公开面内省入口保留，后续可再评估
+- 仍未发版（用户要求不频繁发版）：main 已累积 panic recovery 加固、档位名翻译、多轮死代码清理，等下次发版一起带出
