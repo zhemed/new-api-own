@@ -547,4 +547,19 @@ export const STATIC_I18N_KEYS = [
   'Verification scope is missing',
   'OAuth',
   'Resize column',
+
+  // Tier names in the built-in billing expression templates
+  // (mapped through TIER_LABEL_I18N_KEYS in features/pricing/lib/tier-labels.ts)
+  'Peak hours',
+  'Off-peak hours',
+  'Base',
+  'Standard',
+  'Short',
+  'Mid',
+  'Long',
+  'Short output',
+  'Long output',
+  'Mid context',
+  'Long context',
+  'Discount',
 ] as const

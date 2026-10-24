@@ -44,6 +44,7 @@ import {
   type RequestRuleGroup,
   type TierCondition,
 } from '../lib/billing-expr'
+import { getTierDisplayLabel } from '../lib/tier-labels'
 
 type DynamicPricingBreakdownProps = {
   billingExpr: string | null | undefined
@@ -298,7 +299,7 @@ export function DynamicPricingBreakdown({
                       variant='secondary'
                       className='bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300'
                     >
-                      {tier.label || t('Default')}
+                      {getTierDisplayLabel(tier.label, t)}
                     </Badge>
                     {isMatched && (
                       <Badge
@@ -381,7 +382,7 @@ export function DynamicPricingBreakdown({
                           variant='secondary'
                           className='bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300'
                         >
-                          {tier.label || t('Default')}
+                          {getTierDisplayLabel(tier.label, t)}
                         </Badge>
                         {isMatched && (
                           <Badge

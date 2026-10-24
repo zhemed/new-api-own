@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { after, afterEach, describe, test } from 'node:test'
 
 import { Window } from 'happy-dom'
@@ -126,5 +127,106 @@ describe('dynamic pricing breakdown money cells', () => {
     const text = await renderBreakdown()
 
     assert.match(text, /¥ \d/)
+  })
+})
+
+function localeDict(locale: string): Record<string, string> {
+  return (
+    JSON.parse(
+      readFileSync(
+        new URL(`../../../../i18n/locales/${locale}.json`, import.meta.url),
+        'utf8'
+      )
+    ) as { translation: Record<string, string> }
+  ).translation
+}
+
+async function renderBreakdownWith(
+  billingExpr: string,
+  locale: 'en' | 'zh',
+  matchedTierLabel?: string
+): Promise<string> {
+  const instance = createInstance()
+  await instance.use(initReactI18next).init({
+    lng: locale,
+    resources: { [locale]: { translation: localeDict(locale) } },
+  })
+
+  const container = document.createElement('div')
+  document.body.append(container)
+  const root = createRoot(container)
+  roots.push(root)
+
+  await act(async () => {
+    root.render(
+      <I18nextProvider i18n={instance}>
+        <DynamicPricingBreakdown
+          billingExpr={billingExpr}
+          matchedTierLabel={matchedTierLabel}
+        />
+      </I18nextProvider>
+    )
+    for (let tick = 0; tick < 8; tick++) await Promise.resolve()
+  })
+
+  return container.textContent ?? ''
+}
+
+function countOccurrences(haystack: string, needle: string): number {
+  return needle === '' ? 0 : haystack.split(needle).length - 1
+}
+
+const TWO_TIERS = 'tier("base", p * 2) + tier("peak", p * 4)'
+
+describe('dynamic pricing tier label display', () => {
+  test('built-in tier names render in the active language', async () => {
+    await renderBreakdownWith(TWO_TIERS, 'zh')
+
+    const badgeLabels = new Set(
+      [...document.querySelectorAll('span')]
+        .filter((node) => node.className.includes('bg-blue-100'))
+        .map((node) => node.textContent)
+    )
+
+    assert.ok(badgeLabels.has('基础'), 'base should render as 基础')
+    assert.ok(badgeLabels.has('高峰'), 'peak should render as 高峰')
+    assert.equal(
+      badgeLabels.has('base'),
+      false,
+      'the raw label must not be rendered'
+    )
+  })
+
+  test('the same tier names stay English on an English UI', async () => {
+    const en = await renderBreakdownWith(TWO_TIERS, 'en')
+
+    assert.ok(en.includes('Base'))
+    assert.ok(en.includes('Peak hours'))
+  })
+
+  test('a custom tier name is shown exactly as written', async () => {
+    const zh = await renderBreakdownWith('tier("my_custom_tier", p * 2)', 'zh')
+
+    assert.ok(zh.includes('my_custom_tier'))
+  })
+
+  test('the matched row is still resolved by the raw tier label', async () => {
+    const dict = localeDict('zh')
+    const byRawLabel = await renderBreakdownWith(TWO_TIERS, 'zh', 'base')
+    const byTranslatedLabel = await renderBreakdownWith(
+      TWO_TIERS,
+      'zh',
+      dict['Base']
+    )
+
+    assert.ok(
+      countOccurrences(byRawLabel, dict['Matched']) > 0,
+      'the raw label base should highlight its row'
+    )
+    assert.equal(
+      countOccurrences(byTranslatedLabel, dict['Matched']),
+      0,
+      'highlighting must compare raw labels, not translated ones'
+    )
   })
 })
