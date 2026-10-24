@@ -379,16 +379,6 @@ func (token *Token) GetModelLimitsMap() map[string]bool {
 	return limitsMap
 }
 
-func DisableModelLimits(tokenId int) error {
-	token, err := GetTokenById(tokenId)
-	if err != nil {
-		return err
-	}
-	token.ModelLimitsEnabled = false
-	token.ModelLimits = ""
-	return token.Update()
-}
-
 func DeleteTokenById(id int, userId int) (err error) {
 	// Why we need userId here? In case user want to delete other's token.
 	if id == 0 || userId == 0 {
@@ -512,7 +502,7 @@ func GetTokenKeysByIds(ids []int, userId int) ([]Token, error) {
 }
 
 // InvalidateUserTokensCache 清理指定用户所有令牌在 Redis 中的缓存，
-// 配合 InvalidateUserCache 使用，可在用户被禁用/删除时立即阻断其令牌的请求。
+// 可在用户被禁用/删除时立即阻断其令牌的请求。
 // 下一次请求将从数据库重新加载令牌及用户状态，从而立即识别出被禁用的用户。
 func InvalidateUserTokensCache(userId int) error {
 	if !common.RedisEnabled {

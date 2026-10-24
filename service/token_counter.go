@@ -259,9 +259,8 @@ func EstimateRequestToken(c *gin.Context, meta *types.TokenCountMeta, info *rela
 
 		// 如果文件类型未知且需要获取，通过 MIME 类型检测
 		if file.FileType == "" || (file.Source.IsURL() && shouldFetchFiles) {
-			// 注意：这里我们直接调用 LoadFileSource 而不是 GetMimeType
-			// 因为 GetMimeType 内部可能会调用 GetFileTypeFromUrl (HEAD 请求)
-			// 而我们这里既然要计算 token，通常需要完整数据
+			// 注意：这里直接调用 LoadFileSource 做完整加载（而不是只探测 MIME 类型），
+			// 因为计算 token 通常需要完整文件数据。
 			cachedData, err := LoadFileSource(c, file.Source, "token_counter")
 			if err != nil {
 				if shouldFetchFiles {

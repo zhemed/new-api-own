@@ -177,12 +177,6 @@ func NormalizeProxyURL(rawProxyURL string) (string, error) {
 	return config.cacheKey, nil
 }
 
-// ValidateProxyURL validates a channel proxy URL without connecting to it.
-func ValidateProxyURL(rawProxyURL string) error {
-	_, err := common.ParseProxyURLStrict(rawProxyURL)
-	return err
-}
-
 func (cache *proxyHTTPClientCache) store(fullKey string, client *http.Client) {
 	cache.mutex.Lock()
 	defer cache.mutex.Unlock()
