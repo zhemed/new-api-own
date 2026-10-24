@@ -1838,3 +1838,42 @@ v0.0.45（提交 b5f9388，tag v0.0.45）：IsDeepSeekV4Model → IsDeepSeekMode
 ### Next Steps
 
 - 可选：清理 v0.0.45/46/47 回滚镜像（需单独授权）；data/ 仍无异地备份
+
+
+## Session 111: 技术债清扫（一轮）：gofmt 9 文件、清 2 个死 i18n key、脚本守卫；产出 TODO/死代码/版本引用清单
+<!-- trellis-session: v=2 fp=8e1848d2af92df9d -->
+
+**Date**: 2026-10-24
+**Task**: 技术债清扫（一轮）：gofmt 9 文件、清 2 个死 i18n key、脚本守卫；产出 TODO/死代码/版本引用清单
+**Branch**: `main`
+
+### Summary
+
+一轮低风险清扫：① 9 个 relay 文件 gofmt 不干净（import 顺序），纯格式修复后 gofmt -l 为空；② 上一轮替换重置文案后遗留的 2 个死 i18n key 从 7 个 locale 删除（无引用、无重排、混淆键完好）；③ check-trellis-gate.sh 的 cd 加失败守卫。另产出报告：120 处 TODO 全部来自初始基线（自维护期零新增）、39 个未导出死符号、导出符号 105 候选（含 3 类误报）、版本示例值陈旧清单、无残留文件。
+
+### Main Changes
+
+- relay/channel 下 9 个文件：仅 1 行 import 位置调整（github.com/... 与标准库同组排序），零语义
+- web/src/i18n/locales 7 个文件：删除 Model prices reset successfully 与 This will clear custom pricing ratios and revert to upstream defaults.（各 -2 行、0 增、未重排）
+- scripts/check-trellis-gate.sh：cd 加失败守卫并 exit 1（SC2164）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7408647` | chore: 技术债清扫（gofmt import 重排、死 i18n key、脚本 cd 守卫） [task:tech-debt-sweep] |
+| `9666713` | chore(task): 技术债清单与清扫证据 [task:tech-debt-sweep] |
+
+### Testing
+
+- [OK] [OK] 门禁：gofmt -l 为空、go build/vet ./...、relaykit GOWORK=off 独立构建、go test ./... -count=1 全绿；前端 typecheck/i18n:check/oxlint（0 error 0 warning，960 文件）全过
+- [OK] [OK] 独立验证（verifier，task-42）：接受；逐文件确认 relay 18 行变动内容相同且无其它改动、7 locale 键序逐项一致且 i18n:check 引用键数不变（4187）、脚本守卫模拟 cd 失败确实 exit 1
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 报告类待办（需新授权）：清理 39 个未导出死符号（分批+全测试）；导出符号 48 条候选需逐个确认接口/反射后再动；README/MAINTENANCE 示例版本号陈旧（0.0.6 等）可统一到 0.0.48 或占位符
+- 可选：装 deadcode 工具做导出符号全程序分析（需联网授权）；shellcheck -S warning 接入 CI（当前 0 warning）
