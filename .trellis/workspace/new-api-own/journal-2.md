@@ -1797,3 +1797,44 @@ v0.0.45（提交 b5f9388，tag v0.0.45）：IsDeepSeekV4Model → IsDeepSeekMode
 
 - 既有 flaky（与本次无关）：全仓测试在并发负载下偶发 model 包日志预算两用例翻红（后台裁剪 goroutine 跨用例）；建议单开任务修测试隔离
 - 可选：本机 latest 仍指 v0.0.47（registry 已 v0.0.48），一条 docker tag 可对齐；data/ 仍无异地备份
+
+
+## Session 110: 修两处既有 flaky（日志预算测试隔离、内存限流器复位）；全仓 -count=3 首次全绿；latest 对齐 v0.0.48
+<!-- trellis-session: v=2 fp=756a23f9c5d10dab -->
+
+**Date**: 2026-10-24
+**Task**: 修两处既有 flaky（日志预算测试隔离、内存限流器复位）；全仓 -count=3 首次全绿；latest 对齐 v0.0.48
+**Branch**: `main`
+
+### Summary
+
+清理门禁噪音：① model 日志预算用例受后台裁剪 goroutine 跨用例影响而偶发翻红，改为有界等待收敛后再断言/复位（生产代码零改动）；② middleware/TestRedisFailurePolicies 在 -count>1 时必红（Redis 关闭后回落到不清计数的包级内存限流器），给 InMemoryRateLimiter 加仅测试用的 Reset() 并在用例首尾复位。两处都用确定性手法复现修复前失败；go test ./... -count=3 现在全绿（含并发负载场景）。本机 latest 对齐到 v0.0.48。
+
+### Main Changes
+
+- model/log_budget_test.go：新增 waitLogBudgetIdle（5ms 轮询/5s 上限，超时显式 fail，无固定 sleep）与 beginLogBudgetTest，8 个用例统一使用；断言一个未改
+- common/rate-limit.go：新增 Reset()（持同一把 mutex 原地清空 store，保留窗口与清理 goroutine，未初始化保持未初始化）；生产零调用、doc 标注仅测试用途
+- middleware/rate_limit_test.go：新增 resetMemoryRateLimiter(t) 并在 TestRedisFailurePolicies 首尾复位；未改任何断言
+- 本机 latest：docker tag v0.0.48 latest，latest 与 v0.0.48 同 ID e485361d15d4；v0.0.47/46/45 回滚点保留
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3e8dd7b` | test: 修两处测试隔离 flaky（日志预算后台裁剪收敛、内存限流器复位） [task:latest-and-fix-flaky-log-tests] |
+| `077c3fd` | chore(task): flaky 修复与 latest 对齐的证据 [task:latest-and-fix-flaky-log-tests] |
+
+### Testing
+
+- [OK] [OK] model：确定性复现（占住唯一 DB 连接+触发裁剪）修复前 3/3 FAIL（Should be true）、修复后同场景 3/3 PASS；model -count=20 -shuffle=on 两轮绿
+- [OK] [OK] middleware：修复前 -count=3 第 3 轮 expected 204 actual 429；修复后 -count=5、-count=3 -race 全绿
+- [OK] [OK] R8：go test ./... -count=3 单跑全绿，且与 model -count=20 并发跑仍全绿（复现原始翻红条件）
+- [OK] [OK] 独立验证（verifier，task-39）：接受；确认无断言被改弱、无 Skip、helper 超时会 fail、Reset 无生产调用且 -race 安全
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 可选：清理 v0.0.45/46/47 回滚镜像（需单独授权）；data/ 仍无异地备份
