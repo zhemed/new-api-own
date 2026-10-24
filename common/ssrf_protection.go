@@ -95,8 +95,12 @@ var privateIPv6Nets = func() []net.IPNet {
 	return nets
 }()
 
-// isPrivateIP 检查IP是否为私有/保留/特殊用途地址
-func isPrivateIP(ip net.IP) bool {
+// IsPrivateIP 检查 IP 是否为私有/保留/特殊用途地址（SSRF 防护的唯一判定源）。
+//
+// 覆盖 IANA 特殊用途登记表中的 IPv4/IPv6 网段，并叠加标准库识别的回环、链路本地、
+// 组播与 IsPrivate；nil 视为不可信（返回 true）。SSRF 校验调用点必须复用它，
+// 不要在本包另写第二套私网判定。
+func IsPrivateIP(ip net.IP) bool {
 	if ip == nil {
 		return true
 	}
@@ -259,7 +263,7 @@ func isIPListed(ip net.IP, list []string) bool {
 // IsIPAccessAllowed 检查IP是否允许访问
 func (p *SSRFProtection) IsIPAccessAllowed(ip net.IP) bool {
 	// 私有IP限制
-	if isPrivateIP(ip) && !p.AllowPrivateIp {
+	if IsPrivateIP(ip) && !p.AllowPrivateIp {
 		return false
 	}
 
@@ -273,7 +277,7 @@ func (p *SSRFProtection) IsIPAccessAllowed(ip net.IP) bool {
 
 func (p *SSRFProtection) ipAccessError(host string, ip net.IP) error {
 	if host != "" {
-		if isPrivateIP(ip) && !p.AllowPrivateIp {
+		if IsPrivateIP(ip) && !p.AllowPrivateIp {
 			return fmt.Errorf("private IP address not allowed: %s resolves to %s", host, ip.String())
 		}
 		if p.IpFilterMode {
@@ -282,7 +286,7 @@ func (p *SSRFProtection) ipAccessError(host string, ip net.IP) error {
 		return fmt.Errorf("ip in blacklist: %s resolves to %s", host, ip.String())
 	}
 
-	if isPrivateIP(ip) && !p.AllowPrivateIp {
+	if IsPrivateIP(ip) && !p.AllowPrivateIp {
 		return fmt.Errorf("private IP address not allowed: %s", ip.String())
 	}
 	if p.IpFilterMode {

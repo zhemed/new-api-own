@@ -70,3 +70,27 @@ func TestGetRequestAutoGroupsDoesNotFallBackAfterPermissionChange(t *testing.T) 
 
 	assert.Empty(t, groups)
 }
+
+// 三分支之二：context 里存在 token 快照但类型不符时，必须是"显式空快照"，
+// 不能回退到全局 Auto 列表（回退会绕过 token 自身的 Auto 限制）。
+func TestGetRequestAutoGroupsWrongTypeIsExplicitEmptySnapshot(t *testing.T) {
+	configureRequestAutoGroupsTest(t)
+	ctx := newRequestAutoGroupsContext()
+	common.SetContextKey(ctx, constant.ContextKeyTokenAutoGroups, []int{1, 2, 3})
+
+	groups := GetRequestAutoGroups(ctx, "default")
+
+	assert.Empty(t, groups)
+	assert.NotEqual(t, []string{"vip", "default", "svip"}, groups, "类型不符时不得继承全局 Auto 列表")
+}
+
+// 三分支之三：合法快照仍按当前权限过滤（与既有 Filter 用例互补，显式断言非继承）。
+func TestGetRequestAutoGroupsValidSnapshotFiltersWithoutInheriting(t *testing.T) {
+	configureRequestAutoGroupsTest(t)
+	ctx := newRequestAutoGroupsContext()
+	common.SetContextKey(ctx, constant.ContextKeyTokenAutoGroups, []string{"vip", "revoked"})
+
+	groups := GetRequestAutoGroups(ctx, "default")
+
+	assert.Equal(t, []string{"vip"}, groups)
+}

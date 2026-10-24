@@ -241,6 +241,20 @@ GOWORK=off go build ./...
 GOWORK=off go test ./relayconvert -run TestGolden -update
 ```
 
+### JSON 编码约定（模块例外）
+
+`relaykit` 是独立 Go 模块，按项目 `AGENTS.md` 的「relaykit module independence」约束**不得**导入根模块的
+`common` 包；因此根模块的 JSON 包装约定（`common.Marshal` / `common.Unmarshal` /
+`common.UnmarshalJsonStr` / `common.DecodeJson` / `common.GetJsonType`）在本模块内不适用。模块内的 JSON 操作约定为：
+
+- 普通序列化/反序列化优先使用 `relayconvert/kitutil` 的本地包装（`kitutil.Marshal` / `kitutil.Unmarshal` /
+  `kitutil.GetJsonType` / `kitutil.JsonRawMessageToString`）；
+- 需要流式解码、或实现类型自身的 `MarshalJSON` / `UnmarshalJSON` 方法时，允许直接使用标准库 `encoding/json`。
+
+这是对 `AGENTS.md`「JSON package」约定的**模块内例外**，不是遗漏：`relaykit` 无法引用 `common`，而为了统一包装
+再在模块里维护一套无人使用的同名辅助函数只会留下死代码（`kitutil.UnmarshalJsonStr` / `kitutil.DecodeJson`
+即因此于 2026-10-24 删除）。根模块业务代码仍必须走 `common.*` 包装。
+
 ## 版本与兼容性
 
 RelayKit 当前使用 `v0.x` 版本。公开 API 和 DTO 仍可能在小版本中调整，升级前请检查发布说明和实际序列化结果。协议之间并非完全同构，建议对业务实际使用的工具调用、多模态、推理和流式场景增加端到端测试。

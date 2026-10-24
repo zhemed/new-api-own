@@ -49,11 +49,6 @@ func IsCurrencyDisplay() bool {
 	return generalSetting.QuotaDisplayType != QuotaDisplayTypeTokens
 }
 
-// IsCNYDisplay 是否以人民币展示
-func IsCNYDisplay() bool {
-	return generalSetting.QuotaDisplayType == QuotaDisplayTypeCNY
-}
-
 // GetQuotaDisplayType 返回额度展示类型
 func GetQuotaDisplayType() string {
 	return generalSetting.QuotaDisplayType

@@ -72,10 +72,6 @@ func InitRatioSettings() {
 	audioCompletionRatioMap.AddAll(defaultAudioCompletionRatio)
 }
 
-func GetModelPriceMap() map[string]float64 {
-	return modelPriceMap.ReadAll()
-}
-
 func ModelPrice2JSONString() string {
 	return modelPriceMap.MarshalJSONString()
 }

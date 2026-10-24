@@ -17,11 +17,6 @@ var defaultCreateCacheRatio = map[string]float64{}
 var cacheRatioMap = types.NewRWMap[string, float64]()
 var createCacheRatioMap = types.NewRWMap[string, float64]()
 
-// GetCacheRatioMap returns a copy of the cache ratio map
-func GetCacheRatioMap() map[string]float64 {
-	return cacheRatioMap.ReadAll()
-}
-
 // DefaultCacheRatio2JSONString 返回缓存倍率表的**代码默认** JSON。
 func DefaultCacheRatio2JSONString() string {
 	jsonBytes, err := common.Marshal(defaultCacheRatio)

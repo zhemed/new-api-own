@@ -95,15 +95,15 @@ func FilterUserTokenAutoGroups(userGroup string, groups []string) []string {
 // The absence of the context value means that the token inherits the complete
 // global Auto list; a present (even empty) value is an explicit token snapshot.
 func GetRequestAutoGroups(c *gin.Context, userGroup string) []string {
-	value, ok := common.GetContextKey(c, constant.ContextKeyTokenAutoGroups)
-	if !ok {
+	// 三分支语义（顺序不能换）：
+	// ① key 缺失 → 继承全局 Auto 列表；
+	// ② 存在但类型不符 → 空结果（helper 返回 nil，FilterUserTokenAutoGroups 会得到空切片），
+	//    不能回退全局，否则会绕过 token 的显式快照；
+	// ③ 存在且合法 → 先按当前权限过滤，再应用当前 limit。
+	if _, ok := common.GetContextKey(c, constant.ContextKeyTokenAutoGroups); !ok {
 		return GetUserAutoGroup(userGroup)
 	}
-	groups, ok := value.([]string)
-	if !ok {
-		return []string{}
-	}
-	return FilterUserTokenAutoGroups(userGroup, groups)
+	return FilterUserTokenAutoGroups(userGroup, common.GetContextKeyStringSlice(c, constant.ContextKeyTokenAutoGroups))
 }
 
 // GetGroupsEnabledModels 按 groups 顺序获取各分组启用的模型并去重
