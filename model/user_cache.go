@@ -172,14 +172,6 @@ func getUserQuotaCache(userId int) (int, error) {
 	return cache.Quota, nil
 }
 
-func getUserStatusCache(userId int) (int, error) {
-	cache, err := GetUserCache(userId)
-	if err != nil {
-		return 0, err
-	}
-	return cache.Status, nil
-}
-
 func getUserNameCache(userId int) (string, error) {
 	cache, err := GetUserCache(userId)
 	if err != nil {
@@ -194,15 +186,6 @@ func getUserSettingCache(userId int) (dto.UserSetting, error) {
 		return dto.UserSetting{}, err
 	}
 	return cache.GetSetting(), nil
-}
-
-// New functions for individual field updates
-func updateUserStatusCache(userId int, status bool) error {
-	statusInt := common.UserStatusEnabled
-	if !status {
-		statusInt = common.UserStatusDisabled
-	}
-	return updateUserCacheField(userId, "Status", statusInt)
 }
 
 func updateUserQuotaCache(userId int, quota int) error {
@@ -251,10 +234,6 @@ func RefreshUserGroupCache(userId int) error {
 		return err
 	}
 	return fmt.Errorf("user group changed repeatedly during cache refresh")
-}
-
-func updateUserEmailCache(userId int, email string) error {
-	return updateUserCacheField(userId, "Email", email)
 }
 
 func updateUserNameCache(userId int, username string) error {

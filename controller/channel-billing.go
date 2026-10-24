@@ -165,44 +165,6 @@ func GetResponseBody(method, url string, channel *model.Channel, headers http.He
 	return body, nil
 }
 
-func updateChannelCloseAIBalance(channel *model.Channel) (float64, error) {
-	url := fmt.Sprintf("%s/dashboard/billing/credit_grants", channel.GetBaseURL())
-	body, err := GetResponseBody("GET", url, channel, GetAuthHeader(channel.Key))
-
-	if err != nil {
-		return 0, err
-	}
-	response := OpenAICreditGrants{}
-	err = common.Unmarshal(body, &response)
-	if err != nil {
-		return 0, err
-	}
-	channel.UpdateBalance(response.TotalAvailable)
-	return response.TotalAvailable, nil
-}
-
-func updateChannelOpenAISBBalance(channel *model.Channel) (float64, error) {
-	url := fmt.Sprintf("https://api.openai-sb.com/sb-api/user/status?api_key=%s", channel.Key)
-	body, err := GetResponseBody("GET", url, channel, GetAuthHeader(channel.Key))
-	if err != nil {
-		return 0, err
-	}
-	response := OpenAISBUsageResponse{}
-	err = common.Unmarshal(body, &response)
-	if err != nil {
-		return 0, err
-	}
-	if response.Data == nil {
-		return 0, errors.New(response.Msg)
-	}
-	balance, err := strconv.ParseFloat(response.Data.Credit, 64)
-	if err != nil {
-		return 0, err
-	}
-	channel.UpdateBalance(balance)
-	return balance, nil
-}
-
 func updateChannelAIProxyBalance(channel *model.Channel) (float64, error) {
 	url := "https://aiproxy.io/api/report/getUserOverview"
 	headers := http.Header{}
@@ -369,8 +331,6 @@ func updateChannelBalance(channel *model.Channel) (float64, error) {
 		return 0, errors.New("尚未实现")
 	case constant.ChannelTypeCustom:
 		baseURL = channel.GetBaseURL()
-	//case common.ChannelTypeOpenAISB:
-	//	return updateChannelOpenAISBBalance(channel)
 	case constant.ChannelTypeAIProxy:
 		return updateChannelAIProxyBalance(channel)
 	case constant.ChannelTypeAPI2GPT:

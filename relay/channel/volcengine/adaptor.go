@@ -8,7 +8,6 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"io"
 	"net/http"
-	"path/filepath"
 	"strings"
 
 	channelconstant "github.com/QuantumNous/new-api/constant"
@@ -214,23 +213,6 @@ func (a *Adaptor) ConvertImageRequest(c *gin.Context, info *relaycommon.RelayInf
 
 	default:
 		return request, nil
-	}
-}
-
-func detectImageMimeType(filename string) string {
-	ext := strings.ToLower(filepath.Ext(filename))
-	switch ext {
-	case ".jpg", ".jpeg":
-		return "image/jpeg"
-	case ".png":
-		return "image/png"
-	case ".webp":
-		return "image/webp"
-	default:
-		if strings.HasPrefix(ext, ".jp") {
-			return "image/jpeg"
-		}
-		return "image/png"
 	}
 }
 
