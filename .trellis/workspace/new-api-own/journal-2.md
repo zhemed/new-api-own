@@ -1393,3 +1393,44 @@ v0.0.45（提交 b5f9388，tag v0.0.45）：IsDeepSeekV4Model → IsDeepSeekMode
 
 - 镜像删除待用户按桶点名授权（建议先 C 桶，再对 B 桶各项目分别点头；D 桶建议保留）
 - 备份策略仍未做（./data 单点、无异地副本）——连续三轮未选，建议尽快确认
+
+
+## Session 100: 按点名清镜像：删 84 个镜像/111 标签，回收 9.43GB；Build Cache 可回收量升至 13.26GB
+<!-- trellis-session: v=2 fp=61ae40dfbad320c8 -->
+
+**Date**: 2026-10-24
+**Task**: 按点名清镜像：删 84 个镜像/111 标签，回收 9.43GB；Build Cache 可回收量升至 13.26GB
+**Branch**: `main`
+
+### Summary
+
+用户点名授权后按桶删镜像：C 桶 22 个 + B 桶五项目旧标签 62 个，逐条按仓库:标签 docker rmi 全部成功，实测回收 9.43GB；镜像 110→26、标签 146→35、悬空 0；服务零影响。执行前拦下一次误判（halo 在用镜像因 ID 截断曾被误列入清单）。
+
+### Main Changes
+
+- 删除范围：C 桶 22 个 + B 桶 komari 20/komari-agent 19/picsur 17/litepan 5/postgres 1 = 84 镜像/111 标签，全部 rc=0；未按 ID 删、未用 prune/-f
+- 保留名单 18 项逐条命中：各项目在用版+上一版（komari/komari-agent 0.0.24+0.0.23、picsur allinone+latest、litepan 0.0.49+0.0.50、postgres 15.4+17-alpine）、new-api-own、halo 在用镜像、Dockerfile 基础镜像
+- 执行前拦截误判：首版脚本在用镜像 ID 截断长度写成 5 位（应 12 位），halo 在用镜像被误列入待删清单；修正后回归保留侧，范围判定改为防御性默认（只认名单内仓库），未造成误删
+- 连带效果：Build Cache 可回收量 85.79MB → 13.26GB（被删镜像的共享缓存层失去引用），本轮未动，待用户授权
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e52552b` | chore(task): 按桶删除镜像的授权、清单与回收证据 [task:prune-reclaimable-images] |
+
+### Testing
+
+- [OK] [OK] Lead 独立复核：现存项目标签全部在保留名单内（26 镜像/35 标签/悬空 0）、df 已用 88.3GB、system df Images 5.276GB
+- [OK] [OK] 服务核验：8 容器全 running、new-api running/restarts=0/挂载工作区/200 + v0.0.45、卷 3、data/ 55 文件
+- [OK] [OK] 实测 vs 估算：估算 11.45GB（B 7.59 + C 3.86）对实测 9.43GB，差约 2GB 归因共享层与 Build Cache 引用
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- Build Cache 现可回收 13.26GB：一条 docker builder prune -f 即可（只清缓存），需用户点名授权
+- 镜像侧剩余 1.754GB 主要来自 D 桶基础镜像（用户本轮未选）；更早的旧版本已永久删除，回退需重新拉取
+- 备份策略仍未做（./data 单点、无异地副本），已连续四轮未选
