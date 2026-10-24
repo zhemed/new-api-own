@@ -204,11 +204,9 @@ func TestResetModelRatioClearsEmptyDefaultTables(t *testing.T) {
 	assert.Empty(t, ratio_setting.GetCreateCacheRatioCopy())
 }
 
-// TestResetModelRatioWriteFailureIsSilentlySuccessfulInModel 记录一个**已知的上游限制**（不在本任务改写范围）：
-// `model.UpdateOption` 丢弃了 `DB.Save` 的错误，因此"写库失败"不会变成 error，重置接口会照旧返回成功。
-// 本用例把这个行为钉住：一旦有人修好 model.UpdateOption 的静默失败，这里会失败并提醒同步复核控制器语义。
-// 控制器侧的错误分支本身是就位的（任一步返回 error 即如实报失败），只是当前无法从 UpdateOption 触发。
-func TestResetModelRatioWriteFailureIsSilentlySuccessfulInModel(t *testing.T) {
+// TestResetModelRatioWriteFailureReturnsFailure：写库失败时重置接口必须如实返回 success:false。
+// 依赖 model.UpdateOption 传播 DB 错误（修复前它吞掉 DB.Save 的错误，接口会谎报成功）。
+func TestResetModelRatioWriteFailureReturnsFailure(t *testing.T) {
 	setupPricingResetTest(t)
 
 	require.NoError(t, model.UpdateOption("ModelRatio", `{"probe":1.5}`)) // 先建行，让后续走 UPDATE 分支
@@ -216,16 +214,11 @@ func TestResetModelRatioWriteFailureIsSilentlySuccessfulInModel(t *testing.T) {
 		`CREATE TRIGGER reset_must_fail BEFORE UPDATE ON options
 		 BEGIN SELECT RAISE(ABORT, 'forced option write failure'); END;`).Error)
 
-	var option model.Option
-	require.NoError(t, model.DB.Where("key = ?", "ModelRatio").First(&option).Error)
-	option.Value = `{"probe":2.5}`
-	require.Error(t, model.DB.Save(&option).Error, "DB 层确实写失败")
-
-	// 上游限制：UpdateOption 把该失败吞掉了。
-	require.NoError(t, model.UpdateOption("ModelRatio", `{"probe":3.5}`),
-		"若此处开始报错，说明 model.UpdateOption 的静默失败已被修复，请同步复核 ResetModelRatio 的错误分支")
-
 	body := resetModelRatioRequest(t)
-	require.Contains(t, body, `"success":true`,
-		"当前上游吞错，故接口仍报成功；这是记录在案的限制，不是本接口的期望语义")
+
+	require.Contains(t, body, `"success":false`, "写库失败必须如实返回失败：%s", body)
+	require.Contains(t, body, `"message"`, "失败响应必须带 message：%s", body)
+	// 内存定价不得被半途改成默认值（写库失败 → 不更新内存）。
+	require.Equal(t, 1.5, ratio_setting.GetModelRatioCopy()["probe"],
+		"写库失败时内存倍率应保持旧值")
 }

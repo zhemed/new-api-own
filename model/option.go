@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -224,12 +225,19 @@ func UpdateOption(key string, value string) error {
 		Key: key,
 	}
 	// https://gorm.io/docs/update.html#Save-All-Fields
-	DB.FirstOrCreate(&option, Option{Key: key})
+	if err := DB.FirstOrCreate(&option, Option{Key: key}).Error; err != nil {
+		// 错误只带 key，不带 value：value 可能是密钥/支付配置等敏感内容。
+		return fmt.Errorf("cannot create option %q: %w", key, err)
+	}
 	option.Value = value
 	// Save is a combination function.
 	// If save value does not contain primary key, it will execute Create,
 	// otherwise it will execute Update (with all fields).
-	DB.Save(&option)
+	if err := DB.Save(&option).Error; err != nil {
+		return fmt.Errorf("cannot save option %q: %w", key, err)
+	}
+	// 只有 DB 落盘成功才同步内存：否则 DB 与内存会分叉，
+	// 且调用方会误以为写入生效（历史缺陷：这里曾吞掉 DB 错误）。
 	// Update OptionMap
 	return updateOptionMap(key, value)
 }
