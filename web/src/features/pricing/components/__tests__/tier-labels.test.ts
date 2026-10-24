@@ -45,8 +45,8 @@ function translatorFor(locale: string): (key: string) => string {
 }
 
 const BUILT_IN_TIERS: Array<[string, string]> = [
-  ['peak', '高峰'],
-  ['offpeak', '低谷'],
+  ['peak', '高峰时段'],
+  ['offpeak', '空闲时段'],
   ['base', '基础'],
   ['standard', '标准'],
   ['short', '短'],
@@ -103,7 +103,7 @@ describe('tier label display mapping', () => {
   test('case and separators do not defeat the mapping', () => {
     const t = translatorFor('zh')
     assert.equal(getTierDisplayLabel('Short Output', t), '短输出')
-    assert.equal(getTierDisplayLabel('  PEAK  ', t), '高峰')
+    assert.equal(getTierDisplayLabel('  PEAK  ', t), '高峰时段')
   })
 
   test('every mapped key exists in all seven locales', () => {

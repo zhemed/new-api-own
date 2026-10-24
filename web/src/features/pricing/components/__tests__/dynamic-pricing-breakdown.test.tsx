@@ -189,7 +189,7 @@ describe('dynamic pricing tier label display', () => {
     )
 
     assert.ok(badgeLabels.has('基础'), 'base should render as 基础')
-    assert.ok(badgeLabels.has('高峰'), 'peak should render as 高峰')
+    assert.ok(badgeLabels.has('高峰时段'), 'peak should render as 高峰')
     assert.equal(
       badgeLabels.has('base'),
       false,
