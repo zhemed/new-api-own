@@ -3,6 +3,7 @@ package billing_setting
 import (
 	"fmt"
 
+	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/pkg/billingexpr"
 	"github.com/QuantumNous/new-api/setting/config"
 	"github.com/samber/lo"
@@ -45,6 +46,25 @@ func defaultBillingSetting() BillingSetting {
 		exprs[model] = defaultDeepSeekPeakOffPeakExpr
 	}
 	return BillingSetting{BillingMode: modes, BillingExpr: exprs}
+}
+
+// DefaultBillingMode2JSONString 返回计费模式的**代码默认** JSON（两个默认模板均为 tiered_expr）。
+// 供「重置定价」恢复出厂值使用，避免在别处复制默认值字面量。
+func DefaultBillingMode2JSONString() string {
+	return marshalDefault(defaultBillingSetting().BillingMode, BillingModeField)
+}
+
+// DefaultBillingExpr2JSONString 返回计费表达式的代码默认 JSON（两个默认模板逐字符相同）。
+func DefaultBillingExpr2JSONString() string {
+	return marshalDefault(defaultBillingSetting().BillingExpr, BillingExprField)
+}
+
+func marshalDefault(value map[string]string, field string) string {
+	jsonBytes, err := common.Marshal(value)
+	if err != nil {
+		common.SysError("error marshalling default " + field + ": " + err.Error())
+	}
+	return string(jsonBytes)
 }
 
 var billingSetting = defaultBillingSetting()

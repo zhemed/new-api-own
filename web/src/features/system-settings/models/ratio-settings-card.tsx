@@ -169,7 +169,11 @@ export function RatioSettingsCard({
     mutationFn: resetModelRatios,
     onSuccess: (data) => {
       if (data.success) {
-        toast.success(t('Model prices reset successfully'))
+        toast.success(
+          t(
+            'Model pricing was restored to the default templates. Group ratios were not changed.'
+          )
+        )
         queryClient.invalidateQueries({ queryKey: ['system-options'] })
         setConfirmOpen(false)
       } else {
@@ -512,7 +516,7 @@ export function RatioSettingsCard({
         onOpenChange={setConfirmOpen}
         title={t('Reset all model prices?')}
         desc={t(
-          'This will clear custom pricing ratios and revert to upstream defaults.'
+          'This restores model pricing to the default templates: model, completion, cache and cache-write ratios, per-call prices, image and audio ratios, and the billing mode with its billing expression. Group ratios and usable groups are not affected.'
         )}
         destructive
         isLoading={resetMutation.isPending}

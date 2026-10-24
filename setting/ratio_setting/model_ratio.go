@@ -154,10 +154,61 @@ func DefaultModelRatio2JSONString() string {
 	return string(jsonBytes)
 }
 
+// DefaultCompletionRatio2JSONString 返回补全倍率表的**代码默认** JSON。
+// 供「重置定价」等需要恢复出厂值的调用方使用，避免在别处复制默认值字面量。
+func DefaultCompletionRatio2JSONString() string {
+	jsonBytes, err := common.Marshal(defaultCompletionRatio)
+	if err != nil {
+		common.SysError("error marshalling completion ratio: " + err.Error())
+	}
+	return string(jsonBytes)
+}
+
+// DefaultModelPrice2JSONString 返回模型价格表的代码默认 JSON（当前默认是空表）。
+func DefaultModelPrice2JSONString() string {
+	jsonBytes, err := common.Marshal(defaultModelPrice)
+	if err != nil {
+		common.SysError("error marshalling model price: " + err.Error())
+	}
+	return string(jsonBytes)
+}
+
+// DefaultImageRatio2JSONString / DefaultAudioRatio2JSONString /
+// DefaultAudioCompletionRatio2JSONString 返回对应倍率表的代码默认 JSON（当前均为空表）。
+func DefaultImageRatio2JSONString() string {
+	jsonBytes, err := common.Marshal(defaultImageRatio)
+	if err != nil {
+		common.SysError("error marshalling image ratio: " + err.Error())
+	}
+	return string(jsonBytes)
+}
+
+func DefaultAudioRatio2JSONString() string {
+	jsonBytes, err := common.Marshal(defaultAudioRatio)
+	if err != nil {
+		common.SysError("error marshalling audio ratio: " + err.Error())
+	}
+	return string(jsonBytes)
+}
+
+func DefaultAudioCompletionRatio2JSONString() string {
+	jsonBytes, err := common.Marshal(defaultAudioCompletionRatio)
+	if err != nil {
+		common.SysError("error marshalling audio completion ratio: " + err.Error())
+	}
+	return string(jsonBytes)
+}
+
 func GetDefaultModelRatioMap() map[string]float64 {
 	return defaultModelRatio
 }
 
+// GetDefaultCompletionRatioMap 返回补全倍率表的代码默认（与 GetDefaultModelRatioMap 同风格）。
+func GetDefaultCompletionRatioMap() map[string]float64 {
+	return defaultCompletionRatio
+}
+
+// GetDefaultModelPriceMap 返回模型价格表的代码默认。
 func GetDefaultModelPriceMap() map[string]float64 {
 	return defaultModelPrice
 }

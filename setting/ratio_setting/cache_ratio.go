@@ -1,6 +1,7 @@
 package ratio_setting
 
 import (
+	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/types"
 )
 
@@ -19,6 +20,29 @@ var createCacheRatioMap = types.NewRWMap[string, float64]()
 // GetCacheRatioMap returns a copy of the cache ratio map
 func GetCacheRatioMap() map[string]float64 {
 	return cacheRatioMap.ReadAll()
+}
+
+// DefaultCacheRatio2JSONString 返回缓存倍率表的**代码默认** JSON。
+func DefaultCacheRatio2JSONString() string {
+	jsonBytes, err := common.Marshal(defaultCacheRatio)
+	if err != nil {
+		common.SysError("error marshalling cache ratio: " + err.Error())
+	}
+	return string(jsonBytes)
+}
+
+// GetDefaultCacheRatioMap 返回缓存倍率表的代码默认（与 GetDefaultModelRatioMap 同风格）。
+func GetDefaultCacheRatioMap() map[string]float64 {
+	return defaultCacheRatio
+}
+
+// DefaultCreateCacheRatio2JSONString 返回缓存写入倍率表的代码默认 JSON（当前是空表）。
+func DefaultCreateCacheRatio2JSONString() string {
+	jsonBytes, err := common.Marshal(defaultCreateCacheRatio)
+	if err != nil {
+		common.SysError("error marshalling create cache ratio: " + err.Error())
+	}
+	return string(jsonBytes)
 }
 
 // CacheRatio2JSONString converts the cache ratio map to a JSON string
