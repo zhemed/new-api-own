@@ -1554,3 +1554,43 @@ v0.0.45（提交 b5f9388，tag v0.0.45）：IsDeepSeekV4Model → IsDeepSeekMode
 
 - 发版（tag/Release/镜像）与两个受影响实例的镜像升级均待用户点名；面板内更新在实例升到修复版后恢复
 - 可选：把「locale 只插入不重排 + 必须跑 i18n:sync 恢复混淆键」写进 i18n 技能/AGENTS；给 ReleaseFetcher 接口补「必须返回完整资产列表」契约注释
+
+
+## Session 104: 发布 v0.0.46（自更新白名单修复）并升级本机实例；Release 四资产含 SHA256SUMS.sig
+<!-- trellis-session: v=2 fp=55d980a0cb7d77ae -->
+
+**Date**: 2026-10-24
+**Task**: 发布 v0.0.46（自更新白名单修复）并升级本机实例；Release 四资产含 SHA256SUMS.sig
+**Branch**: `main`
+
+### Summary
+
+发版全链路成功：推 main+tag → 两个 workflow 双绿（40053075548 镜像 / 40053075528 Release）→ Release 四资产齐全（含 SHA256SUMS.sig 89B）→ 多架构镜像就位 → 本机实例按原参数升级到 v0.0.46（停机约 14 秒），200 + X-New-Api-Version v0.0.46、restarts=0、挂载工作区、8 容器全 Up。
+
+### Main Changes
+
+- 发布：VERSION 0.0.45→0.0.46（Lead 署名提交 + 附注 tag v0.0.46，注解即 changelog）；main 与 tag 推送成功，无 force
+- CI 双绿：docker-build 与 release 两个 workflow 并行触发，均已 success；Release 非 draft/非 prerelease，时间 02:09:19Z
+- 资产 4/4：amd64 118513848 / arm64 115474616 / SHA256SUMS 172 / SHA256SUMS.sig 89；下载 amd64 并按 SHA256SUMS 校验 OK
+- 实例升级：pull v0.0.46（digest 95e3c1b9…）→ docker rm -f（未加 -v）→ 原参数重建；升级前后配置仅镜像 tag 不同；v0.0.45 镜像留作回滚点
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9c09fc7` | chore(task): v0.0.46 发布与本机升级证据 [task:release-v0046-and-upgrade-local] |
+
+### Testing
+
+- [OK] [OK] Lead 抽查：docker inspect（v0.0.46/running/restarts=0/挂载 /root/new-api-own/data）、200 + X-New-Api-Version v0.0.46、gh release 非 draft
+- [OK] [OK] 修复在运行二进制中：容器内 grep -a -c signature_asset_missing /new-api = 2（无 strings 工具，用等价只读检查）
+- [OK] [OK] 数据与邻接面：8 容器全 running、卷 3、data 56 文件（增量是新日志 oneapi-20261024021655.log），核心 db 与 3 个 .bak 完好
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 待裁定：本地 latest 仍指 v0.0.45（registry latest 已是 v0.0.46），一条 docker tag 可对齐；v0.0.45 继续留作回滚点
+- 面板内更新端到端演练需下一个版本（v0.0.47）才能实操；同时另一实例（生产）需先用镜像方式升级一次，主机需用户点名
