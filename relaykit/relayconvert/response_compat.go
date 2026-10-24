@@ -28,10 +28,6 @@ func StreamResponseOpenAI2Claude(openAIResponse *dto.ChatCompletionsStreamRespon
 	return oaichat.StreamResponseOpenAI2Claude(openAIResponse, info)
 }
 
-func StopReasonClaudeToOpenAI(reason string) string {
-	return claudemessages.StopReasonClaudeToOpenAI(reason)
-}
-
 func StreamResponseClaude2OpenAI(claudeResponse *dto.ClaudeResponse) *dto.ChatCompletionsStreamResponse {
 	return claudemessages.StreamResponseClaude2OpenAI(claudeResponse)
 }
@@ -84,10 +80,6 @@ func ChatCompletionsResponseToResponsesResponse(resp *dto.OpenAITextResponse, id
 	return oaichat.ChatCompletionsResponseToResponsesResponse(resp, id)
 }
 
-func ResponsesStatusFromChatFinishReason(finishReason string) (string, *dto.IncompleteDetails) {
-	return oaichat.ResponsesStatusFromChatFinishReason(finishReason)
-}
-
 func UsageFromChatUsage(src *dto.Usage) *dto.Usage {
 	return oaichat.UsageFromChatUsage(src)
 }
@@ -104,10 +96,6 @@ func FinalizeChatCompletionsStreamToResponses(state *ChatToResponsesStreamState)
 	return oaichat.FinalizeChatCompletionsStreamToResponses(state)
 }
 
-func ResponsesFinishReasonFromStatus(resp *dto.OpenAIResponsesResponse) (string, bool) {
-	return oairesponses.ResponsesFinishReasonFromStatus(resp)
-}
-
 func ResponsesResponseToChatCompletionsResponse(resp *dto.OpenAIResponsesResponse, id string) (*dto.OpenAITextResponse, *dto.Usage, error) {
 	return oairesponses.ResponsesResponseToChatCompletionsResponse(resp, id)
 }
@@ -118,10 +106,6 @@ func UsageFromResponsesUsage(src *dto.Usage) *dto.Usage {
 
 func ExtractOutputTextFromResponses(resp *dto.OpenAIResponsesResponse) string {
 	return oairesponses.ExtractOutputTextFromResponses(resp)
-}
-
-func ExtractReasoningTextFromResponses(resp *dto.OpenAIResponsesResponse) string {
-	return oairesponses.ExtractReasoningTextFromResponses(resp)
 }
 
 func NewResponsesToChatStreamState(model string, includeUsage bool) *ResponsesToChatStreamState {

@@ -37,23 +37,6 @@ type FileMeta struct {
 	Detail string     // 图片细节级别（low/high/auto）
 }
 
-// NewFileMeta 创建新的 FileMeta
-func NewFileMeta(fileType FileType, source FileSource) *FileMeta {
-	return &FileMeta{
-		FileType: fileType,
-		Source:   source,
-	}
-}
-
-// NewImageFileMeta 创建图片类型的 FileMeta
-func NewImageFileMeta(source FileSource, detail string) *FileMeta {
-	return &FileMeta{
-		FileType: FileTypeImage,
-		Source:   source,
-		Detail:   detail,
-	}
-}
-
 // GetIdentifier 获取文件标识符（用于日志）
 func (f *FileMeta) GetIdentifier() string {
 	if f.Source != nil {

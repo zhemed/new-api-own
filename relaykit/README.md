@@ -2,7 +2,7 @@
 
 RelayKit 是本项目拆分出的独立 Go 模块，提供常用大模型文本协议的 DTO、请求转换、响应转换和流式事件转换。
 
-它只负责协议层的数据建模与语义转换，不包含 HTTP 服务、上游请求发送、渠道调度、鉴权、计费或数据库逻辑。因此可以脱离 new-api 主模块，嵌入其他 Go 网关或代理服务。
+它只负责协议层的数据建模与语义转换，不包含 HTTP 服务、上游请求发送、渠道调度、鉴权、计费或数据库逻辑。技术上它可以脱离 new-api 主模块独立构建；但**当前定位是主仓库的内部拆分模块，不计划独立发布**（没有 `relaykit/v*` tag、没有独立发布流水线，主仓库通过 `replace` 指向本地目录），公开面与兼容性口径见「公开 API 政策」。
 
 ## 能力
 
@@ -32,12 +32,16 @@ RelayKit 是本项目拆分出的独立 Go 模块，提供常用大模型文本�
 
 请求、非流式响应和流式响应均覆盖上述矩阵。实际采用的路径可从转换结果的 `Steps` 和 `Quality` 字段中读取。
 
-## 安装
+## 使用与安装
 
 RelayKit 要求 Go 1.25.1 或更高版本。
 
+**当前状态：未独立发布。** RelayKit 作为 new-api 的内部拆分模块随主仓库一起开发：没有 `relaykit/v*` tag，也没有独立发布流水线，主仓库的 `go.mod` 通过 `replace ... => ./relaykit` 引用本地目录。因此**现在不能**用 `go get github.com/QuantumNous/new-api/relaykit@latest` 安装（无可用版本 tag）；在仓库内按下面的方式构建与测试：
+
 ```bash
-go get github.com/QuantumNous/new-api/relaykit@latest
+cd relaykit
+GOWORK=off go build ./...
+GOWORK=off go test ./...
 ```
 
 主要包：
@@ -226,6 +230,24 @@ relayconvert.SetMediaResolver(relayconvert.MediaResolver{
 
 如果需要固定转换路径，可使用 `ConvertRequestVia`；如果需要按转换器 ID 执行，可使用 `ConvertRequestByID`、`ConvertResponseByID` 和 `NewResponseStreamStateByID`。
 
+## 公开 API 政策
+
+**模块定位（2026-10-24 起）**：RelayKit 是 new-api 主仓库的**内部拆分模块**，不计划独立发布（无 `relaykit/v*` tag、无独立发布流水线、主仓库用 `replace` 本地引用）。下表的「公开面」是**主仓库自用契约**，不是对外兼容承诺。
+
+| 分类 | 范围 | 变更要求 |
+|---|---|---|
+| 公开面 | `relaykit/dto`、`relaykit/types`、`relaykit/relayconvert` 的注册表入口（`ConvertRequest` / `ConvertRequestVia` / `ConvertRequestByID` / `ConvertResponse` / `ConvertStreamResponseChunk` / `FinalizeStreamResponse` / `NewResponseStreamState` / `SetMediaResolver` 等）、`relaykit/relayconvert/convmeta`、`relaykit/reasonmap` | 删除/改名/改签名必须同步主仓库全部调用点，并更新本清单与主仓库发布说明 |
+| 注册表与内省入口（公开面，保留） | `ConvertResponseByID`、`NewResponseStreamStateByID`、`LookupTextConverter`、`ChannelTypeOf` | 同上；这 4 个是转换器注册表与上下文内省 API。依赖实况：`ConvertResponseByID` / `LookupTextConverter` / `ChannelTypeOf` 由**模块测试**使用（主仓库零调用）；`NewResponseStreamStateByID` 当前无调用，按公开面内省入口保留 |
+| 内部面（不承诺兼容） | `relayconvert/internal/**`、`relayconvert/kitutil`、`request_compat.go` / `response_compat.go` 的历史兼容门面 | 可自由删改，但必须保持主仓库可编译、两套门禁全绿 |
+
+变更流程：
+
+1. 改公开面 → 同步主仓库调用点 → 跑主仓库 `go build ./...`、`go test ./... -count=1`，以及 `cd relaykit && GOWORK=off go build ./... && GOWORK=off go test ./...`；
+2. 在本节「公开面」清单与主仓库发布说明（`MAINTENANCE.md` 的发布记录）中记录删改；
+3. 内部面清理不需要发布说明，但需保持本节与「JSON 编码约定（模块例外）」同步，避免文档腐化。
+
+最近一次收敛（2026-10-24）：删除 16 个无人使用的导出函数（8 个真死兼容门面、3 个仅模块自测引用的兼容门面、`kitutil.StringToByteSlice`、`types.NewFileMeta` / `NewImageFileMeta`、`dto.StringValue` 的 2 个 JSON 方法）与孤儿类型 `dto.StringValue` 本体；3 个仅自测引用的门面删除后，测试改为直接调用 `internal` 实现；保留上表 4 个注册表/内省入口。
+
 ## 开发
 
 RelayKit 必须始终保持独立可构建。修改模块后，在 `relaykit` 目录运行：
@@ -257,7 +279,7 @@ GOWORK=off go test ./relayconvert -run TestGolden -update
 
 ## 版本与兼容性
 
-RelayKit 当前使用 `v0.x` 版本。公开 API 和 DTO 仍可能在小版本中调整，升级前请检查发布说明和实际序列化结果。协议之间并非完全同构，建议对业务实际使用的工具调用、多模态、推理和流式场景增加端到端测试。
+RelayKit 当前使用 `v0.x` 版本（版本号随主仓库演进，当前没有独立 tag）。公开 API 和 DTO 仍可能随主仓库小版本调整；由于当前不计划独立发布，RelayKit 不承诺独立的模块级兼容性，升级或改动前请检查主仓库发布说明和实际序列化结果。协议之间并非完全同构，建议对业务实际使用的工具调用、多模态、推理和流式场景增加端到端测试。
 
 ## 许可证
 

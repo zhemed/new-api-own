@@ -7,7 +7,6 @@ package kitutil
 import (
 	"bytes"
 	"encoding/json"
-	"unsafe"
 )
 
 func Unmarshal(data []byte, v any) error {
@@ -54,12 +53,6 @@ func JsonRawMessageToString(data json.RawMessage) string {
 		return string(trimmed)
 	}
 	return value
-}
-
-func StringToByteSlice(s string) []byte {
-	tmp1 := (*[2]uintptr)(unsafe.Pointer(&s))
-	tmp2 := [3]uintptr{tmp1[0], tmp1[1], tmp1[1]}
-	return *(*[]byte)(unsafe.Pointer(&tmp2))
 }
 
 func Any2Type[T any](data any) (T, error) {

@@ -6,6 +6,8 @@ import (
 
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/relaykit/relayconvert/convmeta"
+	oaichat "github.com/QuantumNous/new-api/relaykit/relayconvert/internal/oai_chat"
+	oairesponses "github.com/QuantumNous/new-api/relaykit/relayconvert/internal/oai_responses"
 	kitutil "github.com/QuantumNous/new-api/relaykit/relayconvert/kitutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,7 +22,7 @@ func TestOpenAIToGeminiSafetySettings(t *testing.T) {
 			name: "chat completions",
 			convert: func(t *testing.T, meta convmeta.Meta) *dto.GeminiChatRequest {
 				t.Helper()
-				got, err := OpenAIChatRequestToGeminiGenerateContent(context.Background(), dto.GeneralOpenAIRequest{
+				got, err := oaichat.OpenAIChatRequestToGeminiGenerateContent(context.Background(), dto.GeneralOpenAIRequest{
 					Model: "gemini-test",
 					Messages: []dto.Message{
 						{Role: "user", Content: "hello"},
@@ -34,7 +36,7 @@ func TestOpenAIToGeminiSafetySettings(t *testing.T) {
 			name: "responses",
 			convert: func(t *testing.T, meta convmeta.Meta) *dto.GeminiChatRequest {
 				t.Helper()
-				got, err := OpenAIResponsesRequestToGeminiChat(context.Background(), &dto.OpenAIResponsesRequest{
+				got, err := oairesponses.OpenAIResponsesRequestToGeminiChat(context.Background(), &dto.OpenAIResponsesRequest{
 					Model: "gemini-test",
 					Input: []byte(`"hello"`),
 				}, meta)
