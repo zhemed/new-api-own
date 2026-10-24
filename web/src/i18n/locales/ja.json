@@ -4235,6 +4235,7 @@
     "System settings": "システム設定",
     "System setup wizard": "システムセットアップウィザード",
     "System task records": "システムタスク記録",
+    "The release is missing its signature asset, so the replacement was refused.": "リリースに署名アセットが含まれていないため、置き換えを拒否しました。",
     "TPM": "TPM",
     "TTFT P50": "TTFT P50",
     "TTFT P95": "TTFT P95",

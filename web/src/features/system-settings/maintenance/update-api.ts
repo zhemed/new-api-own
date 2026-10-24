@@ -75,6 +75,8 @@ type UpdateFailureReason =
   | 'replace_failed'
   /** The downloaded artifact failed signature verification, so it was refused. */
   | 'signature_mismatch'
+  /** The release has no signature asset, so the downloaded artifact could not be verified. */
+  | 'signature_asset_missing'
   /** The caller authenticated with a system access token instead of root. */
   | 'pat_not_allowed'
   /** No `.prev` artifact exists, so there is nothing to roll back to. */
@@ -123,6 +125,7 @@ const FAILURE_CODES: Record<string, UpdateFailureReason> = {
   signature_mismatch: 'signature_mismatch',
   signature_invalid: 'signature_mismatch',
   signature_verify_failed: 'signature_mismatch',
+  signature_asset_missing: 'signature_asset_missing',
   pat_not_allowed: 'pat_not_allowed',
   token_not_allowed: 'pat_not_allowed',
   rollback_unavailable: 'rollback_unavailable',

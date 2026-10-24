@@ -4235,6 +4235,7 @@
     "System settings": "Системные настройки",
     "System setup wizard": "Мастер настройки системы",
     "System task records": "Записи системных задач",
+    "The release is missing its signature asset, so the replacement was refused.": "В релизе отсутствует файл подписи, поэтому замена отклонена.",
     "TPM": "TPM",
     "TTFT P50": "TTFT P50",
     "TTFT P95": "TTFT P95",

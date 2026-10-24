@@ -204,6 +204,7 @@ describe('applyUpdate', () => {
     for (const [code, reason] of [
       ['pat_not_allowed', 'pat_not_allowed'],
       ['signature_mismatch', 'signature_mismatch'],
+      ['signature_asset_missing', 'signature_asset_missing'],
       ['rollback_unavailable', 'rollback_unavailable'],
     ] as const) {
       stubPost(() => {

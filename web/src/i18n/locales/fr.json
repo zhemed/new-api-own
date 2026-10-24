@@ -4235,6 +4235,7 @@
     "System settings": "Paramètres système",
     "System setup wizard": "Assistant de configuration du système",
     "System task records": "Historique des tâches système",
+    "The release is missing its signature asset, so the replacement was refused.": "L'actif de signature est absent de la publication ; le remplacement a été refusé.",
     "TPM": "TPM",
     "TTFT P50": "TTFT P50",
     "TTFT P95": "TTFT P95",

@@ -181,6 +181,10 @@ export function UpdateCheckerSection({
         detail = t(
           'The update signature did not match the published checksum, so the replacement was refused.'
         )
+      } else if (result.reason === 'signature_asset_missing') {
+        detail = t(
+          'The release is missing its signature asset, so the replacement was refused.'
+        )
       } else if (result.reason === 'pat_not_allowed') {
         detail = t(
           'System access tokens cannot install updates. Sign in as the root account instead.'

@@ -557,6 +557,24 @@ describe('update checker apply flow', () => {
     )
   })
 
+  test('explains a missing signature asset instead of a signature mismatch', async () => {
+    signInAsRoot()
+    stubApplyUpdate(() => ({
+      data: { success: false, code: 'signature_asset_missing', message: '' },
+    }))
+    const container = await renderUpdateChecker()
+
+    await clickButton(applyButton(container))
+    await clickButton(confirmButton())
+
+    assert.equal(
+      latestToastTitle(),
+      en[
+        'The release is missing its signature asset, so the replacement was refused.'
+      ]
+    )
+  })
+
   test('ends the dialog with the persistence warning after a successful apply', async () => {
     signInAsRoot()
     stubApplyUpdate(() => ({
