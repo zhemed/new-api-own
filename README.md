@@ -164,6 +164,7 @@ curl -s http://127.0.0.1:3000/api/status | grep -o '"version":"[^"]*"'
 > （`UPDATE_APPLY_ENABLED=false` 可整体关掉）；GitHub 直连不通时用 `HTTPS_PROXY`，或用
 > `UPDATE_CHECK_API_BASE_URL` 指向镜像/代理。细节、排障与回退见
 > [MAINTENANCE.md](./MAINTENANCE.md)「面板内更新（self-update）」。
+> 受影响版本（v0.0.43–v0.0.45）会稳定失败并报签名校验不匹配：先按上面「升级 / 回滚」的提示用镜像方式升级一次即可恢复。
 
 可选环境变量（按需追加 `-e`）：限流开关、缓存、日志承载方式等见 [`.env.example`](./.env.example)
 与 [MAINTENANCE.md](./MAINTENANCE.md)。
