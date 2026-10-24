@@ -1633,3 +1633,41 @@ v0.0.45（提交 b5f9388，tag v0.0.45）：IsDeepSeekV4Model → IsDeepSeekMode
 
 - 面板内更新的端到端演练留待下一版：v0.0.45 实例点更新复现报错 → 镜像升级 → 再点确认恢复，并把文档里的「尚未做」改成实测结论
 - 另一实例（生产）仍需先用镜像方式升级一次（未获点名主机，本轮未动）
+
+
+## Session 106: README 面板内更新小节补一行影响提示指针（v0.0.43–v0.0.45 需先镜像升级）
+<!-- trellis-session: v=2 fp=d6e5780dfcae4f13 -->
+
+**Date**: 2026-10-24
+**Task**: README 面板内更新小节补一行影响提示指针（v0.0.43–v0.0.45 需先镜像升级）
+**Branch**: `main`
+
+### Summary
+
+收口尾巴：README 的「面板内更新」小节补一行指针，指向「升级 / 回滚」章节里已有的完整提示，避免读者从该小节进入时看不到受影响版本说明。改动仅 +1 行，未重复长句、未新增小节。
+
+### Main Changes
+
+- README.md:167 新增一行（引用块）：受影响版本（v0.0.43–v0.0.45）会稳定失败并报签名校验不匹配，先按上面「升级 / 回滚」的提示用镜像方式升级一次即可恢复
+- 口径三处分工：README 升级段=完整提示、README 面板段=一行指针、MAINTENANCE 前置条件=简短版并标注「端到端演练尚未做」
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d7e14ae` | docs(readme): 面板内更新小节补一行影响提示指针 [task:readme-self-update-pointer] |
+| `21a9855` | chore(task): README 指针任务记录与证据 [task:readme-self-update-pointer] |
+
+### Testing
+
+- [OK] [OK] 定位证据：改动前该小节（155–166 行）内无任何指向（git show HEAD:README.md 为证）→ 确需补，非重复
+- [OK] [OK] 门禁：forbid-extra-deploy-methods.sh 通过；渲染安全自查通过（成对美元符号 0、围栏配平、无新小节标题）
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 下一版实测面板自更新恢复后，把 README 的「即可恢复」改成实测确认的表述，并回填 MAINTENANCE 的「尚未做」
+- 另一实例（生产）仍需先用镜像方式升级一次（未获点名主机）

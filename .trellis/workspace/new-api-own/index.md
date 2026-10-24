@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 105
+- **Total Sessions**: 106
 - **Last Active**: 2026-10-24
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~1635 | Active |
+| `journal-2.md` | ~1673 | Active |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 106 | 2026-10-24 | README 面板内更新小节补一行影响提示指针（v0.0.43–v0.0.45 需先镜像升级） | `d7e14ae`, `21a9855` | `main` |
 | 105 | 2026-10-24 | 本机 latest 对齐到 v0.0.46，并把「受影响旧版本需先镜像升级」写进 README/MAINTENANCE | `c613908`, `ce86029` | `main` |
 | 104 | 2026-10-24 | 发布 v0.0.46（自更新白名单修复）并升级本机实例；Release 四资产含 SHA256SUMS.sig | `9c09fc7` | `main` |
 | 103 | 2026-10-24 | 修复面板自更新：资产白名单漏 SHA256SUMS.sig（自 v0.0.43 起 100% 失败）已根治 | `f843c3f`, `6820971`, `f61e511` | `main` |
