@@ -1512,3 +1512,45 @@ v0.0.45（提交 b5f9388，tag v0.0.45）：IsDeepSeekV4Model → IsDeepSeekMode
 
 - 修复待用户点名：A 白名单补 SHA256SUMS.sig（最小）、B 裁剪移出共用 fetcher（结构）、C 补日志+独立错误码+fetcher→applier 集成回归
 - S2（已是 v0.0.45 仍提示更新）需用户说明点击场景/实例才能闭环；若要点名核实另一实例需先授权
+
+
+## Session 103: 修复面板自更新：资产白名单漏 SHA256SUMS.sig（自 v0.0.43 起 100% 失败）已根治
+<!-- trellis-session: v=2 fp=a88211646ce27954 -->
+
+**Date**: 2026-10-24
+**Task**: 修复面板自更新：资产白名单漏 SHA256SUMS.sig（自 v0.0.43 起 100% 失败）已根治
+**Branch**: `main`
+
+### Summary
+
+三项全修：fetcher 不再裁剪资产（删 filterUpdateAssets）、缺签名资产改报独立码 signature_asset_missing(502) 并记缺失资产名、前端新码映射与七语言文案；补 fetcher→applier 直通回归（修复前 4 条失败→修复后 11 条全绿，前端 2 失败→47 全绿），独立验证接受。受影响实例需先用镜像方式升级一次，面板更新才能恢复。
+
+### Main Changes
+
+- 后端：service/update_check.go 不再裁剪（同一 fetcher 也是 applier 数据源）、删除 filterUpdateAssets；service/update_apply.go 新增 UpdateApplyCodeSignatureAssetMissing 并在缺 sig 时记缺失资产名
+- 前端：update-api.ts 新码映射 + update-checker-section.tsx 展示分支 + 七语言各 +1 键（无重排），前后端字面量一致
+- 测试：fetcher 用例改断言完整资产列表（原 Len==2 正是锁死 bug 处）；新增直通回归与缺 sig 用例；controller 稳定 code 清单补登记新码
+- 两处实现偏差经 Lead 与 verifier 双方核实后接受：① 响应结构本就不含 assets，故按 B 的意图改为完全不裁剪；② 日志不套 MaskSensitiveInfo（实测会把 SHA256SUMS.sig 打成 ***.sig，抹掉诊断价值）
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f843c3f` | fix(update): 资产不再被白名单裁剪 + 缺签名资产用独立错误码 [task:fix-update-asset-whitelist] |
+| `6820971` | fix(web): 新错误码映射与七语言专用文案 [task:fix-update-asset-whitelist] |
+| `f61e511` | chore(task): 修复的设计/计划/证据与独立验证记录 [task:fix-update-asset-whitelist] |
+
+### Testing
+
+- [OK] [OK] 门禁：go build/vet ./...、go test ./service/... 与全仓 go test ./...、bun typecheck、i18n:check（4186→4187）、maintenance 70 pass 全绿
+- [OK] [OK] 独立验证（verifier，task-21）：接受；在 /tmp 克隆内做修复前后对照（Go 4 失败→11 全绿、前端 2 失败→47 全绿），未触碰真实工作区
+- [OK] [OK] Lead 抽查：go test ./service/ -run 'SignatureAsset|Signature|Fetcher' ok、controller 稳定 code 用例 ok、git diff 仅预期 16 文件
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 发版（tag/Release/镜像）与两个受影响实例的镜像升级均待用户点名；面板内更新在实例升到修复版后恢复
+- 可选：把「locale 只插入不重排 + 必须跑 i18n:sync 恢复混淆键」写进 i18n 技能/AGENTS；给 ReleaseFetcher 接口补「必须返回完整资产列表」契约注释
