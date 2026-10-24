@@ -20,7 +20,15 @@
 
 ## Acceptance Criteria
 
-- [ ] `10-24-leftover-task-audit` 的归档目录已被 git 跟踪并提交。
-- [ ] journal 中新增本轮审计 session 记录（含 188 归档全 completed、非任务残留说明）。
-- [ ] 本收尾任务已归档，且其归档目录已提交/无未跟踪残留。
-- [ ] `git status --porcelain` 为空（仅可能有 gitignored 条目），无代码/配置改动。
+- [x] `10-24-leftover-task-audit` 的归档目录已被 git 跟踪并提交。
+- [x] journal 中新增本轮审计 session 记录（含 188 归档全 completed、非任务残留说明）。
+- [x] 本收尾任务已归档，且其归档目录已提交/无未跟踪残留。
+- [x] `git status --porcelain` 为空（仅可能有 gitignored 条目），无代码/配置改动。
+
+## 执行结果
+
+- 审计归档记录提交：`b5816bc` `chore(task): 归档 10-24-leftover-task-audit 残留任务审计记录 [task:session-wrapup-audit-record]`。
+- journal 记录：Session 120（`journal-3.md`），提交 `1a4e2a2` `chore: record journal`；同时把本收尾任务目录首次纳入 git 跟踪（archive auto-commit 需要源目录已被跟踪）。
+- 本任务归档：`finish` + `archive --skip-branch-validation` 执行于收尾命令中；若 auto-commit 失败，同一命令内以 `git add -A -- .trellis/tasks .trellis/workspace` + 兜底提交补齐。
+- 顺序说明：因审计任务归档后闸门会拦截 `add_session.py`，本轮 journal 先于本任务归档写入（正常顺序为 archive → journal），属修复流程记录的例外。
+- 未修改任何代码、配置或既有任务内容。
