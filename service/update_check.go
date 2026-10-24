@@ -55,6 +55,8 @@ type ReleaseAsset struct {
 }
 
 // ReleaseInfo 是更新源返回的最少字段集。
+// Assets 保持**完整列表**：检查（状态响应）不需要它，但 applier 需要从同一份数据里
+// 取出 SHA256SUMS 与 SHA256SUMS.sig 完成验签，因此 fetcher 不做任何资产裁剪。
 type ReleaseInfo struct {
 	TagName     string         `json:"tag_name"`
 	HTMLURL     string         `json:"html_url"`
@@ -273,7 +275,10 @@ func (f *githubReleaseFetcher) FetchLatestRelease(ctx context.Context) (*Release
 	if strings.TrimSpace(release.TagName) == "" {
 		return nil, errors.New("update source returned no release tag")
 	}
-	release.Assets = filterUpdateAssets(release.Assets)
+	// 注意：这里**不裁剪资产**。同一个 fetcher 也是 applier 的数据源，而 applier 需要
+	// SHA256SUMS + SHA256SUMS.sig 才能验签；一旦在此收敛资产清单，下游就会误报「资产缺失」
+	// （历史缺陷：白名单漏掉 SHA256SUMS.sig → 自更新 100% 失败）。对外响应本来也不含资产字段，
+	// 因此「完整资产列表」不会扩大任何响应体。
 	return release, nil
 }
 
@@ -283,19 +288,6 @@ func (f *githubReleaseFetcher) latestReleaseURL() string {
 		base = "https://api.github.com"
 	}
 	return base + "/repos/" + f.repo + "/releases/latest"
-}
-
-// filterUpdateAssets 只保留自更新需要的资产，避免把整份资产列表带进内存与响应。
-func filterUpdateAssets(assets []ReleaseAsset) []ReleaseAsset {
-	kept := make([]ReleaseAsset, 0, 3)
-	for _, asset := range assets {
-		if asset.Name == UpdateAssetNameSHA256Sums ||
-			asset.Name == UpdateAssetNameForArch("amd64") ||
-			asset.Name == UpdateAssetNameForArch("arm64") {
-			kept = append(kept, asset)
-		}
-	}
-	return kept
 }
 
 // newUpdateSourceClient 构造访问更新源的客户端：克隆默认传输（保留 HTTPS_PROXY 等

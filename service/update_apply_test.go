@@ -8,13 +8,19 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
+	"fmt"
+	"io"
+	"net"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
 
@@ -448,8 +454,133 @@ func TestApplyUpdateRejectsMissingSignatureAsset(t *testing.T) {
 
 	_, err := applier.Apply(context.Background())
 
-	requireUpdateApplyError(t, err, UpdateApplyCodeSignatureMismatch)
+	requireUpdateApplyError(t, err, UpdateApplyCodeSignatureAssetMissing)
 	requireBinaryUntouched(t, executable)
+}
+
+// 签名资产缺失是独立错误码：HTTP 502，且日志必须能指出缺的是哪个资产；
+// 同时不得记录签名字节或公钥内容。
+// 说明：资产名刻意不套 MaskSensitiveInfo——实测它把 "SHA256SUMS.sig" 打成 "***.sig"，会抹掉诊断价值。
+func TestApplyUpdateMissingSignatureAssetReportsCodeAndLogsAssetName(t *testing.T) {
+	setUpdateSetting(t, true, true)
+	newBinary := []byte("new-binary-content")
+	sums := sha256Hex(newBinary) + "  " + UpdateAssetNameForArch("amd64") + "\n"
+	applier, _, executable := newTestApplierWithSignature(t, newBinary, sums, nil)
+
+	var logged strings.Builder
+	previousErrorWriter := gin.DefaultErrorWriter
+	gin.DefaultErrorWriter = &logged
+	t.Cleanup(func() { gin.DefaultErrorWriter = previousErrorWriter })
+
+	_, err := applier.Apply(context.Background())
+
+	var applyErr *UpdateApplyError
+	require.ErrorAs(t, err, &applyErr)
+	require.Equal(t, UpdateApplyCodeSignatureAssetMissing, applyErr.Code)
+	require.Equal(t, http.StatusBadGateway, applyErr.HTTPStatus)
+	require.Contains(t, logged.String(), UpdateAssetNameSHA256SumsSig, "日志必须能指出缺的是哪个资产")
+	require.NotContains(t, logged.String(), "public key", "日志不得记录公钥内容")
+	require.NotContains(t, logged.String(), "signature does not match", "日志不得记录验签细节")
+	require.NotContains(t, logged.String(), updateSigningPublicKeys[0], "日志不得回显内嵌公钥")
+	requireBinaryUntouched(t, executable)
+}
+
+// TestApplyUpdateSeesSignatureAssetFromRealFetcher 是本缺陷的核心回归（fetcher → applier 直通）：
+// 既有的 apply 用例都注入 fakeReleaseFetcher，绕开了 fetcher 的资产处理，才让「裁剪掉 .sig」漏网。
+// 这里用本地 httptest 起一个 GitHub 风格 Release（含 SHA256SUMS.sig），经**真实 fetcher** 解析后
+// 交给 applier：断言 applier 确实拿到了签名资产并进入验签环节（故意给错误签名 → signature_mismatch）。
+// 关键判据是「applier 真的去下载了 .sig 资产」——修复前 fetcher 会把它裁掉，applier 连请求都不会发。
+func TestApplyUpdateSeesSignatureAssetFromRealFetcher(t *testing.T) {
+	setUpdateSetting(t, true, true)
+	signMessage := setTestSigningKey(t)
+	newBinary := []byte("new-binary-content")
+	sums := sha256Hex(newBinary) + "  " + UpdateAssetNameForArch("amd64") + "\n"
+
+	// 先声明再赋值：handler 里的闭包要引用 server.URL。
+	var server *httptest.Server
+	server = httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		switch request.URL.Path {
+		case "/repos/owner/repo/releases/latest":
+			writer.Header().Set("Content-Type", "application/json")
+			_, _ = fmt.Fprintf(writer, `{"tag_name":%q,"html_url":%q,"published_at":"2026-01-02T03:04:05Z","prerelease":false,"draft":false,"assets":[`+
+				`{"name":%q,"browser_download_url":%q,"size":100},`+
+				`{"name":%q,"browser_download_url":%q,"size":128},`+
+				`{"name":%q,"browser_download_url":%q,"size":2048}]}`,
+				testTag,
+				server.URL+"/releases/"+testTag,
+				UpdateAssetNameSHA256Sums, server.URL+"/assets/SHA256SUMS",
+				UpdateAssetNameSHA256SumsSig, server.URL+"/assets/SHA256SUMS.sig",
+				UpdateAssetNameForArch("amd64"), server.URL+"/assets/new-api-linux-amd64",
+			)
+		case "/assets/SHA256SUMS":
+			_, _ = io.WriteString(writer, sums)
+		case "/assets/SHA256SUMS.sig":
+			// 签名有效，但覆盖的是另一份内容 → 必须停在验签失败（T3），而不是资产缺失（T1）。
+			_, _ = io.WriteString(writer, signMessage([]byte("tampered-checksums\n")))
+		case "/assets/new-api-linux-amd64":
+			_, _ = writer.Write(newBinary)
+		default:
+			writer.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+
+	// 真实 fetcher 打本地 server；下载器复用同一客户端（已对私有 IP/回环显式放行）并记录请求。
+	httpClient := *server.Client()
+	httpClient.Transport = &http.Transport{Proxy: nil, DialContext: serverDialContext}
+	recorder := &recordingHTTPDoer{inner: &httpClient}
+	fetcher := &githubReleaseFetcher{client: &httpClient, repo: "owner/repo", baseURL: server.URL}
+
+	executable := filepath.Join(t.TempDir(), "new-api")
+	require.NoError(t, os.WriteFile(executable, []byte("old-binary"), 0o755))
+	applier := newUpdateApplier(fetcher, recorder)
+	applier.currentExecutable = func() (string, error) { return executable, nil }
+	applier.goos = "linux"
+	applier.goarch = "amd64"
+
+	_, err := applier.Apply(context.Background())
+
+	// 修复前：fetcher 把 .sig 裁掉 → applier 在资产检查处直接返回，根本不会请求签名资产。
+	require.Contains(t, recorder.urls(), server.URL+"/assets/SHA256SUMS.sig",
+		"applier 必须拿到并请求签名资产；没有该请求说明 fetcher 仍在裁剪资产")
+	var applyErr *UpdateApplyError
+	require.ErrorAs(t, err, &applyErr)
+	require.Equal(t, UpdateApplyCodeSignatureMismatch, applyErr.Code,
+		"越过资产检查后应停在验签失败")
+	require.Equal(t, http.StatusBadGateway, applyErr.HTTPStatus)
+	requireBinaryUntouched(t, executable)
+}
+
+// recordingHTTPDoer 记录下载请求的 URL，用于断言 applier 实际走到了哪一步。
+type recordingHTTPDoer struct {
+	inner httpDoer
+	mu    sync.Mutex
+	seen  []string
+}
+
+func (d *recordingHTTPDoer) Do(request *http.Request) (*http.Response, error) {
+	d.mu.Lock()
+	d.seen = append(d.seen, request.URL.String())
+	d.mu.Unlock()
+	return d.inner.Do(request)
+}
+
+func (d *recordingHTTPDoer) urls() []string {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return append([]string(nil), d.seen...)
+}
+
+// serverDialContext 只放行回环地址：让 httptest 客户端能连本地 server，同时杜绝测试碰外部网络。
+func serverDialContext(ctx context.Context, network string, address string) (net.Conn, error) {
+	host, _, err := net.SplitHostPort(address)
+	if err != nil {
+		return nil, err
+	}
+	if ip := net.ParseIP(host); ip == nil || !ip.IsLoopback() {
+		return nil, fmt.Errorf("refusing non-loopback dial to %s", address)
+	}
+	return (&net.Dialer{}).DialContext(ctx, network, address)
 }
 
 // .sig 不是 64 字节 base64：按 signature_mismatch 处理。

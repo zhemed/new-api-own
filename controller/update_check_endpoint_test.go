@@ -63,6 +63,7 @@ func TestUpdateErrorResponsesCarryStableCode(t *testing.T) {
 		status int
 	}{
 		{code: service.UpdateApplyCodeSignatureMismatch, status: http.StatusBadGateway},
+		{code: service.UpdateApplyCodeSignatureAssetMissing, status: http.StatusBadGateway},
 		{code: service.UpdateApplyCodeBackupFailed, status: http.StatusInternalServerError},
 		{code: service.UpdateApplyCodeNoRollbackPoint, status: http.StatusConflict},
 		{code: service.UpdateApplyCodeRollbackPointInvalid, status: http.StatusInternalServerError},

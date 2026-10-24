@@ -28,6 +28,9 @@ import (
 const (
 	// UpdateApplyCodeSignatureMismatch 表示 SHA256SUMS 的签名缺失或验签失败；此时绝不替换二进制。
 	UpdateApplyCodeSignatureMismatch = "signature_mismatch"
+	// UpdateApplyCodeSignatureAssetMissing 表示 Release 里根本没有 SHA256SUMS.sig 资产。
+	// 与「签名不通过」分开报码：资产缺失与验签失败的处理动作不同（前者要补发布侧资产）。
+	UpdateApplyCodeSignatureAssetMissing = "signature_asset_missing"
 	// UpdateApplyCodeBackupFailed 表示无法生成回滚点（<exe>.prev），为安全起见中止替换。
 	UpdateApplyCodeBackupFailed = "backup_failed"
 	// UpdateApplyCodeNoRollbackPoint 表示本机没有可用的回滚点。
@@ -207,7 +210,11 @@ func (a *UpdateApplier) Apply(ctx context.Context) (*UpdateApplyResult, error) {
 	signatureAsset, ok := findUpdateAsset(release.Assets, UpdateAssetNameSHA256SumsSig)
 	if !ok || strings.TrimSpace(signatureAsset.DownloadURL) == "" {
 		// 安全优先：没有签名资产就不再往下走，也不降级放行（老版本资产同样被拒绝）。
-		return nil, newUpdateApplyError(UpdateApplyCodeSignatureMismatch, http.StatusBadGateway,
+		// 日志只带**缺失的资产名**（编译期常量、发布侧公开文件名，不含任何凭据/签名字节/公钥内容）：
+		// 这里刻意不套 MaskSensitiveInfo——它会把 "SHA256SUMS.sig" 打成 "***.sig"（当成域名），
+		// 恰好抹掉本错误码存在的唯一诊断价值（缺的是哪个资产）。
+		common.SysError(fmt.Sprintf("update apply signature asset is missing: %s", UpdateAssetNameSHA256SumsSig))
+		return nil, newUpdateApplyError(UpdateApplyCodeSignatureAssetMissing, http.StatusBadGateway,
 			"release has no "+UpdateAssetNameSHA256SumsSig+"; refusing to replace the binary")
 	}
 

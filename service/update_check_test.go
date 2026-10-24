@@ -338,6 +338,7 @@ const stableReleasePayload = `{
   "body": "release notes",
   "assets": [
     {"name": "SHA256SUMS", "browser_download_url": "https://example.test/SHA256SUMS", "size": 100},
+    {"name": "SHA256SUMS.sig", "browser_download_url": "https://example.test/SHA256SUMS.sig", "size": 128},
     {"name": "new-api-linux-amd64", "browser_download_url": "https://example.test/new-api-linux-amd64", "size": 2048},
     {"name": "notes.txt", "browser_download_url": "https://example.test/notes.txt", "size": 10}
   ]
@@ -358,10 +359,19 @@ func TestGithubReleaseFetcherParsesStableRelease(t *testing.T) {
 	require.Equal(t, "https://api.github.com/repos/owner/repo/releases/latest", doer.requests[0].URL.String())
 	require.Equal(t, "application/vnd.github+json", doer.requests[0].Header.Get("Accept"))
 	require.NotEmpty(t, doer.requests[0].Header.Get("User-Agent"), "GitHub 强制要求 User-Agent")
-	// 只保留自更新需要的资产。
-	require.Len(t, release.Assets, 2)
-	require.Equal(t, UpdateAssetNameSHA256Sums, release.Assets[0].Name)
-	require.Equal(t, UpdateAssetNameForArch("amd64"), release.Assets[1].Name)
+
+	// fetcher 必须原样返回完整资产列表：它同时是 applier 的数据源，
+	// 任何裁剪都会让下游「资产缺失」（历史缺陷：SHA256SUMS.sig 被裁掉 → 更新恒失败）。
+	names := make([]string, 0, len(release.Assets))
+	for _, asset := range release.Assets {
+		names = append(names, asset.Name)
+	}
+	require.Equal(t, []string{
+		UpdateAssetNameSHA256Sums,
+		UpdateAssetNameSHA256SumsSig,
+		UpdateAssetNameForArch("amd64"),
+		"notes.txt",
+	}, names)
 }
 
 func TestGithubReleaseFetcherHonorsBaseURLOverride(t *testing.T) {
