@@ -1594,3 +1594,42 @@ v0.0.45（提交 b5f9388，tag v0.0.45）：IsDeepSeekV4Model → IsDeepSeekMode
 
 - 待裁定：本地 latest 仍指 v0.0.45（registry latest 已是 v0.0.46），一条 docker tag 可对齐；v0.0.45 继续留作回滚点
 - 面板内更新端到端演练需下一个版本（v0.0.47）才能实操；同时另一实例（生产）需先用镜像方式升级一次，主机需用户点名
+
+
+## Session 105: 本机 latest 对齐到 v0.0.46，并把「受影响旧版本需先镜像升级」写进 README/MAINTENANCE
+<!-- trellis-session: v=2 fp=1f0be334e8ee5f08 -->
+
+**Date**: 2026-10-24
+**Task**: 本机 latest 对齐到 v0.0.46，并把「受影响旧版本需先镜像升级」写进 README/MAINTENANCE
+**Branch**: `main`
+
+### Summary
+
+两项收尾：本机 docker latest 由 v0.0.45 重指到 v0.0.46（与 registry 一致，v0.0.45 保留作回滚点，镜像计数不变、实例零影响）；README 与 MAINTENANCE 各补一处说明——v0.0.43–v0.0.45 面板内更新因白名单漏 SHA256SUMS.sig 必然失败，需先镜像升级一次。
+
+### Main Changes
+
+- 标签：docker tag v0.0.46 latest（纯引用变更），latest 与 v0.0.46 同 ID 95e3c1b97e32；v0.0.45 e114b17532f1 仍在；27 唯一/36 标签/悬空 0 前后一致
+- README「升级 / 回滚」+5 行、MAINTENANCE「面板内更新 → 前置条件」+4 行：症状串与前端 zh 文案逐字一致，明确「发布资产没问题、不是被篡改」，处置为镜像三步升级，升到 v0.0.46 或更新版本后恢复
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c613908` | docs(update): 补受影响版本（v0.0.43-v0.0.45）面板更新失败的说明与处置 [task:align-latest-tag-and-upgrade-notes] |
+| `ce86029` | chore(task): latest 对齐与文档证据 [task:align-latest-tag-and-upgrade-notes] |
+
+### Testing
+
+- [OK] [OK] 实例零影响：v0.0.46/running/restarts=0/挂载工作区/200 + v0.0.46；8 容器全 Up；卷 3；data 56 文件（核心 4）
+- [OK] [OK] registry 一致性：registry latest 的 index digest 与 registry v0.0.46 完全相同（本地 95e3c1b9 为 amd64 config digest，层级不同不矛盾）
+- [OK] [OK] 门禁：scripts/forbid-extra-deploy-methods.sh 通过；渲染安全自查通过（成对美元符号 0、围栏配平）
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 面板内更新的端到端演练留待下一版：v0.0.45 实例点更新复现报错 → 镜像升级 → 再点确认恢复，并把文档里的「尚未做」改成实测结论
+- 另一实例（生产）仍需先用镜像方式升级一次（未获点名主机，本轮未动）
