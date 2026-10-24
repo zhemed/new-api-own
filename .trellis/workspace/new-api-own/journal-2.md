@@ -1472,3 +1472,43 @@ v0.0.45（提交 b5f9388，tag v0.0.45）：IsDeepSeekV4Model → IsDeepSeekMode
 
 - 磁盘治理已到本项目授权边界：剩余可回收仅 D 桶基础镜像（约 1.07GB unique）与两个命名悬空卷（约 814.6MB），均需用户单独点名
 - 备份策略仍未做（./data 单点、无异地副本）——连续四轮未选，仍是最高风险项
+
+
+## Session 102: 查明面板自更新报签名不匹配的根因：资产白名单漏了 SHA256SUMS.sig（自 v0.0.43 起恒失败）
+<!-- trellis-session: v=2 fp=7d1bb01bbb322afe -->
+
+**Date**: 2026-10-24
+**Task**: 查明面板自更新报签名不匹配的根因：资产白名单漏了 SHA256SUMS.sig（自 v0.0.43 起恒失败）
+**Branch**: `main`
+
+### Summary
+
+只读诊断：check 与 apply 共用 fetcher 的资产白名单只有 SHA256SUMS + 两个架构二进制、漏了 SHA256SUMS.sig，而 applier 在下载前就要求该资产存在 → 任何需要 apply 的升级都稳定返回 signature_mismatch(502)；发布侧资产齐全自洽、非篡改。影响是面板内更新自 v0.0.43 起 100% 不可用（fail closed，非安全退化），镜像升级不受影响。
+
+### Main Changes
+
+- 验签机制查明：内嵌公钥的 ed25519 分离签名（非 cosign keyless）；signature_mismatch 的 T1–T5 触发条件已穷举，本次命中 T1 资产缺失
+- 发布侧核对：v0.0.45 四资产齐全（amd64/arm64/SHA256SUMS/SHA256SUMS.sig），本地用官方 asset digest 重建 SHA256SUMS 与官方值逐字节一致；v0.0.44 同样一致；无签后重传
+- 实例侧核对：容器进程自报 v0.0.45、/data 无 .prev 与临时产物、容器内二进制 sha256 ≠ 发布 digest（旁证从未成功做过下载式自更新）、options 表无 update 缓存
+- 缺陷溯源：自 v0.0.43 引入（提交 813d5c4），v0.0.43/44/45 同一份漏项实现；次要问题＝文案把资产缺失误报成签名不匹配，且 T1 分支不写日志
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `82943ec` | chore(task): 自更新签名校验失败根因诊断证据 [task:diagnose-update-signature-mismatch] |
+
+### Testing
+
+- [OK] [OK] 只读约束：未改代码/配置/服务/数据库，未触发更新动作；外部证据仅公开只读检索（GitHub API 与 SHA256SUMS 文本）
+- [OK] [OK] 逐 tag 复核（git show v0.0.42/43/44/45）确认引入点与影响版本；读取 update_check/update_apply/version_compare 与前端 update API 调用链
+- [OK] [OK] 证据 290 行含结论速览、触发条件穷举、发布侧与实例侧证据、根因链、影响面、三个候选修复方向、复核命令与越界自述
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 修复待用户点名：A 白名单补 SHA256SUMS.sig（最小）、B 裁剪移出共用 fetcher（结构）、C 补日志+独立错误码+fetcher→applier 集成回归
+- S2（已是 v0.0.45 仍提示更新）需用户说明点击场景/实例才能闭环；若要点名核实另一实例需先授权

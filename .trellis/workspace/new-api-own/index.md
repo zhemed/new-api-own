@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 101
+- **Total Sessions**: 102
 - **Last Active**: 2026-10-24
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~1474 | Active |
+| `journal-2.md` | ~1514 | Active |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 102 | 2026-10-24 | 查明面板自更新报签名不匹配的根因：资产白名单漏了 SHA256SUMS.sig（自 v0.0.43 起恒失败） | `82943ec` | `main` |
 | 101 | 2026-10-24 | 第二次清 Build Cache：回收 13.42GB，磁盘治理四连收官（116G→75G） | `bf4c515` | `main` |
 | 100 | 2026-10-24 | 按点名清镜像：删 84 个镜像/111 标签，回收 9.43GB；Build Cache 可回收量升至 13.26GB | `e52552b` | `main` |
 | 99 | 2026-10-24 | 只读盘点镜像侧 12.47GB 可回收量（全属其它项目）；补 wrapup 脚本的文档互链 | `07385d3`, `02cbebc` | `main` |
