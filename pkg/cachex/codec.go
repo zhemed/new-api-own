@@ -26,8 +26,6 @@ func (c IntCodec) Decode(s string) (int, error) {
 	return strconv.Atoi(s)
 }
 
-type StringCodec struct{}
-
 type JSONCodec[V any] struct{}
 
 func (c JSONCodec[V]) Encode(v V) (string, error) {

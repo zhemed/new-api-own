@@ -212,22 +212,6 @@ type PriceBreakdown struct {
 	HourlyRate  float64 `json:"hourly_rate"`
 }
 
-// ContainerLogs represents container log entries
-type ContainerLogs struct {
-	ContainerID string     `json:"container_id"`
-	Logs        []LogEntry `json:"logs"`
-	HasMore     bool       `json:"has_more"`
-	NextCursor  string     `json:"next_cursor,omitempty"`
-}
-
-// LogEntry represents a single log entry
-type LogEntry struct {
-	Timestamp time.Time `json:"timestamp"`
-	Level     string    `json:"level,omitempty"`
-	Message   string    `json:"message"`
-	Source    string    `json:"source,omitempty"`
-}
-
 // UpdateDeploymentRequest represents request to update deployment configuration
 type UpdateDeploymentRequest struct {
 	EnvVariables       map[string]string `json:"env_variables,omitempty"`
@@ -333,21 +317,4 @@ type Location struct {
 type LocationsResponse struct {
 	Locations []Location `json:"locations"`
 	Total     int        `json:"total"`
-}
-
-// LocationAvailability represents real-time availability for a location
-type LocationAvailability struct {
-	LocationID           int                    `json:"location_id"`
-	LocationName         string                 `json:"location_name"`
-	Available            bool                   `json:"available"`
-	HardwareAvailability []HardwareAvailability `json:"hardware_availability"`
-	UpdatedAt            time.Time              `json:"updated_at"`
-}
-
-// HardwareAvailability represents availability for specific hardware at a location
-type HardwareAvailability struct {
-	HardwareID     int    `json:"hardware_id"`
-	HardwareName   string `json:"hardware_name"`
-	AvailableCount int    `json:"available_count"`
-	MaxGPUs        int    `json:"max_gpus"`
 }
