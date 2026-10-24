@@ -41,6 +41,24 @@ func (l *InMemoryRateLimiter) clearExpiredItems() {
 	}
 }
 
+// Reset clears all recorded request windows, keeping the limiter initialized and
+// usable (the map is truncated in place, so expirationDuration and the cleanup
+// goroutine started by Init are left untouched). A limiter that was never
+// initialized stays uninitialized, so a later Init still sets it up normally.
+//
+// It exists so tests that share a process-wide limiter can start from a clean
+// state across repeated runs (e.g. `go test -count=N`, where counters otherwise
+// leak from one repetition into the next). Production code has no reason to call
+// it; Reset is race-free with concurrent Request/clearExpiredItems because it
+// holds the same mutex.
+func (l *InMemoryRateLimiter) Reset() {
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
+	for key := range l.store {
+		delete(l.store, key)
+	}
+}
+
 // Request parameter duration's unit is seconds
 func (l *InMemoryRateLimiter) Request(key string, maxRequestNum int, duration int64) bool {
 	l.mutex.Lock()

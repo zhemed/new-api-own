@@ -45,6 +45,19 @@ func performRateLimitRequest(router http.Handler, path string, remoteAddr string
 	return recorder
 }
 
+// resetMemoryRateLimiter 复位**包级**内存限流器的计数。
+//
+// inMemoryRateLimiter 是进程级全局状态：用例里 Redis 不可用时会回落到它。
+// `go test -count=N` 在同一进程内重复执行用例，上一轮累计的计数（固定 IP +
+// EmailVerificationMaxRequests=2 / 30s 窗口）会让第 3 轮起直接被判 429，
+// 表现为与业务无关的必现失败。这里在用例开始与结束时各复位一次，
+// 保证用例可单独运行、可重复运行、可任意顺序运行。
+func resetMemoryRateLimiter(t *testing.T) {
+	t.Helper()
+	inMemoryRateLimiter.Reset()
+	t.Cleanup(func() { inMemoryRateLimiter.Reset() })
+}
+
 func TestRedisIPRateLimiterThresholdTTLAndNamespace(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	redisServer, _ := useRateLimitMiniRedis(t)
@@ -197,6 +210,9 @@ func TestRedisFixedWindowRepairsCounterWithoutTTL(t *testing.T) {
 
 func TestRedisFailurePolicies(t *testing.T) {
 	gin.SetMode(gin.TestMode)
+	// 该用例会让 Redis 不可用、回落到包级内存限流器：先复位残留计数，
+	// 否则同一进程内的 -count>1 重复执行会撞上上一轮的限流窗口。
+	resetMemoryRateLimiter(t)
 	_, redisClient := useRateLimitMiniRedis(t)
 	require.NoError(t, redisClient.Close())
 
