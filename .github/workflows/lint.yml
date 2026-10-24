@@ -1,0 +1,75 @@
+name: lint (gofmt + shellcheck)
+
+# 独立的轻量守卫：只检查「Go 文件格式」与「Shell 脚本卫生」，不构建、不发版、不碰闸门。
+#
+# 与既有 workflow 的分工（本文件不改动它们，也不被它们依赖）：
+#   docker-build.yml  -> 打多架构镜像并推 ghcr（tag 触发）
+#   release.yml       -> 建 GitHub Release + updater 二进制（tag 触发）
+#   trellis-gate.yml  -> 审计提交里的 [task:] 锚点（push/pull_request）
+#
+# 触发条件与 trellis-gate.yml 保持一致（push main + pull_request），另留 workflow_dispatch 便于手动重跑。
+# 运行时开销：不做构建、不装依赖；gofmt 作业约 20-40 秒（大头是 checkout + setup-go），
+#             shellcheck 作业约 15-25 秒（ubuntu runner 已预装 shellcheck）。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 同一 ref 上并发运行时取消旧的一轮，避免快速连推时排队堆积。
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gofmt:
+    name: gofmt (tracked Go files)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 固定到 go.mod 声明的 Go 版本：gofmt 的规则随 Go 版本演进，用 runner 默认版本会让
+      # 「同一次提交在不同时间跑出不同结果」。本作业不构建，因此关掉模块缓存。
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: gofmt check
+        run: |
+          # 只检查被 git 跟踪的 .go 文件：
+          #   * 天然排除 vendor/（本仓库没有）、web/node_modules/（本机存在且体积大）、未跟踪的临时文件；
+          #   * relaykit/ 虽是独立 Go 模块（自带 go.mod），但源码在本仓库，且 gofmt 与模块边界无关，
+          #     故有意纳入检查，避免独立模块的格式漂移无人守；
+          #   * 本仓库当前没有 `// Code generated ... DO NOT EDIT.` 的 Go 生成物；将来若有，
+          #     在此处按路径显式排除，而不是放宽整条检查。
+          unformatted=$(git ls-files -z '*.go' | xargs -0 -r gofmt -l)
+          if [ -n "$unformatted" ]; then
+            echo "::error::gofmt 发现未格式化文件，CI 失败。文件清单如下："
+            echo "$unformatted"
+            echo "本地修复：gofmt -w <上面列出的文件>"
+            exit 1
+          fi
+          echo "gofmt OK：$(git ls-files '*.go' | wc -l) 个被跟踪的 Go 文件全部已格式化"
+
+  shellcheck:
+    name: shellcheck (scripts/*.sh)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # shellcheck 由 ubuntu-latest 镜像预装（这里不联网安装）；打印版本便于排查
+      # 「镜像升级导致 shellcheck 版本变化、新旧规则不一致」这类问题。
+      # 级别与本地基线一致：-S warning（info/style 报告不导致失败）。
+      - name: 记录 shellcheck 版本
+        run: shellcheck --version
+
+      - name: bash 语法检查
+        run: bash -n scripts/*.sh
+
+      - name: shellcheck -S warning
+        run: shellcheck -S warning scripts/*.sh
