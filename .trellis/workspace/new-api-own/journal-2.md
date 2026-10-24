@@ -1877,3 +1877,49 @@ v0.0.45（提交 b5f9388，tag v0.0.45）：IsDeepSeekV4Model → IsDeepSeekMode
 
 - 报告类待办（需新授权）：清理 39 个未导出死符号（分批+全测试）；导出符号 48 条候选需逐个确认接口/反射后再动；README/MAINTENANCE 示例版本号陈旧（0.0.6 等）可统一到 0.0.48 或占位符
 - 可选：装 deadcode 工具做导出符号全程序分析（需联网授权）；shellcheck -S warning 接入 CI（当前 0 warning）
+
+
+## Session 112: 清 36 个未导出死符号；装 deadcode 出导出符号清单；文档示例版本号统一；CI 加 gofmt/shellcheck
+<!-- trellis-session: v=2 fp=1cd7362d774aa83c -->
+
+**Date**: 2026-10-24
+**Task**: 清 36 个未导出死符号；装 deadcode 出导出符号清单；文档示例版本号统一；CI 加 gofmt/shellcheck
+**Branch**: `main`
+
+### Summary
+
+四项技术债：① 39 个未导出死符号中 36 个删除（25 文件、-487 行，六批每批全测试），另 3 个按裁决处置——commonTrueVal/commonFalseVal 改为在 model/twofa.go 真实使用并补测试，logKeyCol 经查无处可用但属 spec 文档化的跨库约定，保留（unused 由 39 降到 1）；② 文档 21 处示例版本号统一到 0.0.48（功能门槛与历史记录一处未动）；③ 新增 lint.yml 守 gofmt+shellcheck（故意违规演示可正常 fail）；④ 装 deadcode 出 144 条导出符号清单（可删 62/需确认 82/误报 32），与 unused 交叉核对 0 矛盾。
+
+### Main Changes
+
+- 删除 36 个未导出死符号：controller/model/common/middleware/pkg/relay/service 共 25 个文件，纯删除；随删随清 6 处失效 import
+- model/twofa.go：三处 raw SQL 的布尔字面量改用 commonTrueVal/commonFalseVal（三库语义等价，查询结构与参数绑定不变）；新增 model/twofa_test.go 两用例（方言常量 + 端到端）
+- README/MAINTENANCE：21 处示例 tag 更新（回滚示例用 0.0.47、新 tag 示例用 v0.0.49，语义自洽）
+- 新增 .github/workflows/lint.yml：gofmt（git ls-files 取被跟踪 Go 文件，813 个）+ shellcheck -S warning + bash -n；两 job 并行，检查本体 <0.3s
+- controller/channel-billing.go：删除两行指向已删函数的死注释
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f552dc0` | chore: 删除 36 个未导出死符号，twofa 复用跨库布尔常量并补测试 [task:deadcode-docs-ci] |
+| `42d3f3a` | docs: 统一 README/MAINTENANCE 示例版本号到 0.0.48（门槛与历史不动） [task:deadcode-docs-ci] |
+| `0837c7c` | ci: 新增 gofmt + shellcheck 检查工作流 [task:deadcode-docs-ci] |
+| `f882ccf` | chore(task): 死代码清理/文档/CI 的证据与清单 [task:deadcode-docs-ci] |
+
+### Testing
+
+- [OK] [OK] 门禁：go build/vet ./...、go test ./... -count=1（36 包）、relaykit GOWORK=off 独立构建、gofmt -l 空、unused 恰 1（logKeyCol）
+- [OK] [OK] 六批删除每批后 build+全量测试；verifier 全量 36/36 独立核对 HEAD 残留引用为 0（非抽样）
+- [OK] [OK] 独立验证（task-46）：接受；文档门槛/历史与 HEAD 逐字节相同；CI 违规演示 exit 1；twofa 三库等价 + 新测试 -count=3 通过
+- [OK] [OK] 事故闭环：verifier 误用 -mod=mod 改写了 go.mod，已由 Lead 还原，go.mod/go.sum 无改动
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 导出符号待办：62 个「可删」可分批清（同样每批全测试）；82 个「需确认」需 owner 决策（relaykit 独立模块、common 公共工具面）
+- logKeyCol 若要彻底清零，需同时改 AGENTS.md 与 backend spec 的跨库列描述（文档改动）；relay/channel/volcengine/adaptor.go 的注释块仍引用已删的 detectImageMimeType（整块是注释掉的旧实现，未动）
+- 首次 CI 运行需在推送后观察 lint.yml 两个 job 是否绿（runner 的 shellcheck 版本可能与本地 0.10.0 不同）
