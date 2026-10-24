@@ -1671,3 +1671,46 @@ v0.0.45（提交 b5f9388，tag v0.0.45）：IsDeepSeekV4Model → IsDeepSeekMode
 
 - 下一版实测面板自更新恢复后，把 README 的「即可恢复」改成实测确认的表述，并回填 MAINTENANCE 的「尚未做」
 - 另一实例（生产）仍需先用镜像方式升级一次（未获点名主机）
+
+
+## Session 107: 修复「重置」只重置倍率：改为恢复整份定价默认；发 v0.0.47 并真机演练验证
+<!-- trellis-session: v=2 fp=911727f743114351 -->
+
+**Date**: 2026-10-24
+**Task**: 修复「重置」只重置倍率：改为恢复整份定价默认；发 v0.0.47 并真机演练验证
+**Branch**: `main`
+
+### Summary
+
+用户报两行定价不一致，定位为真实缺陷：ResetModelRatio 只写 ModelRatio 一个键，从不重置 billing_setting.billing_mode/expr，故缺表达式的模型重置后仍是「按 Token/仅基础」。修复为恢复 10 个定价键的默认值（含计费模式与表达式），前端确认框写明范围；发 v0.0.47 并升级本机实例，用管理接口注入用户同样的坏状态后调重置，两行恢复为逐字符相同的表达式。
+
+### Main Changes
+
+- 后端：controller/pricing.go 的 ResetModelRatio 扩为 10 键全量重置（倍率/完成/缓存/缓存写入/按次价/图像/音频/billing_mode/billing_expr），默认值全部取自新加的导出 getter；分组类键与 ExposeRatioEnabled 不动
+- 前端：重置确认框与成功提示写明「恢复整份定价默认（含计费模式与表达式）、分组倍率不受影响」，七语言各 +2 键
+- 测试：新增 controller/pricing_test.go 三个用例（修复前 2 条失败，逐字复现生产症状：billing_mode 期望两行 tiered_expr 实得 v4.1-flash=ratio、表达式实得空串）；前端新增确认框文案用例
+- 发版：VERSION 0.0.47 + 附注 tag；两个 workflow 双绿（40059436370 镜像 / 40059436414 Release）；资产 4/4 含 SHA256SUMS.sig；镜像多架构就位
+- 真机演练：用临时 root 凭据把实例改成用户那种坏状态（v4.1-flash mode=ratio、表达式缺失）→ POST rest_model_ratio → 两行 mode 均 tiered_expr、表达式 sha256 完全相同（5705272e190a）；GroupRatio/TopupGroupRatio 未变；令牌已还原 NULL
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `19ff3b8` | fix(pricing): 重置恢复整份定价默认（含计费模式与表达式）+ 前端文案与回归 [task:diagnose-deepseek-pricing-row-mismatch] |
+| `ef7e1b2` | chore(task): 重置定价修复的发版与真机演练证据 [task:diagnose-deepseek-pricing-row-mismatch] |
+
+### Testing
+
+- [OK] [OK] Lead 独立复核：实例 v0.0.47/running/restarts=0；DB 两行 mode 均 tiered_expr、表达式同 sha；access_token 非空行数 0
+- [OK] [OK] 独立验证（verifier，task-28）：接受；在 /tmp 克隆内取得修复前失败/修复后通过的对照（Go 2 FAIL→3 PASS，前端 FAIL→PASS）
+- [OK] [OK] 门禁：go build/vet ./... 与 service/controller/setting 测试全绿；前端 typecheck/i18n:check/85 项测试全绿
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 用户的另一实例已在 v0.0.46（含自更新修复），可在面板里「立即更新」到 v0.0.47 后再点一次重置；若不便升级，也可手动把 v4.1-flash 的计费模式改回表达式并粘贴同一表达式
+- 另开任务：model.UpdateOption 吞掉 DB.Save 错误（model/option.go:227-232），写库失败仍可能返回成功；本次未改该底座
+- 可选：后端成功文案仍为「重置模型倍率成功」，与语义不符；本地 latest 仍指 v0.0.46，可按需对齐
