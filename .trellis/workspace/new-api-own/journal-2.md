@@ -1714,3 +1714,45 @@ v0.0.45（提交 b5f9388，tag v0.0.45）：IsDeepSeekV4Model → IsDeepSeekMode
 - 用户的另一实例已在 v0.0.46（含自更新修复），可在面板里「立即更新」到 v0.0.47 后再点一次重置；若不便升级，也可手动把 v4.1-flash 的计费模式改回表达式并粘贴同一表达式
 - 另开任务：model.UpdateOption 吞掉 DB.Save 错误（model/option.go:227-232），写库失败仍可能返回成功；本次未改该底座
 - 可选：后端成功文案仍为「重置模型倍率成功」，与语义不符；本地 latest 仍指 v0.0.46，可按需对齐
+
+
+## Session 108: 修全站底座：UpdateOption 不再吞 DB 写错误；本机 latest 对齐 v0.0.47
+<!-- trellis-session: v=2 fp=9649c3c84a11f651 -->
+
+**Date**: 2026-10-24
+**Task**: 修全站底座：UpdateOption 不再吞 DB 写错误；本机 latest 对齐 v0.0.47
+**Branch**: `main`
+
+### Summary
+
+两项：① model.UpdateOption 此前丢弃 FirstOrCreate/Save 错误，写库失败仍返回成功（上一轮重置定价静默成功即由此而来）；现传播错误、失败不更新内存、错误只格式化 key。5 处生产调用点全部已处理返回值；② 本机 latest 对齐到 v0.0.47（v0.0.46/v0.0.45 保留为回滚点）。独立验证接受。
+
+### Main Changes
+
+- model/option.go：两处裸调用改为检查 .Error 并返回 cannot create/save option %q 的包裹错误；写库失败提前 return，不调 updateOptionMap（内存保持旧值）
+- 测试：新增 model/option_test.go 三用例（Save 失败传播+内存不变 / Create 失败传播 / 正常路径一致）；controller/pricing_test.go 把「钉住静默成功」的用例改写为 TestResetModelRatioWriteFailureReturnsFailure
+- 影响面：仅 DB 实际写失败时行为变化（以前静默成功、现在如实报错）；受影响的对外接口为 option 更新、重置定价、setup、支付合规确认；正常路径完全不变；回滚为单函数 revert
+- 本机 latest：docker tag v0.0.47 latest，latest 与 v0.0.47 同 ID bccc31d54ad7；v0.0.46 95e3c1b9、v0.0.45 e114b175 保留；实例与邻接面零变化
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `174350c` | fix(option): UpdateOption 传播 DB 写错误，失败时不更新内存 [task:fix-updateoption-error-propagation] |
+| `12a542b` | chore(task): 底座修复与本机 latest 对齐的证据 [task:fix-updateoption-error-propagation] |
+
+### Testing
+
+- [OK] [OK] 修复前实测：三个新用例失败（An error is expected but got nil / 响应体 success:true 不含 success:false），修复后全 PASS；同组「正常路径」修复前即 PASS
+- [OK] [OK] 门禁：go build/vet ./...、model/controller/service/setting 测试、以及全仓 go test ./... -count=1 全绿
+- [OK] [OK] 独立验证（verifier，task-32）：接受；在 /tmp 克隆内复现修复前失败；调用点独立复核为 5 处表达式/4 个位置，全部处理返回值；UpdateOptionsBulk 未改
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 调用点表述更正：实际是 5 处调用表达式（setup.go 有两处）、4 个位置
+- 可选后续（不阻塞）：setup.go 在落库前先改内存值（DB 失败会报错但内存已变）；MySQL 错误文本可能带值片段可对外加固；DB 成功但内存同步失败的分叉（需设计）
+- 本修复尚未发版：若要让实例用上，需再发一版（v0.0.48）并镜像升级；等用户点名
