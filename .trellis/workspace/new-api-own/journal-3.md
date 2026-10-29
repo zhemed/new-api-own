@@ -288,3 +288,35 @@
 
 - 如需清理非任务残留（过期 marker、.verify-scratch），另建任务执行；本轮未改代码/配置
 - 后续任务若目录未被 git 跟踪，archive auto-commit 会因 pathspec 报错，归档前先让任务目录入库
+
+
+## Session 121: 排查生产 429 ttft_admission_refused 无法使用
+<!-- trellis-session: v=2 fp=f65d2a4eeb2f7f75 -->
+
+**Date**: 2026-10-29
+**Task**: 排查生产 429 ttft_admission_refused 无法使用
+**Branch**: `main`
+
+### Summary
+
+生产 new-api 单渠道上游 OpenCode Zen 容量准入拒绝返回 429 ttft_admission_refused；网关原样透传、客户端 DSH 重试 5/5 后本轮运行失败；非网关故障、非限流、非账号问题，上游 12 分钟后自愈。证据落任务 research/，未改动生产。
+
+### Main Changes
+
+- 新增只读调查任务 10-29-investigate-ttft-admission-refused 与三份证据文档：prod-raw.md 原始取证、prod-runtime.md 交叉分析、code-path.md 代码链路
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- [OK] 只读取证：docker logs 故障窗口与重启后对照、sqlite 只读查询 channels/abilities/options、全仓库关键字检索与公开资料核对
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 待用户授权后另开任务：渠道冗余、429 有限重试与降权、Retry-After 透传、LOG_SQL_DSN 日志落盘、429 监控告警

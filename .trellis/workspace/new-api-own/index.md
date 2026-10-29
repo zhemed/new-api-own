@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-3.md`
-- **Total Sessions**: 120
-- **Last Active**: 2026-10-24
+- **Total Sessions**: 121
+- **Last Active**: 2026-10-29
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-3.md` | ~290 | Active |
+| `journal-3.md` | ~322 | Active |
 | `journal-2.md` | ~1968 | Archived |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
@@ -31,6 +31,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 121 | 2026-10-29 | 排查生产 429 ttft_admission_refused 无法使用 | - | `main` |
 | 120 | 2026-10-24 | 残留任务审计：确认工作区无未完成 Trellis 任务 | - | `main` |
 | 119 | 2026-10-24 | 发布 v0.0.51：档位名措辞改为高峰时段/空闲时段，翻译补齐 4 个展示入口 | `61f9e2e`, `d84f45a`, `ab0dfa3`, `d047189` | `main` |
 | 118 | 2026-10-24 | 档位名：措辞改为高峰时段/空闲时段，并把翻译补齐到日志与模型详情（发 v0.0.51） | `61f9e2e`, `d84f45a`, `ab0dfa3` | `main` |
