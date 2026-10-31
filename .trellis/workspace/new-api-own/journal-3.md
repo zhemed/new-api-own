@@ -351,3 +351,25 @@
 ### Next Steps
 
 - 若继续：重新建任务，先请用户指明「对外模式默认 200 余额」所在页面或配置项，再决定改代码默认值还是改实例 option。
+
+
+## Session 123: 会话启动与残留任务排查：确认无残留 Trellis 任务
+<!-- trellis-session: v=2 fp=13764ea44ea277a8 -->
+
+**Date**: 2026-10-31
+**Task**: 会话启动与残留任务排查：确认无残留 Trellis 任务
+**Branch**: `main`
+
+### Summary
+
+用户要求建立新任务并查看工作区是否有残留任务。Lead 新建 10-31-startup-residual-check，派 r2-analyst 只读盘点并抽查复核：非归档任务仅本任务；归档 193/193 status=completed、completedAt 齐全；唯一会话绑定为本会话；git 仅任务目录未跟踪、main 领先 origin/main 7 提交、无 stash/多 worktree；journal 最新 Session 122 无绑定残留。发现非任务残留：14 个 update-check marker、.verify-scratch 23 文件 2.6MB；两个 10-31 归档 PRD 仍为 TBD 模板，131 个历史 PRD 有未勾选框。结论：无 Trellis 任务残留，可选清理需用户授权。任务已 finish + archive，未改代码。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5de734d` | chore(task): 建档会话启动与残留任务排查 [task:startup-residual-check] |
+
+### Status
+
+[OK] **Completed**
