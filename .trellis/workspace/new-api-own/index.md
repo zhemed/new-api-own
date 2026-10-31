@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-3.md`
-- **Total Sessions**: 123
+- **Total Sessions**: 124
 - **Last Active**: 2026-10-31
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-3.md` | ~375 | Active |
+| `journal-3.md` | ~397 | Active |
 | `journal-2.md` | ~1968 | Archived |
 | `journal-1.md` | ~1975 | Archived |
 <!-- @@@/auto:active-documents -->
@@ -31,6 +31,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 124 | 2026-10-31 | 残留清理与提交推送：推送 10 个提交、回填归档 PRD、清理 gitignored 残留 | `da4ac71` | `main` |
 | 123 | 2026-10-31 | 会话启动与残留任务排查：确认无残留 Trellis 任务 | `5de734d` | `main` |
 | 122 | 2026-10-31 | 对外模式默认余额调研（用户中途叫停并归档） | - | `main` |
 | 121 | 2026-10-29 | 排查生产 429 ttft_admission_refused 无法使用 | - | `main` |

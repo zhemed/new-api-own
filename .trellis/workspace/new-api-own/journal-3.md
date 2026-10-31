@@ -373,3 +373,25 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 124: 残留清理与提交推送：推送 10 个提交、回填归档 PRD、清理 gitignored 残留
+<!-- trellis-session: v=2 fp=6bcf8becd6f7ab87 -->
+
+**Date**: 2026-10-31
+**Task**: 残留清理与提交推送：推送 10 个提交、回填归档 PRD、清理 gitignored 残留
+**Branch**: `main`
+
+### Summary
+
+用户授权处理 Session 123 盘点出的三类残留。r4-operator 执行：git push origin main 推送 10 个未推送提交，origin/main 与本地一致；删除 .verify-scratch 23 个 png 共 2.6M 与 14 个 update-check marker，保留 sessions 会话文件，被跟踪文件零改动。r2-analyst 回填两份仍为 TBD 模板的归档 PRD：10-31-external-default-quota 依据 journal Session 122 与 7e9717c，10-31-archive-commit-cleanup 依据 cd3c633 与 9668862，均无 TBD、无臆造。Lead 复核 diff 后提交 da4ac71 并归档本任务；收尾提交由 r4-operator 在 journal 提交后同步到 origin。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `da4ac71` | chore(task): 回填归档 PRD、清理 gitignored 残留 [task:residual-cleanup-push] |
+
+### Status
+
+[OK] **Completed**
