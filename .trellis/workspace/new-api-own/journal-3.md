@@ -320,3 +320,34 @@
 ### Next Steps
 
 - 待用户授权后另开任务：渠道冗余、429 有限重试与降权、Retry-After 透传、LOG_SQL_DSN 日志落盘、429 监控告警
+
+
+## Session 122: 对外模式默认余额调研（用户中途叫停并归档）
+<!-- trellis-session: v=2 fp=8f921c7e016846c3 -->
+
+**Date**: 2026-10-31
+**Task**: 对外模式默认余额调研（用户中途叫停并归档）
+**Branch**: `main`
+
+### Summary
+
+用户要求建立新任务，把「对外模式」默认 200 的余额改成 10 万；Lead 建任务 10-31-external-default-quota 并派 r2-analyst 只读调研，随后用户指令「停止一切任务，并归档」，任务在规划阶段终止，代码零改动。
+
+### Main Changes
+
+- 确认本仓库「对外模式」即设置向导三选一的 external（对外运营）：web/src/features/setup/components/usage-mode-step.tsx:48-55 定义选项，提交映射为 SelfUseModeEnabled=false 且 DemoSiteEnabled=false（web/src/features/setup/api.ts:44-52），后端只落这两个布尔值（controller/setup.go:125-134）。
+- 全仓未找到独立的「对外模式默认余额=200」：新用户默认额度为 common.QuotaForNewUser，代码默认 0（common/constants.go:128），前端表单默认 0（web/src/features/system-settings/billing/index.tsx:28），写入路径 model/option.go:538-539 与 model/user.go:597/661；grep「对外模式」仅命中 i18n zh.json:1672-1673。
+- 判断 200 更可能是实例数据库里 option 的当前值（例如 QuotaForNewUser 已配成 200）而非仓库代码默认值，再次开工前需用户指明具体页面或配置项。
+- 已执行 task.py finish + archive，任务移入 .trellis/tasks/archive/2026-10/10-31-external-default-quota；派出的 r2-analyst 已中断并处于 inactive。
+
+### Git Commits
+
+(No commits - planning session)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 若继续：重新建任务，先请用户指明「对外模式默认 200 余额」所在页面或配置项，再决定改代码默认值还是改实例 option。
